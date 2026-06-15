@@ -1,0 +1,37 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "eidolon-sdk"
+version = "0.1.0"
+description = "Shared Python SDK contracts and infrastructure for Eidolon projects"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+dependencies = [
+    "pydantic>=2.8",
+]
+
+[project.optional-dependencies]
+db = [
+    "aiosqlite>=0.20",
+    "sqlalchemy[asyncio]>=2.0",
+]
+dev = [
+    "hatchling>=1.25",
+    "pytest>=8.0",
+    "pytest-asyncio>=0.24",
+    "pyyaml>=6.0",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["eidolon_sdk"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
