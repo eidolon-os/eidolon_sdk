@@ -24,6 +24,9 @@ runtime = [
 http = [
     "httpx>=0.27",
 ]
+admin = [
+    "httpx>=0.27",
+]
 devices = [
     "cryptography>=43",
 ]
