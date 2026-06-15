@@ -7,7 +7,7 @@ name = "eidolon-sdk"
 version = "0.1.0"
 description = "Shared Python SDK contracts and infrastructure for Eidolon projects"
 readme = "README.md"
-requires-python = ">=3.11"
+requires-python = ">=3.10"
 license = { text = "MIT" }
 dependencies = [
     "pydantic>=2.8",
@@ -17,6 +17,9 @@ dependencies = [
 db = [
     "aiosqlite>=0.20",
     "sqlalchemy[asyncio]>=2.0",
+]
+runtime = [
+    "PyJWT>=2.8",
 ]
 dev = [
     "hatchling>=1.25",

@@ -13,7 +13,7 @@ Options:
                        Default is --no-deps to avoid unexpectedly changing
                        sibling project dependency versions.
   --extras EXTRAS      Extras to install when --with-deps is used.
-                       Default: db
+                       Default: db,runtime
   --dist-dir DIR       Wheel output directory.
                        Default: <eidolon_sdk>/dist/sdk-update
   --help              Show this help.
@@ -33,7 +33,7 @@ ROOT_DIR="$(cd "${SDK_DIR}/.." && pwd)"
 SDK_PYTHON="${SDK_DIR}/.venv/bin/python"
 DIST_DIR="${SDK_DIR}/dist/sdk-update"
 INSTALL_DEPS=0
-EXTRAS="db"
+EXTRAS="db,runtime"
 PROJECTS=()
 
 while [[ $# -gt 0 ]]; do
