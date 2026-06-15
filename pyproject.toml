@@ -21,6 +21,9 @@ db = [
 runtime = [
     "PyJWT>=2.8",
 ]
+http = [
+    "httpx>=0.27",
+]
 dev = [
     "hatchling>=1.25",
     "pytest>=8.0",

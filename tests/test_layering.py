@@ -30,3 +30,14 @@ def test_db_layer_does_not_import_registry_domain() -> None:
     imports = _imports_under("db")
     assert not any(imp.startswith("eidolon_sdk.registry") for imp in imports)
 
+
+def test_http_layer_does_not_import_domain_or_storage_layers() -> None:
+    imports = _imports_under("http")
+    forbidden = (
+        "eidolon_sdk.adapters",
+        "eidolon_sdk.db",
+        "eidolon_sdk.kv",
+        "eidolon_sdk.registry",
+        "eidolon_sdk.runtime",
+    )
+    assert not any(imp.startswith(forbidden) for imp in imports)
