@@ -8,6 +8,7 @@ from .client import (
     authorization_metadata,
     build_channel_credentials,
     create_aio_channel,
+    create_aio_channel_with_credentials,
     default_channel_options,
     resolve_token_source,
 )
@@ -20,6 +21,7 @@ __all__ = [
     "authorization_metadata",
     "build_channel_credentials",
     "create_aio_channel",
+    "create_aio_channel_with_credentials",
     "default_channel_options",
     "resolve_token_source",
 ]

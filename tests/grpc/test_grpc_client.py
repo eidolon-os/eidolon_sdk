@@ -7,6 +7,7 @@ from eidolon_sdk.grpc import (
     GrpcTlsConfig,
     authorization_metadata,
     build_channel_credentials,
+    create_aio_channel_with_credentials,
     default_channel_options,
     resolve_token_source,
 )
@@ -71,3 +72,27 @@ def test_build_channel_credentials_validates_ca_file(tmp_path) -> None:
         build_channel_credentials(
             GrpcTlsConfig(mode="tls", ca_path=str(tmp_path / "nope.pem"))
         )
+
+
+def test_create_aio_channel_with_credentials_reuses_prebuilt_credentials(monkeypatch) -> None:
+    import grpc
+
+    calls = []
+    credentials = object()
+
+    def fake_secure_channel(target, creds, *, options):
+        calls.append((target, creds, options))
+        return "secure-channel"
+
+    monkeypatch.setattr(grpc.aio, "secure_channel", fake_secure_channel)
+
+    channel = create_aio_channel_with_credentials("agent:45051", credentials)
+
+    assert channel == "secure-channel"
+    assert calls == [
+        (
+            "agent:45051",
+            credentials,
+            DEFAULT_LOW_LATENCY_CHANNEL_OPTIONS,
+        )
+    ]

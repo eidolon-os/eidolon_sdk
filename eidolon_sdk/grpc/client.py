@@ -123,6 +123,25 @@ def create_aio_channel(
     return grpc.aio.secure_channel(target, credentials, options=channel_options)
 
 
+def create_aio_channel_with_credentials(
+    target: str,
+    credentials,
+    *,
+    options: Sequence[ChannelOption] | None = None,
+):
+    """Create an async gRPC channel from pre-built credentials.
+
+    Use this when callers intentionally validate and materialize TLS credentials
+    earlier than channel creation, then want reconnects to reuse that material.
+    """
+    import grpc
+
+    channel_options = default_channel_options(options)
+    if credentials is None:
+        return grpc.aio.insecure_channel(target, options=channel_options)
+    return grpc.aio.secure_channel(target, credentials, options=channel_options)
+
+
 def _read_optional(label: str, raw_path: str) -> bytes:
     if not raw_path:
         return b""
