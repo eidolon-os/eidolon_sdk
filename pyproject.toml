@@ -27,6 +27,9 @@ http = [
 devices = [
     "cryptography>=43",
 ]
+livekit = [
+    "livekit-api>=0.5",
+]
 dev = [
     "hatchling>=1.25",
     "pytest>=8.0",
