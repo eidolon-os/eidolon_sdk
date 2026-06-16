@@ -5,9 +5,11 @@ import pytest
 
 from eidolon_sdk.http import (
     HTTPClientSettings,
+    HTTPRetryPolicy,
     ServiceHTTPClient,
     ServiceUnavailable,
     ServiceUpstreamError,
+    authorization_header,
     create_async_client,
     normalize_base_url,
 )
@@ -38,6 +40,33 @@ async def test_service_http_client_builds_url_and_returns_response() -> None:
     assert seen == {
         "method": "GET",
         "url": "http://svc.local/api/things?q=x",
+    }
+
+
+@pytest.mark.asyncio
+async def test_service_http_client_merges_default_and_request_headers() -> None:
+    seen: dict[str, str] = {}
+
+    async def handler(request: httpx.Request) -> httpx.Response:
+        seen["authorization"] = request.headers["authorization"]
+        seen["x-trace-id"] = request.headers["x-trace-id"]
+        return httpx.Response(200, json={"ok": True})
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as http:
+        client = ServiceHTTPClient(
+            http,
+            "http://svc.local/",
+            default_headers=authorization_header("base-token"),
+        )
+        await client._request(
+            "GET",
+            "/api/things",
+            headers={"X-Trace-Id": "trace-1"},
+        )
+
+    assert seen == {
+        "authorization": "Bearer base-token",
+        "x-trace-id": "trace-1",
     }
 
 
@@ -76,6 +105,35 @@ async def test_service_http_client_wraps_network_errors() -> None:
         client = ServiceHTTPClient(http, "http://svc.local")
         with pytest.raises(ServiceUnavailable, match="down"):
             await client._request("GET", "/api/things")
+
+
+@pytest.mark.asyncio
+async def test_service_http_client_retries_retryable_status_for_safe_methods() -> None:
+    statuses = [503, 200]
+
+    async def handler(_request: httpx.Request) -> httpx.Response:
+        return httpx.Response(statuses.pop(0), json={"ok": not statuses})
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as http:
+        client = ServiceHTTPClient(
+            http,
+            "http://svc.local",
+            retry_policy=HTTPRetryPolicy(attempts=2),
+        )
+        response = await client._request("GET", "/api/things")
+
+    assert response.status_code == 200
+    assert statuses == []
+
+
+@pytest.mark.asyncio
+async def test_service_http_health_check_returns_bool() -> None:
+    async with httpx.AsyncClient(
+        transport=httpx.MockTransport(lambda _request: httpx.Response(204))
+    ) as http:
+        client = ServiceHTTPClient(http, "http://svc.local")
+        assert await client.health_check("/ready", ok_statuses=(204,)) is True
+        assert await client.health_check("/ready") is False
 
 
 @pytest.mark.asyncio
