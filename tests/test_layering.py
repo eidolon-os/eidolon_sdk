@@ -41,3 +41,16 @@ def test_http_layer_does_not_import_domain_or_storage_layers() -> None:
         "eidolon_sdk.runtime",
     )
     assert not any(imp.startswith(forbidden) for imp in imports)
+
+
+def test_wire_contract_layers_do_not_import_storage_or_service_clients() -> None:
+    forbidden = (
+        "eidolon_sdk.adapters",
+        "eidolon_sdk.admin",
+        "eidolon_sdk.db",
+        "eidolon_sdk.http",
+        "eidolon_sdk.kv",
+    )
+    for package in ("llm", "long_tasks", "protobuf", "streaming"):
+        imports = _imports_under(package)
+        assert not any(imp.startswith(forbidden) for imp in imports)

@@ -1,5 +1,6 @@
 """Runtime authentication and token contracts."""
 
+from .background import BackgroundTaskRunner
 from .tokens import (
     PairingTokenVerifier,
     RuntimeTokenRevokedError,
@@ -12,6 +13,7 @@ from .tokens import (
 )
 
 __all__ = [
+    "BackgroundTaskRunner",
     "PairingTokenVerifier",
     "RuntimeTokenRevokedError",
     "RuntimeUnauthenticatedError",
@@ -21,4 +23,3 @@ __all__ = [
     "sign_device_token",
     "user_revocation_keys",
 ]
-

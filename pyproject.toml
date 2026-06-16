@@ -16,6 +16,7 @@ dependencies = [
     "httpx>=0.27",
     "livekit-api>=0.5",
     "pydantic>=2.8",
+    "protobuf>=4.25",
     "PyJWT>=2.8",
     "sqlalchemy[asyncio]>=2.0",
 ]
@@ -36,6 +37,7 @@ admin = [
 ]
 grpc = [
     "grpcio>=1.62",
+    "protobuf>=4.25",
 ]
 devices = [
     "cryptography>=43",
