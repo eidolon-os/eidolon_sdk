@@ -4,7 +4,13 @@ from __future__ import annotations
 
 from typing import Protocol
 
-from .models import TenantSpec, UserRegistryRecord
+from .models import (
+    AgentMetadataRecord,
+    DeviceBindingRecord,
+    DeviceRegistryRecord,
+    TenantSpec,
+    UserRegistryRecord,
+)
 
 
 class TenantStore(Protocol):
@@ -30,3 +36,36 @@ class UserStore(Protocol):
 
     async def allocate_memory_port(self) -> int: ...
 
+
+class DeviceStore(Protocol):
+    async def get(self, device_id: str) -> DeviceRegistryRecord | None: ...
+
+    async def put(self, record: DeviceRegistryRecord) -> None: ...
+
+    async def delete(self, device_id: str) -> None: ...
+
+    async def list_all(self) -> dict[str, DeviceRegistryRecord]: ...
+
+
+class DeviceBindingStore(Protocol):
+    async def get(self, device_id: str) -> DeviceBindingRecord | None: ...
+
+    async def put(self, record: DeviceBindingRecord) -> None: ...
+
+    async def delete(self, device_id: str) -> None: ...
+
+    async def list_all(self) -> dict[str, DeviceBindingRecord]: ...
+
+    async def list_by_agent(self, agent_id: str) -> list[str]: ...
+
+
+class AgentMetadataStore(Protocol):
+    async def get(self, agent_id: str) -> AgentMetadataRecord | None: ...
+
+    async def put(self, record: AgentMetadataRecord) -> None: ...
+
+    async def delete(self, agent_id: str) -> None: ...
+
+    async def list_all(self) -> dict[str, AgentMetadataRecord]: ...
+
+    async def list_by_user(self, user_id: str) -> list[tuple[str, AgentMetadataRecord]]: ...

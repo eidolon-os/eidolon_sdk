@@ -86,3 +86,53 @@ class UserRegistryRecord(BaseModel):
     def _check_tenant_id(cls, v: str) -> str:
         return validate_registry_id(v, field_name="tenant_id")
 
+
+class DeviceRegistryRecord(BaseModel):
+    """Full persisted registry row for a physical device.
+
+    Device ids are hardware/client generated and may be MAC addresses, so they
+    intentionally do not use the stricter registry id validator.
+    """
+
+    device_id: str = Field(..., min_length=1, max_length=128)
+    name: str = ""
+    kind: str = "unknown"
+    enabled: bool = True
+    psk_hash: str | None = None
+    paired: bool = False
+    approved: bool = False
+    approved_at: str | None = None
+    created_at: str = ""
+    last_seen: str = ""
+    metadata: dict = Field(default_factory=dict)
+
+
+class DeviceBindingRecord(BaseModel):
+    """Admin-owned pointer from one device to one agent."""
+
+    device_id: str = Field(..., min_length=1, max_length=128)
+    agent_id: str = Field(..., min_length=1, max_length=128)
+    bound_at: str
+    interaction_mode: str | None = None
+
+
+class AgentMetadataRecord(BaseModel):
+    """Admin-owned metadata that resolves flat agent ids to runtime context."""
+
+    agent_id: str = Field(..., min_length=1, max_length=128)
+    tenant_id: str = Field("default", min_length=1, max_length=64)
+    user_id: str = Field(..., min_length=1, max_length=64)
+    template_id: str = Field(..., min_length=1, max_length=128)
+    template_revision: int = 1
+    display_name: str = ""
+    created_at: str = ""
+
+    @field_validator("tenant_id")
+    @classmethod
+    def _check_agent_tenant_id(cls, v: str) -> str:
+        return validate_registry_id(v, field_name="tenant_id")
+
+    @field_validator("user_id")
+    @classmethod
+    def _check_agent_user_id(cls, v: str) -> str:
+        return validate_registry_id(v, field_name="user_id")

@@ -6,12 +6,18 @@ from datetime import datetime, timedelta, timezone
 import pytest
 
 from eidolon_sdk.adapters.registry_sqlite import (
+    AgentMetadataRepository,
+    DeviceBindingRepository,
+    DeviceRepository,
     RegistrySqliteStore,
     TenantRepository,
     UserRepository,
 )
 from eidolon_sdk.registry.models import (
+    AgentMetadataRecord,
     ConsolidatorConfig,
+    DeviceBindingRecord,
+    DeviceRegistryRecord,
     TenantSpec,
     UserRegistryRecord,
 )
@@ -114,53 +120,96 @@ async def test_legacy_user_metadata_table_imports(tmp_path) -> None:
     assert fetched.created_at
 
 
-async def test_legacy_memory_yaml_import_preserves_explicit_registry_config(tmp_path) -> None:
-    db = tmp_path / "registry.sqlite3"
-    yaml_path = tmp_path / "users.yaml"
-    yaml_path.write_text(
-        """
-users:
-  - id: alice
-    enabled: false
-    palace_path: /legacy/alice
-    port: 8033
-    consolidator:
-      enabled: false
-      interval_hours: 2
-      window_days: 5
-      min_drawers: 2
-      min_confidence: 0.8
-""",
-        encoding="utf-8",
+async def test_device_repository_round_trip(tmp_path) -> None:
+    repo = DeviceRepository(RegistrySqliteStore(tmp_path / "registry.sqlite3"))
+    record = DeviceRegistryRecord(
+        device_id="1c:db:d4:7a:ef:0c",
+        name="Desk",
+        kind="esp32",
+        enabled=True,
+        paired=False,
+        approved=False,
+        created_at="2026-06-23T00:00:00+00:00",
+        last_seen="2026-06-23T00:01:00+00:00",
+        metadata={"fingerprint": "abc", "recent_nonces": ["n1"]},
     )
 
-    repo = UserRepository(RegistrySqliteStore(db, legacy_users_yaml_path=yaml_path))
-    fetched = await repo.get("alice")
-    assert fetched is not None
-    assert fetched.display_name == "alice"
-    assert fetched.enabled is False
-    assert fetched.palace_path == "/legacy/alice"
-    assert fetched.memory_port == 8033
-    assert fetched.consolidator.interval_hours == 2
+    assert await repo.get(record.device_id) is None
+    await repo.put(record)
+    assert await repo.get(record.device_id) == record
+    assert await repo.list_all() == {record.device_id: record}
 
-    await repo.put(
-        UserRegistryRecord(
-            user_id="alice",
-            display_name="Alice",
-            enabled=True,
-            palace_path="/explicit/alice",
-            memory_port=8044,
+    updated = record.model_copy(update={"approved": True, "approved_at": "2026-06-23T00:02:00+00:00"})
+    await repo.put(updated)
+    assert await repo.get(record.device_id) == updated
+
+    await repo.delete(record.device_id)
+    assert await repo.get(record.device_id) is None
+
+
+async def test_device_binding_repository_round_trip(tmp_path) -> None:
+    repo = DeviceBindingRepository(RegistrySqliteStore(tmp_path / "registry.sqlite3"))
+    binding = DeviceBindingRecord(
+        device_id="1c:db:d4:7a:ef:0c",
+        agent_id="ag-1",
+        bound_at="2026-06-23T00:00:00+00:00",
+        interaction_mode="half_duplex",
+    )
+
+    await repo.put(binding)
+    assert await repo.get(binding.device_id) == binding
+    assert await repo.list_all() == {binding.device_id: binding}
+    assert await repo.list_by_agent("ag-1") == [binding.device_id]
+    assert await repo.list_by_agent("ag-2") == []
+
+    await repo.delete(binding.device_id)
+    assert await repo.get(binding.device_id) is None
+
+
+async def test_agent_metadata_repository_round_trip(tmp_path) -> None:
+    repo = AgentMetadataRepository(RegistrySqliteStore(tmp_path / "registry.sqlite3"))
+    meta = AgentMetadataRecord(
+        agent_id="ag-1",
+        tenant_id="default",
+        user_id="alice",
+        template_id="caretaker",
+        template_revision=2,
+        display_name="A1",
+        created_at="2026-06-23T00:00:00+00:00",
+    )
+
+    await repo.put(meta)
+    assert await repo.get("ag-1") == meta
+    assert await repo.list_all() == {"ag-1": meta}
+    assert await repo.list_by_user("alice") == [("ag-1", meta)]
+    assert await repo.list_by_user("bob") == []
+
+    await repo.delete("ag-1")
+    assert await repo.get("ag-1") is None
+
+
+async def test_registry_store_shares_control_plane_tables(tmp_path) -> None:
+    store = RegistrySqliteStore(tmp_path / "registry.sqlite3")
+    users = UserRepository(store)
+    devices = DeviceRepository(store)
+    bindings = DeviceBindingRepository(store)
+
+    await users.put(UserRegistryRecord(user_id="alice", tenant_id="default"))
+    await devices.put(
+        DeviceRegistryRecord(
+            device_id="dev-1",
+            created_at="2026-06-23T00:00:00+00:00",
+            last_seen="2026-06-23T00:00:00+00:00",
         )
     )
-    await store_reopen_and_get(db, yaml_path)
+    await bindings.put(
+        DeviceBindingRecord(
+            device_id="dev-1",
+            agent_id="ag-1",
+            bound_at="2026-06-23T00:00:00+00:00",
+        )
+    )
 
-
-async def store_reopen_and_get(db, yaml_path) -> None:  # type: ignore[no-untyped-def]
-    repo = UserRepository(RegistrySqliteStore(db, legacy_users_yaml_path=yaml_path))
-    fetched = await repo.get("alice")
-    assert fetched is not None
-    assert fetched.display_name == "Alice"
-    assert fetched.enabled is True
-    assert fetched.palace_path == "/explicit/alice"
-    assert fetched.memory_port == 8044
-
+    assert "alice" in await users.list_all()
+    assert "dev-1" in await devices.list_all()
+    assert "dev-1" in await bindings.list_all()

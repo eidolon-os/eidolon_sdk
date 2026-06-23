@@ -56,3 +56,60 @@ class UserRow(RegistryBase):
     created_at: Mapped[str] = mapped_column(
         Text, nullable=False, default="", server_default=""
     )
+
+
+class DeviceRow(RegistryBase):
+    __tablename__ = "devices"
+
+    device_id: Mapped[str] = mapped_column(String(128), primary_key=True)
+    name: Mapped[str] = mapped_column(String(128), nullable=False, default="", server_default="")
+    kind: Mapped[str] = mapped_column(
+        String(64), nullable=False, default="unknown", server_default="unknown"
+    )
+    enabled: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=1, server_default="1"
+    )
+    psk_hash: Mapped[str | None] = mapped_column(Text)
+    paired: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=0, server_default="0"
+    )
+    approved: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=0, server_default="0"
+    )
+    approved_at: Mapped[str | None] = mapped_column(Text)
+    created_at: Mapped[str] = mapped_column(
+        Text, nullable=False, default="", server_default=""
+    )
+    last_seen: Mapped[str] = mapped_column(
+        Text, nullable=False, default="", server_default=""
+    )
+    metadata_json: Mapped[str] = mapped_column(
+        Text, nullable=False, default="{}", server_default="{}"
+    )
+
+
+class DeviceBindingRow(RegistryBase):
+    __tablename__ = "device_bindings"
+
+    device_id: Mapped[str] = mapped_column(String(128), primary_key=True)
+    agent_id: Mapped[str] = mapped_column(String(128), nullable=False)
+    bound_at: Mapped[str] = mapped_column(Text, nullable=False)
+    interaction_mode: Mapped[str | None] = mapped_column(String(32))
+
+
+class AgentMetadataRow(RegistryBase):
+    __tablename__ = "agent_metadata"
+
+    agent_id: Mapped[str] = mapped_column(String(128), primary_key=True)
+    tenant_id: Mapped[str] = mapped_column(String(64), nullable=False)
+    user_id: Mapped[str] = mapped_column(String(64), nullable=False)
+    template_id: Mapped[str] = mapped_column(String(128), nullable=False)
+    template_revision: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=1, server_default="1"
+    )
+    display_name: Mapped[str] = mapped_column(
+        String(128), nullable=False, default="", server_default=""
+    )
+    created_at: Mapped[str] = mapped_column(
+        Text, nullable=False, default="", server_default=""
+    )
