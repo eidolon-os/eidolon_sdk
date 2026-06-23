@@ -18,7 +18,12 @@ from sqlalchemy.pool import NullPool, StaticPool
 from .settings import SqliteSettings
 
 
-def _build_sqlite_url(path: Path | str) -> tuple[str, bool]:
+def sqlite_url_for_path(path: Path | str) -> tuple[str, bool]:
+    """Return the async SQLAlchemy SQLite URL and whether it is in-memory.
+
+    File-backed databases have their parent directory created here so callers
+    get the same filesystem behavior no matter which project owns the schema.
+    """
     path_str = str(path)
     if path_str == ":memory:":
         return "sqlite+aiosqlite:///:memory:", True
@@ -29,7 +34,7 @@ def _build_sqlite_url(path: Path | str) -> tuple[str, bool]:
 
 def create_sqlite_engine(settings: SqliteSettings) -> AsyncEngine:
     """Create an async SQLite engine with Eidolon-standard PRAGMAs."""
-    url, in_memory = _build_sqlite_url(settings.path)
+    url, in_memory = sqlite_url_for_path(settings.path)
     kwargs: dict = {"future": True, "echo": False}
     if in_memory:
         kwargs.update(connect_args={"check_same_thread": False}, poolclass=StaticPool)

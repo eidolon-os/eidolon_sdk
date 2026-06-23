@@ -4,6 +4,7 @@ from sqlalchemy import text
 
 from eidolon_sdk.adapters.registry_sqlite.schema import ensure_registry_schema
 from eidolon_sdk.db.engine import create_sqlite_engine
+from eidolon_sdk.db import sqlite_url_for_path
 from eidolon_sdk.db.health import integrity_check, quick_check
 from eidolon_sdk.db.settings import SqliteSettings
 
@@ -44,3 +45,19 @@ async def test_memory_db_bootstrap_is_idempotent() -> None:
     finally:
         await engine.dispose()
 
+
+def test_sqlite_url_for_path_creates_file_parent(tmp_path) -> None:
+    target = tmp_path / "nested" / "registry.sqlite3"
+
+    url, in_memory = sqlite_url_for_path(target)
+
+    assert url.endswith(str(target))
+    assert in_memory is False
+    assert target.parent.is_dir()
+
+
+def test_sqlite_url_for_path_supports_memory() -> None:
+    url, in_memory = sqlite_url_for_path(":memory:")
+
+    assert url == "sqlite+aiosqlite:///:memory:"
+    assert in_memory is True
