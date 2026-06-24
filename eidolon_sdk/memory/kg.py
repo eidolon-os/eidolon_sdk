@@ -2,11 +2,12 @@
 
 from __future__ import annotations
 
-from typing import Literal
+from typing import Any, Literal
 
-from pydantic import Field
+from pydantic import Field, field_validator
 
 from ._model import EidolonWireModel
+from .subjects import validate_memory_space_id
 
 KgPredicate = Literal[
     "child_of",
@@ -53,12 +54,17 @@ KG_PREDICATE_VALUES: tuple[str, ...] = tuple(
 
 
 class _BaseMemoryCommand(EidolonWireModel):
-    """Common fields on every command published to ``agent.memory.cmd.<user>``."""
+    """Common fields on every command published to ``eidolon.memory.cmd.<space>``."""
 
     request_id: str
-    user_id: str
+    memory_space_id: str
     issued_at: str
     issuer: Literal["admin", "agent"] = "admin"
+
+    @field_validator("memory_space_id")
+    @classmethod
+    def _valid_memory_space_id(cls, value: str) -> str:
+        return validate_memory_space_id(value)
 
 
 class KgAddTripleCommand(_BaseMemoryCommand):
@@ -98,6 +104,28 @@ class UserConfirmedFactCommand(_BaseMemoryCommand):
     importance: int = Field(ge=1, le=5, default=5)
     confidence: float = Field(ge=0.0, le=1.0, default=0.99)
     tags: list[str] = Field(default_factory=list)
+    scope: Literal["global", "persona", "agent", "device", "session"] = "persona"
+    visibility: Literal["all_devices", "current_device", "private"] = "all_devices"
+    source_device_id: str = ""
+    target_device_id: str | None = None
+    source_instance_id: str = ""
+    session_id: str = ""
+    extensions: dict[str, dict[str, Any]] = Field(default_factory=dict)
+
+
+class DeviceSyncEvent(EidolonWireModel):
+    """One offline memory event replayed from a device outbox."""
+
+    event_id: str = Field(min_length=1)
+    idempotency_hash: str = Field(min_length=1)
+    turn: dict[str, Any]
+
+
+class DeviceSyncBatchPayload(_BaseMemoryCommand):
+    kind: Literal["device_sync_batch"] = "device_sync_batch"
+    device_id: str = Field(min_length=1)
+    instance_id: str = Field(min_length=1)
+    events: list[DeviceSyncEvent] = Field(default_factory=list)
 
 
 USER_CONFIRMED_ROOM_PREFIX = "userconfirm:"
@@ -107,5 +135,6 @@ MemoryCommandPayload = (
     | KgInvalidateCommand
     | ConsolidatorIngestThemeCommand
     | UserConfirmedFactCommand
+    | DeviceSyncBatchPayload
 )
 """Discriminated union; route on the ``kind`` field."""
