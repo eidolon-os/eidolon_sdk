@@ -9,43 +9,76 @@ from eidolon_sdk.memory import (
     SENSITIVE_PREDICATES,
     ConversationTurnPayload,
     KgAddTripleCommand,
+    build_memory_actor_context,
     conversation_turn_subject,
     envelope_memory_payload,
+    memory_sync_subject,
     memory_command_subject,
+    memory_space_subject_token,
     parse_conversation_turn,
     parse_memory_command,
     unwrap_memory_payload,
 )
 from eidolon_sdk.memory.subjects import all_memory_stream_patterns
 
-pytestmark = pytest.mark.xfail(
-    reason="memory contract cleanup is deferred; current tests pin the legacy subject shape",
-    strict=False,
-)
-
 
 def test_memory_subjects_are_stable() -> None:
-    assert conversation_turn_subject("alice") == "agent.memory.conversation.turn.alice"
-    assert memory_command_subject("alice") == "agent.memory.cmd.alice"
+    memory_space_id = "default.alice.mochi"
+    token = "b64_ZGVmYXVsdC5hbGljZS5tb2NoaQ"
+    assert memory_space_subject_token(memory_space_id) == token
+    assert "." not in token
+    assert conversation_turn_subject(memory_space_id) == (
+        f"eidolon.memory.turn.{token}"
+    )
+    assert memory_command_subject(memory_space_id) == (
+        f"eidolon.memory.cmd.{token}"
+    )
+    assert memory_sync_subject(memory_space_id) == (
+        f"eidolon.memory.sync.{token}"
+    )
     assert all_memory_stream_patterns() == [
-        "agent.memory.conversation.turn.>",
-        "agent.memory.cmd.>",
+        "eidolon.memory.turn.*",
+        "eidolon.memory.cmd.*",
+        "eidolon.memory.sync.*",
     ]
 
 
-def test_memory_subject_user_id_validation() -> None:
-    assert conversation_turn_subject("user.01") == "agent.memory.conversation.turn.user.01"
+def test_memory_subject_memory_space_id_validation() -> None:
+    assert conversation_turn_subject("default.user_01.mochi-test") == (
+        "eidolon.memory.turn.b64_ZGVmYXVsdC51c2VyXzAxLm1vY2hpLXRlc3Q"
+    )
     with pytest.raises(ValueError):
         conversation_turn_subject("bad/user")
     with pytest.raises(ValueError):
+        conversation_turn_subject("alice")
+    with pytest.raises(ValueError):
         memory_command_subject("")
+
+
+def _ctx():
+    return build_memory_actor_context(
+        tenant_id="default",
+        owner_user_id="alice",
+        companion_id="mochi",
+        agent_id="agent-1",
+        device_id="device-1",
+        instance_id="instance-1",
+        session_id="s1",
+    )
+
+
+def test_build_memory_actor_context_maps_companion_to_wire_persona() -> None:
+    ctx = _ctx()
+
+    assert ctx.owner_user_id == "alice"
+    assert ctx.persona_id == "mochi"
+    assert ctx.memory_space_id == "default.alice.mochi"
 
 
 def test_conversation_turn_payload_serializes_wire_shape() -> None:
     payload = ConversationTurnPayload(
         turn_id="t1",
-        user_id="alice",
-        session_id="s1",
+        context=_ctx(),
         timestamp="2026-06-15T00:00:00Z",
         user_text="hi",
         assistant_text="hello",
@@ -54,8 +87,16 @@ def test_conversation_turn_payload_serializes_wire_shape() -> None:
 
     assert payload.model_dump(mode="json") == {
         "turn_id": "t1",
-        "user_id": "alice",
-        "session_id": "s1",
+        "context": {
+            "tenant_id": "default",
+            "owner_user_id": "alice",
+            "persona_id": "mochi",
+            "agent_id": "agent-1",
+            "device_id": "device-1",
+            "instance_id": "instance-1",
+            "session_id": "s1",
+            "memory_space_id": "default.alice.mochi",
+        },
         "timestamp": "2026-06-15T00:00:00Z",
         "user_text": "hi",
         "assistant_text": "hello",
@@ -69,7 +110,7 @@ def test_kg_command_predicate_contract() -> None:
 
     cmd = KgAddTripleCommand(
         request_id="req-1",
-        user_id="alice",
+        memory_space_id="default.alice.mochi",
         issued_at="2026-06-15T00:00:00Z",
         subject="Alice",
         predicate="likes",
@@ -80,7 +121,7 @@ def test_kg_command_predicate_contract() -> None:
     with pytest.raises(ValidationError):
         KgAddTripleCommand(
             request_id="req-2",
-            user_id="alice",
+            memory_space_id="default.alice.mochi",
             issued_at="2026-06-15T00:00:00Z",
             subject="Alice",
             predicate="invented_relation",
@@ -91,8 +132,7 @@ def test_kg_command_predicate_contract() -> None:
 def test_memory_envelope_wraps_and_parses_conversation_turn() -> None:
     payload = ConversationTurnPayload(
         turn_id="t1",
-        user_id="alice",
-        session_id="s1",
+        context=_ctx(),
         timestamp="2026-06-15T00:00:00Z",
         user_text="hi",
         assistant_text="hello",
@@ -107,11 +147,10 @@ def test_memory_envelope_wraps_and_parses_conversation_turn() -> None:
     assert parse_conversation_turn(envelope) == payload
 
 
-def test_memory_parsers_accept_legacy_raw_payloads() -> None:
+def test_memory_parsers_accept_raw_current_payloads() -> None:
     raw_turn = {
         "turn_id": "t1",
-        "user_id": "alice",
-        "session_id": "s1",
+        "context": _ctx().model_dump(mode="json"),
         "timestamp": "2026-06-15T00:00:00Z",
         "user_text": "hi",
         "assistant_text": "hello",
@@ -119,7 +158,7 @@ def test_memory_parsers_accept_legacy_raw_payloads() -> None:
     raw_command = {
         "kind": "kg_add_triple",
         "request_id": "req-1",
-        "user_id": "alice",
+        "memory_space_id": "default.alice.mochi",
         "issued_at": "2026-06-15T00:00:00Z",
         "subject": "Alice",
         "predicate": "likes",

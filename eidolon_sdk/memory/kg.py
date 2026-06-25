@@ -54,7 +54,7 @@ KG_PREDICATE_VALUES: tuple[str, ...] = tuple(
 
 
 class _BaseMemoryCommand(EidolonWireModel):
-    """Common fields on every command published to ``eidolon.memory.cmd.<space>``."""
+    """Common fields on every command published to ``eidolon.memory.cmd.<space_token>``."""
 
     request_id: str
     memory_space_id: str

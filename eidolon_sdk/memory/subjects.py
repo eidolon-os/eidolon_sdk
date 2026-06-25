@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import base64
 import re
 
 MEMORY_CONVERSATION_TURN_BASE = "eidolon.memory.turn"
@@ -34,40 +35,54 @@ def derive_memory_space_id(tenant_id: str, owner_user_id: str, persona_id: str) 
     return validate_memory_space_id(f"{tenant_id}.{owner_user_id}.{persona_id}")
 
 
+def memory_space_subject_token(memory_space_id: str) -> str:
+    """Encode a memory_space_id as one NATS subject token.
+
+    NATS treats ``.`` as a token separator, so the canonical
+    ``tenant.owner.companion`` id must never be interpolated directly into a
+    subject. Base64url without padding is reversible and collision-free for the
+    validated input alphabet.
+    """
+
+    validated = validate_memory_space_id(memory_space_id)
+    encoded = base64.urlsafe_b64encode(validated.encode("utf-8")).decode("ascii")
+    return f"b64_{encoded.rstrip('=')}"
+
+
 def conversation_turn_subject(memory_space_id: str) -> str:
     """Return the JetStream subject for a completed turn."""
 
-    return f"{MEMORY_CONVERSATION_TURN_BASE}.{validate_memory_space_id(memory_space_id)}"
+    return f"{MEMORY_CONVERSATION_TURN_BASE}.{memory_space_subject_token(memory_space_id)}"
 
 
 def conversation_turn_stream_pattern() -> str:
     """Wildcard subject pattern for conversation turn consumers."""
 
-    return f"{MEMORY_CONVERSATION_TURN_BASE}.>"
+    return f"{MEMORY_CONVERSATION_TURN_BASE}.*"
 
 
 def memory_command_subject(memory_space_id: str) -> str:
     """Return the JetStream subject for memory command writes."""
 
-    return f"{MEMORY_COMMAND_BASE}.{validate_memory_space_id(memory_space_id)}"
+    return f"{MEMORY_COMMAND_BASE}.{memory_space_subject_token(memory_space_id)}"
 
 
 def memory_command_stream_pattern() -> str:
     """Wildcard subject pattern for memory command consumers."""
 
-    return f"{MEMORY_COMMAND_BASE}.>"
+    return f"{MEMORY_COMMAND_BASE}.*"
 
 
 def memory_sync_subject(memory_space_id: str) -> str:
     """Return the JetStream subject for offline-device sync batches."""
 
-    return f"{MEMORY_SYNC_BASE}.{validate_memory_space_id(memory_space_id)}"
+    return f"{MEMORY_SYNC_BASE}.{memory_space_subject_token(memory_space_id)}"
 
 
 def memory_sync_stream_pattern() -> str:
     """Wildcard subject pattern for offline-device sync batches."""
 
-    return f"{MEMORY_SYNC_BASE}.>"
+    return f"{MEMORY_SYNC_BASE}.*"
 
 
 def all_memory_stream_patterns() -> list[str]:

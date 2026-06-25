@@ -22,7 +22,11 @@ from .envelope import (
     parse_memory_command,
     unwrap_memory_payload,
 )
-from .payloads import ConversationTurnPayload, MemoryActorContext
+from .payloads import (
+    ConversationTurnPayload,
+    MemoryActorContext,
+    build_memory_actor_context,
+)
 from .subjects import (
     MEMORY_COMMAND_BASE,
     MEMORY_CONVERSATION_TURN_BASE,
@@ -33,6 +37,7 @@ from .subjects import (
     derive_memory_space_id,
     memory_command_stream_pattern,
     memory_command_subject,
+    memory_space_subject_token,
     memory_sync_stream_pattern,
     memory_sync_subject,
     validate_memory_space_id,
@@ -58,6 +63,7 @@ __all__ = [
     "MemoryCommandPayload",
     "UserConfirmedFactCommand",
     "all_memory_stream_patterns",
+    "build_memory_actor_context",
     "conversation_turn_stream_pattern",
     "conversation_turn_subject",
     "derive_memory_space_id",
@@ -65,6 +71,7 @@ __all__ = [
     "memory_payload_kind",
     "memory_command_stream_pattern",
     "memory_command_subject",
+    "memory_space_subject_token",
     "memory_sync_stream_pattern",
     "memory_sync_subject",
     "parse_conversation_turn",

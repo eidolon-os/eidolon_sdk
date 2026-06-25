@@ -66,3 +66,30 @@ class ConversationTurnPayload(EidolonWireModel):
     assistant_text: str
     timestamp: str
     metadata: dict[str, Any] = Field(default_factory=dict)
+
+
+def build_memory_actor_context(
+    *,
+    tenant_id: str,
+    owner_user_id: str,
+    companion_id: str,
+    agent_id: str,
+    device_id: str,
+    instance_id: str,
+    session_id: str,
+) -> MemoryActorContext:
+    """Build the canonical memory actor context from product identity.
+
+    Product surfaces use ``companion_id`` for the long-lived AI companion.
+    The wire contract keeps the existing ``persona_id`` field name for now.
+    """
+
+    return MemoryActorContext(
+        tenant_id=tenant_id,
+        owner_user_id=owner_user_id,
+        persona_id=companion_id,
+        agent_id=agent_id,
+        device_id=device_id,
+        instance_id=instance_id,
+        session_id=session_id,
+    )
