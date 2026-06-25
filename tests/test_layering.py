@@ -54,3 +54,18 @@ def test_wire_contract_layers_do_not_import_storage_or_service_clients() -> None
     for package in ("llm", "long_tasks", "protobuf", "streaming"):
         imports = _imports_under(package)
         assert not any(imp.startswith(forbidden) for imp in imports)
+
+
+def test_core_layer_does_not_import_business_or_adapters() -> None:
+    imports = _imports_under("core")
+    forbidden = (
+        "eidolon_sdk.adapters",
+        "eidolon_sdk.biz",
+        "eidolon_sdk.memory",
+    )
+    assert not any(imp.startswith(forbidden) for imp in imports)
+
+
+def test_business_layer_does_not_import_adapters() -> None:
+    imports = _imports_under("biz")
+    assert not any(imp.startswith("eidolon_sdk.adapters") for imp in imports)

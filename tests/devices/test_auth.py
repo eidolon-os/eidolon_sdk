@@ -54,6 +54,38 @@ def _signed_headers(
     return headers, public_key
 
 
+def test_verify_device_signature_accepts_non_get_method() -> None:
+    key = ec.generate_private_key(ec.SECP256R1())
+    public_der = key.public_key().public_bytes(
+        Encoding.DER,
+        PublicFormat.SubjectPublicKeyInfo,
+    )
+    public_key = _b64url(public_der)
+    signed = canonical_request(
+        method="POST",
+        path_query="/api/control",
+        device_id="esp32-1",
+        nonce="nonce-1",
+        timestamp="0",
+        body_hash=body_sha256_hex(b'{"op":"config.refresh"}'),
+    )
+    headers = DeviceAuthHeaders(
+        device_id="esp32-1",
+        nonce="nonce-1",
+        timestamp="0",
+        public_key=public_key,
+        signature=_b64url(key.sign(signed, ec.ECDSA(hashes.SHA256()))),
+    )
+
+    assert verify_device_signature(
+        headers=headers,
+        stored_public_key=None,
+        path_query="/api/control",
+        method="POST",
+        body=b'{"op":"config.refresh"}',
+    ) == public_key_fingerprint(public_key)
+
+
 def test_verify_device_signature_accepts_first_registration() -> None:
     headers, public_key = _signed_headers()
 

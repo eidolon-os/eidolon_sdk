@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import json
 from datetime import datetime, timezone
 from pathlib import Path
@@ -9,13 +10,13 @@ from pathlib import Path
 from sqlalchemy import delete, func, select
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker
 
-from eidolon_sdk.db.engine import (
+from eidolon_sdk.core.db.engine import (
     create_sqlite_engine,
     create_sqlite_session_factory,
     session_scope,
 )
-from eidolon_sdk.db.settings import SqliteSettings
-from eidolon_sdk.registry.models import (
+from eidolon_sdk.core.db.settings import SqliteSettings
+from eidolon_sdk.biz.registry.models import (
     AgentMetadataRecord,
     ConsolidatorConfig,
     DeviceBindingRecord,
@@ -23,7 +24,7 @@ from eidolon_sdk.registry.models import (
     TenantSpec,
     UserRegistryRecord,
 )
-from eidolon_sdk.registry.settings import resolve_registry_db_path
+from eidolon_sdk.biz.registry.settings import resolve_registry_db_path
 
 from .orm import AgentMetadataRow, DeviceBindingRow, DeviceRow, TenantRow, UserRow
 from .schema import ensure_registry_schema
@@ -51,6 +52,7 @@ class RegistrySqliteStore:
         self._engine = create_sqlite_engine(self._settings)
         self._session_factory = create_sqlite_session_factory(self._engine)
         self._schema_ready = False
+        self._schema_lock = asyncio.Lock()
 
     @property
     def engine(self) -> AsyncEngine:
@@ -63,8 +65,11 @@ class RegistrySqliteStore:
     async def ensure_schema(self) -> None:
         if self._schema_ready:
             return
-        await ensure_registry_schema(self._engine)
-        self._schema_ready = True
+        async with self._schema_lock:
+            if self._schema_ready:
+                return
+            await ensure_registry_schema(self._engine)
+            self._schema_ready = True
 
     async def dispose(self) -> None:
         await self._engine.dispose()
@@ -313,8 +318,16 @@ class AgentMetadataRepository:
             return {row.agent_id: _agent_metadata_from_row(row) for row in rows}
 
     async def list_by_user(self, user_id: str) -> list[tuple[str, AgentMetadataRecord]]:
-        all_meta = await self.list_all()
-        return [(agent_id, meta) for agent_id, meta in all_meta.items() if meta.user_id == user_id]
+        await self._store.ensure_schema()
+        async with self._store.session_factory() as session:
+            rows = (
+                await session.execute(
+                    select(AgentMetadataRow)
+                    .where(AgentMetadataRow.user_id == user_id)
+                    .order_by(AgentMetadataRow.agent_id)
+                )
+            ).scalars()
+            return [(row.agent_id, _agent_metadata_from_row(row)) for row in rows]
 
 
 def _tenant_from_row(row: TenantRow) -> TenantSpec:

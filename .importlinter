@@ -1,0 +1,26 @@
+[importlinter]
+root_package = eidolon_sdk
+include_external_packages = True
+
+[importlinter:contract:contracts-is-a-pure-leaf]
+name = contracts is the single-source wire vocabulary and must stay a pure leaf (no eidolon_sdk siblings → no import cycles)
+type = forbidden
+source_modules =
+    eidolon_sdk.contracts
+forbidden_modules =
+    eidolon_sdk.adapters
+    eidolon_sdk.admin
+    eidolon_sdk.control
+    eidolon_sdk.db
+    eidolon_sdk.devices
+    eidolon_sdk.grpc
+    eidolon_sdk.http
+    eidolon_sdk.kv
+    eidolon_sdk.livekit
+    eidolon_sdk.llm
+    eidolon_sdk.long_tasks
+    eidolon_sdk.memory
+    eidolon_sdk.protobuf
+    eidolon_sdk.registry
+    eidolon_sdk.runtime
+    eidolon_sdk.streaming

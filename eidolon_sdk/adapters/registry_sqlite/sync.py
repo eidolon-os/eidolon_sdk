@@ -10,7 +10,7 @@ from __future__ import annotations
 import sqlite3
 from pathlib import Path
 
-from eidolon_sdk.registry.models import ConsolidatorConfig, UserRegistryRecord
+from eidolon_sdk.biz.registry.models import ConsolidatorConfig, UserRegistryRecord
 
 
 def list_user_records_sync(db_path: str | Path) -> dict[str, UserRegistryRecord]:

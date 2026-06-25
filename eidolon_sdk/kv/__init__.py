@@ -1,6 +1,5 @@
-"""Key-value infrastructure contracts."""
+"""Compatibility exports for :mod:`eidolon_sdk.core.kv`."""
 
-from .ports import KVStore
+from eidolon_sdk.core.kv import KVStore
 
 __all__ = ["KVStore"]
-

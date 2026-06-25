@@ -1,8 +1,7 @@
-"""Control-plane wire contracts shared by Eidolon projects."""
+"""Compatibility exports for :mod:`eidolon_sdk.biz.control`."""
 
-from .protocol import (
+from eidolon_sdk.biz.control import (
     CONTROL_PROTOCOL_VERSION,
-    CONTROL_TOPIC,
     CommandPriority,
     CommandQoS,
     build_command_envelope,
@@ -14,7 +13,6 @@ from .protocol import (
 
 __all__ = [
     "CONTROL_PROTOCOL_VERSION",
-    "CONTROL_TOPIC",
     "CommandPriority",
     "CommandQoS",
     "build_command_envelope",

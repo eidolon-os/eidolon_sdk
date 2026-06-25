@@ -1,20 +1,13 @@
-"""Shared HTTP exception types."""
+"""Compatibility exports for :mod:`eidolon_sdk.core.http.errors`."""
 
-from __future__ import annotations
+from eidolon_sdk.core.http.errors import (
+    ServiceHTTPError,
+    ServiceUnavailable,
+    ServiceUpstreamError,
+)
 
-
-class ServiceHTTPError(Exception):
-    """Base class for service-to-service HTTP failures."""
-
-
-class ServiceUnavailable(ServiceHTTPError):
-    """Network-level failure before a valid HTTP response is available."""
-
-
-class ServiceUpstreamError(ServiceHTTPError):
-    """Remote service responded with an unacceptable HTTP status."""
-
-    def __init__(self, status_code: int, message: str) -> None:
-        super().__init__(message)
-        self.status_code = status_code
-        self.message = message
+__all__ = [
+    "ServiceHTTPError",
+    "ServiceUnavailable",
+    "ServiceUpstreamError",
+]

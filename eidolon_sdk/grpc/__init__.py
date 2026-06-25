@@ -1,6 +1,6 @@
-"""gRPC transport helpers shared by Eidolon Python projects."""
+"""Compatibility exports for :mod:`eidolon_sdk.core.grpc`."""
 
-from .client import (
+from eidolon_sdk.core.grpc import (
     DEFAULT_LOW_LATENCY_CHANNEL_OPTIONS,
     ChannelOption,
     GrpcTlsConfig,

@@ -1,19 +1,5 @@
-"""SQLite health checks."""
+"""Compatibility exports for :mod:`eidolon_sdk.core.db.health`."""
 
-from __future__ import annotations
+from eidolon_sdk.core.db.health import integrity_check, quick_check
 
-from sqlalchemy import text
-from sqlalchemy.ext.asyncio import AsyncEngine
-
-
-async def quick_check(engine: AsyncEngine) -> str:
-    async with engine.connect() as conn:
-        result = await conn.execute(text("PRAGMA quick_check"))
-        return str(result.scalar_one())
-
-
-async def integrity_check(engine: AsyncEngine) -> str:
-    async with engine.connect() as conn:
-        result = await conn.execute(text("PRAGMA integrity_check"))
-        return str(result.scalar_one())
-
+__all__ = ["integrity_check", "quick_check"]

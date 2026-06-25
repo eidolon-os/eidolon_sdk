@@ -1,71 +1,17 @@
-"""Storage-independent registry store protocols."""
+"""Compatibility exports for :mod:`eidolon_sdk.biz.registry.ports`."""
 
-from __future__ import annotations
-
-from typing import Protocol
-
-from .models import (
-    AgentMetadataRecord,
-    DeviceBindingRecord,
-    DeviceRegistryRecord,
-    TenantSpec,
-    UserRegistryRecord,
+from eidolon_sdk.biz.registry.ports import (
+    AgentMetadataStore,
+    DeviceBindingStore,
+    DeviceStore,
+    TenantStore,
+    UserStore,
 )
 
-
-class TenantStore(Protocol):
-    async def get(self, tenant_id: str) -> TenantSpec | None: ...
-
-    async def put(self, spec: TenantSpec) -> None: ...
-
-    async def delete(self, tenant_id: str) -> None: ...
-
-    async def list_all(self) -> list[TenantSpec]: ...
-
-    async def count(self) -> int: ...
-
-
-class UserStore(Protocol):
-    async def get(self, user_id: str) -> UserRegistryRecord | None: ...
-
-    async def put(self, record: UserRegistryRecord) -> None: ...
-
-    async def delete(self, user_id: str) -> None: ...
-
-    async def list_all(self) -> dict[str, UserRegistryRecord]: ...
-
-    async def allocate_memory_port(self) -> int: ...
-
-
-class DeviceStore(Protocol):
-    async def get(self, device_id: str) -> DeviceRegistryRecord | None: ...
-
-    async def put(self, record: DeviceRegistryRecord) -> None: ...
-
-    async def delete(self, device_id: str) -> None: ...
-
-    async def list_all(self) -> dict[str, DeviceRegistryRecord]: ...
-
-
-class DeviceBindingStore(Protocol):
-    async def get(self, device_id: str) -> DeviceBindingRecord | None: ...
-
-    async def put(self, record: DeviceBindingRecord) -> None: ...
-
-    async def delete(self, device_id: str) -> None: ...
-
-    async def list_all(self) -> dict[str, DeviceBindingRecord]: ...
-
-    async def list_by_agent(self, agent_id: str) -> list[str]: ...
-
-
-class AgentMetadataStore(Protocol):
-    async def get(self, agent_id: str) -> AgentMetadataRecord | None: ...
-
-    async def put(self, record: AgentMetadataRecord) -> None: ...
-
-    async def delete(self, agent_id: str) -> None: ...
-
-    async def list_all(self) -> dict[str, AgentMetadataRecord]: ...
-
-    async def list_by_user(self, user_id: str) -> list[tuple[str, AgentMetadataRecord]]: ...
+__all__ = [
+    "AgentMetadataStore",
+    "DeviceBindingStore",
+    "DeviceStore",
+    "TenantStore",
+    "UserStore",
+]

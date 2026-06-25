@@ -1,6 +1,6 @@
-"""Long-task wire contracts shared by Eidolon projects."""
+"""Compatibility exports for :mod:`eidolon_sdk.biz.long_tasks`."""
 
-from .subjects import (
+from eidolon_sdk.biz.long_tasks import (
     LONG_TASK_PROGRESS_BASE,
     parse_session_key,
     progress_subject_for,

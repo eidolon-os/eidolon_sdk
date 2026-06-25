@@ -1,15 +1,5 @@
-"""SQLite settings shared by SQL adapters."""
+"""Compatibility exports for :mod:`eidolon_sdk.core.db.settings`."""
 
-from __future__ import annotations
+from eidolon_sdk.core.db.settings import SqliteSettings
 
-from pathlib import Path
-
-from pydantic import BaseModel, Field
-
-
-class SqliteSettings(BaseModel):
-    path: Path | str
-    enable_wal: bool = True
-    busy_timeout_ms: int = Field(10_000, ge=0)
-    synchronous: str = "NORMAL"
-
+__all__ = ["SqliteSettings"]

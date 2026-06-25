@@ -78,6 +78,11 @@ def test_sign_device_token_rejects_empty_secret() -> None:
         )
 
 
+def test_pairing_token_verifier_rejects_empty_secret() -> None:
+    with pytest.raises(ValueError, match="secret is required"):
+        PairingTokenVerifier(secret="")
+
+
 @pytest.mark.asyncio
 async def test_pairing_token_verifier_round_trips_verified_device() -> None:
     token, exp = sign_device_token(

@@ -1,19 +1,5 @@
-"""Generic async key-value store protocol.
+"""Compatibility exports for :mod:`eidolon_sdk.core.kv.ports`."""
 
-NATS KV adapters can implement this later without changing domain stores.
-"""
+from eidolon_sdk.core.kv.ports import KVStore
 
-from __future__ import annotations
-
-from typing import Protocol
-
-
-class KVStore(Protocol):
-    async def get(self, key: str) -> bytes | None: ...
-
-    async def put(self, key: str, value: bytes) -> None: ...
-
-    async def delete(self, key: str) -> None: ...
-
-    async def keys(self, prefix: str = "") -> list[str]: ...
-
+__all__ = ["KVStore"]

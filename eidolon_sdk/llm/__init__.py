@@ -1,6 +1,6 @@
-"""LLM provider wire-format contracts shared by Eidolon projects."""
+"""Compatibility exports for :mod:`eidolon_sdk.integrations.llm`."""
 
-from .openai_messages import (
+from eidolon_sdk.integrations.llm import (
     OpenAIToolTranscriptError,
     render_openai_tool_calls,
     validate_openai_tool_transcript,

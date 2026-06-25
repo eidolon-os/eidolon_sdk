@@ -1,6 +1,6 @@
-"""Device-facing contracts shared by Eidolon projects."""
+"""Compatibility exports for :mod:`eidolon_sdk.biz.devices`."""
 
-from .auth import (
+from eidolon_sdk.biz.devices import (
     DeviceAuthError,
     DeviceAuthHeaders,
     body_sha256_hex,

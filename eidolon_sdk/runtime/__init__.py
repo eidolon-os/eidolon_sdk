@@ -1,7 +1,6 @@
-"""Runtime authentication and token contracts."""
+"""Compatibility exports for runtime helpers."""
 
-from .background import BackgroundTaskRunner
-from .tokens import (
+from eidolon_sdk.biz.runtime import (
     PairingTokenVerifier,
     RuntimeTokenRevokedError,
     RuntimeUnauthenticatedError,
@@ -11,6 +10,7 @@ from .tokens import (
     sign_device_token,
     user_revocation_keys,
 )
+from eidolon_sdk.core.runtime import BackgroundTaskRunner
 
 __all__ = [
     "BackgroundTaskRunner",

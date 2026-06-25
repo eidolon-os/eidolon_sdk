@@ -1,6 +1,6 @@
-"""Admin HTTP contracts shared by Eidolon Python projects."""
+"""Compatibility exports for :mod:`eidolon_sdk.biz.admin`."""
 
-from .client import (
+from eidolon_sdk.biz.admin import (
     AdminClient,
     AdminClientError,
     AdminNotFound,

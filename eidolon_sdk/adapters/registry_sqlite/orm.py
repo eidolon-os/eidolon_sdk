@@ -5,7 +5,7 @@ from __future__ import annotations
 from sqlalchemy import Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
-from eidolon_sdk.db.schema import EidolonBase
+from eidolon_sdk.core.db.schema import EidolonBase
 
 
 class RegistryBase(EidolonBase):
