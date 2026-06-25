@@ -5,7 +5,7 @@ from datetime import datetime, timedelta, timezone
 import jwt
 import pytest
 
-from eidolon_sdk.runtime import (
+from eidolon_sdk.biz.runtime import (
     PairingTokenVerifier,
     RuntimeTokenRevokedError,
     RuntimeUnauthenticatedError,

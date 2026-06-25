@@ -3,10 +3,10 @@ from __future__ import annotations
 from sqlalchemy import text
 
 from eidolon_sdk.adapters.registry_sqlite.schema import ensure_registry_schema
-from eidolon_sdk.db.engine import create_sqlite_engine
-from eidolon_sdk.db import sqlite_url_for_path
-from eidolon_sdk.db.health import integrity_check, quick_check
-from eidolon_sdk.db.settings import SqliteSettings
+from eidolon_sdk.core.db.engine import create_sqlite_engine
+from eidolon_sdk.core.db import sqlite_url_for_path
+from eidolon_sdk.core.db.health import integrity_check, quick_check
+from eidolon_sdk.core.db.settings import SqliteSettings
 
 
 async def test_file_db_pragmas_and_health(tmp_path) -> None:

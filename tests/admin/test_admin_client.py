@@ -3,7 +3,7 @@ from __future__ import annotations
 import httpx
 import pytest
 
-from eidolon_sdk.admin import (
+from eidolon_sdk.biz.admin import (
     AdminClient,
     AdminNotFound,
     AdminPrecondition,

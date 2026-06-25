@@ -7,7 +7,7 @@ from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.asymmetric import ec
 from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
 
-from eidolon_sdk.devices import (
+from eidolon_sdk.biz.devices import (
     DeviceAuthError,
     DeviceAuthHeaders,
     body_sha256_hex,

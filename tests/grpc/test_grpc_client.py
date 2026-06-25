@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from eidolon_sdk.grpc import (
+from eidolon_sdk.core.grpc import (
     DEFAULT_LOW_LATENCY_CHANNEL_OPTIONS,
     GrpcTlsConfig,
     authorization_metadata,

@@ -3,7 +3,7 @@ from __future__ import annotations
 import httpx
 import pytest
 
-from eidolon_sdk.http import (
+from eidolon_sdk.core.http import (
     HTTPClientSettings,
     HTTPRetryPolicy,
     ServiceHTTPClient,

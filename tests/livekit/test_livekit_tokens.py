@@ -5,7 +5,7 @@ import json
 import jwt
 import pytest
 
-from eidolon_sdk.livekit import build_livekit_token
+from eidolon_sdk.integrations.livekit import build_livekit_token
 
 SECRET = "test-secret-with-enough-entropy-32b"
 

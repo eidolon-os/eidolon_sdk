@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 
-from eidolon_sdk.streaming import SSE_HEARTBEAT_BYTES, encode_sse_comment, encode_sse_event
+from eidolon_sdk.core.streaming import SSE_HEARTBEAT_BYTES, encode_sse_comment, encode_sse_event
 
 
 def test_encode_sse_comment_matches_heartbeat_contract() -> None:

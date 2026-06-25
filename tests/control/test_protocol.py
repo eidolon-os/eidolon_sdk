@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from datetime import UTC, datetime
 
-from eidolon_sdk.contracts import CONTROL_TOPIC
-from eidolon_sdk.control import (
+from eidolon_sdk.biz.contracts import CONTROL_TOPIC
+from eidolon_sdk.biz.control import (
     build_command_envelope,
     command_status_from_ack,
     infer_op,

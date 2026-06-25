@@ -8,7 +8,7 @@ fails loudly in CI instead.
 
 from __future__ import annotations
 
-from eidolon_sdk import contracts as c
+from eidolon_sdk.biz import contracts as c
 
 
 def test_topic_names_are_stable() -> None:

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import date
 
-from eidolon_sdk.long_tasks import (
+from eidolon_sdk.biz.long_tasks import (
     LONG_TASK_PROGRESS_BASE,
     parse_session_key,
     progress_subject_for,

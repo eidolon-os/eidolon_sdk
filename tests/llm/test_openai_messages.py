@@ -4,7 +4,7 @@ from dataclasses import dataclass
 
 import pytest
 
-from eidolon_sdk.llm import (
+from eidolon_sdk.integrations.llm import (
     OpenAIToolTranscriptError,
     render_openai_tool_calls,
     validate_openai_tool_transcript,

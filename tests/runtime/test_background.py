@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import asyncio
 
-from eidolon_sdk.runtime import BackgroundTaskRunner
+from eidolon_sdk.core.runtime import BackgroundTaskRunner
 
 
 async def test_drain_waits_for_scheduled_task() -> None:

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from google.protobuf.struct_pb2 import Struct
 
-from eidolon_sdk.protobuf import protobuf_struct_to_dict
+from eidolon_sdk.core.protobuf import protobuf_struct_to_dict
 
 
 def test_protobuf_struct_to_dict_is_recursive_json_safe() -> None:
