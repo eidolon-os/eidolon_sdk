@@ -49,6 +49,8 @@ def test_infer_op_and_ack_status_normalization() -> None:
     assert infer_op({}) == "device.command"
 
     assert normalize_ack_status("ACCEPTED") == "accepted"
+    assert normalize_ack_status("completed") == "succeeded"
     assert normalize_ack_status("unknown") == "failed"
     assert command_status_from_ack("unsupported") == "failed"
     assert command_status_from_ack("running") == "running"
+    assert command_status_from_ack("completed") == "succeeded"

@@ -12,6 +12,7 @@ CommandPriority = Literal["low", "normal", "high", "urgent"]
 
 _ACK_STATUSES = {
     "accepted",
+    "completed",
     "running",
     "succeeded",
     "failed",
@@ -51,6 +52,11 @@ def build_command_envelope(
 ) -> dict[str, Any]:
     """Build a versioned device command envelope.
 
+    Defaults to ``src.type=hub`` because SDK-built envelopes are the audited
+    cross-session command path. Channel may still use ``eidolon.control`` for
+    session-local best-effort controls by explicitly stamping
+    ``src.type=channel``.
+
     The trailing compatibility fields are intentionally part of the SDK
     contract while older ESP32 firmware and admin traces still read them.
     """
@@ -78,6 +84,8 @@ def build_command_envelope(
 
 def normalize_ack_status(status: str) -> str:
     value = status.lower()
+    if value == "completed":
+        return "succeeded"
     if value in _ACK_STATUSES:
         return value
     return "failed"

@@ -33,6 +33,10 @@ WIRE_SCHEMA_VERSION = 1
 # Device → server.
 CLIENT_AUDIO_STATE_TOPIC = "eidolon.audio_state"
 # Server → device.
+# CONTROL_TOPIC is the device command bus. The envelope ``src.type`` decides the
+# control plane:
+#   - hub: cross-session device control with command history/ack/result.
+#   - channel: session-local best-effort control inside the current voice room.
 CONTROL_TOPIC = "eidolon.control"
 COMPANION_UI_STATE_TOPIC = "eidolon.ui_state"
 SESSION_CONTROL_TOPIC = "eidolon.session_control"
