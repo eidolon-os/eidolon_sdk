@@ -117,7 +117,7 @@ def owner_revocation_keys(owner_id: str) -> tuple[str, ...]:
     return tuple(keys)
 
 
-class PairingTokenVerifier:
+class RuntimeTokenVerifier:
     def __init__(
         self,
         *,
@@ -126,7 +126,7 @@ class PairingTokenVerifier:
         revocation_kv: RuntimeRevocationStore | None = None,
     ) -> None:
         if not secret:
-            raise ValueError("PairingTokenVerifier: secret is required (empty)")
+            raise ValueError("RuntimeTokenVerifier: secret is required (empty)")
         self._secret = secret
         self._alg = algorithm
         self._kv = revocation_kv

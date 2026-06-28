@@ -1,9 +1,9 @@
 """Runtime authentication and token contracts."""
 
 from .tokens import (
-    PairingTokenVerifier,
     RuntimeIdentity,
     RuntimeTokenRevokedError,
+    RuntimeTokenVerifier,
     RuntimeUnauthenticatedError,
     device_revocation_keys,
     owner_revocation_keys,
@@ -12,9 +12,9 @@ from .tokens import (
 )
 
 __all__ = [
-    "PairingTokenVerifier",
     "RuntimeIdentity",
     "RuntimeTokenRevokedError",
+    "RuntimeTokenVerifier",
     "RuntimeUnauthenticatedError",
     "device_revocation_keys",
     "owner_revocation_keys",

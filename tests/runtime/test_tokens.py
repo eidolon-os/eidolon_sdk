@@ -6,8 +6,8 @@ import jwt
 import pytest
 
 from eidolon_sdk.biz.runtime import (
-    PairingTokenVerifier,
     RuntimeTokenRevokedError,
+    RuntimeTokenVerifier,
     RuntimeUnauthenticatedError,
     device_revocation_keys,
     owner_revocation_keys,
@@ -80,16 +80,16 @@ def test_sign_device_token_requires_identity_claims() -> None:
         _sign(owner_id="")
 
 
-def test_pairing_token_verifier_rejects_empty_secret() -> None:
+def test_runtime_token_verifier_rejects_empty_secret() -> None:
     with pytest.raises(ValueError, match="secret is required"):
-        PairingTokenVerifier(secret="")
+        RuntimeTokenVerifier(secret="")
 
 
 @pytest.mark.asyncio
-async def test_pairing_token_verifier_round_trips_runtime_identity() -> None:
+async def test_runtime_token_verifier_round_trips_runtime_identity() -> None:
     token, exp = _sign(scopes=("device",), ttl_seconds=60)
 
-    verified = await PairingTokenVerifier(secret=SECRET).verify(token)
+    verified = await RuntimeTokenVerifier(secret=SECRET).verify(token)
 
     assert verified.device_id == "device-1"
     assert verified.owner_id == "owner-a"
@@ -101,28 +101,28 @@ async def test_pairing_token_verifier_round_trips_runtime_identity() -> None:
 
 
 @pytest.mark.asyncio
-async def test_pairing_token_verifier_rejects_wrong_secret() -> None:
+async def test_runtime_token_verifier_rejects_wrong_secret() -> None:
     token, _exp = _sign()
 
     with pytest.raises(RuntimeUnauthenticatedError, match="invalid token"):
-        await PairingTokenVerifier(secret="wrong-secret-with-enough-bytes-32").verify(token)
+        await RuntimeTokenVerifier(secret="wrong-secret-with-enough-bytes-32").verify(token)
 
 
 @pytest.mark.asyncio
-async def test_pairing_token_verifier_rejects_expired_token() -> None:
+async def test_runtime_token_verifier_rejects_expired_token() -> None:
     token, _exp = _sign(ttl_seconds=-1)
 
     with pytest.raises(RuntimeUnauthenticatedError, match="expired"):
-        await PairingTokenVerifier(secret=SECRET).verify(token)
+        await RuntimeTokenVerifier(secret=SECRET).verify(token)
 
 
 @pytest.mark.asyncio
-async def test_pairing_token_verifier_checks_device_and_owner_revocations() -> None:
+async def test_runtime_token_verifier_checks_device_and_owner_revocations() -> None:
     device_token, _exp = _sign(device_id="1c:db:a1")
     device_store = MemoryRevocationStore({device_revocation_keys("1c:db:a1")[0]})
 
     with pytest.raises(RuntimeTokenRevokedError, match="device revoked"):
-        await PairingTokenVerifier(secret=SECRET, revocation_kv=device_store).verify(
+        await RuntimeTokenVerifier(secret=SECRET, revocation_kv=device_store).verify(
             device_token
         )
 
@@ -130,7 +130,7 @@ async def test_pairing_token_verifier_checks_device_and_owner_revocations() -> N
     owner_store = MemoryRevocationStore({owner_revocation_keys("owner-a")[0]})
 
     with pytest.raises(RuntimeTokenRevokedError, match="all sessions revoked"):
-        await PairingTokenVerifier(secret=SECRET, revocation_kv=owner_store).verify(owner_token)
+        await RuntimeTokenVerifier(secret=SECRET, revocation_kv=owner_store).verify(owner_token)
 
 
 def test_revocation_keys_include_plain_key_only_for_kv_safe_ids() -> None:
@@ -155,18 +155,18 @@ def test_resolve_shared_secret_prefers_argument_then_file(tmp_path) -> None:
 
 
 @pytest.mark.asyncio
-async def test_pairing_token_verifier_requires_device_id() -> None:
+async def test_runtime_token_verifier_requires_device_id() -> None:
     exp = datetime.now(timezone.utc) + timedelta(seconds=60)
     token = jwt.encode({"exp": int(exp.timestamp())}, SECRET, algorithm="HS256")
 
-    verifier = PairingTokenVerifier(secret=SECRET)
+    verifier = RuntimeTokenVerifier(secret=SECRET)
 
     with pytest.raises(RuntimeUnauthenticatedError, match="missing device_id"):
         await verifier.verify(token)
 
 
 @pytest.mark.asyncio
-async def test_pairing_token_verifier_requires_owner_claims() -> None:
+async def test_runtime_token_verifier_requires_owner_claims() -> None:
     exp = datetime.now(timezone.utc) + timedelta(seconds=60)
     token = jwt.encode(
         {
@@ -178,4 +178,4 @@ async def test_pairing_token_verifier_requires_owner_claims() -> None:
     )
 
     with pytest.raises(RuntimeUnauthenticatedError, match="missing owner_id"):
-        await PairingTokenVerifier(secret=SECRET).verify(token)
+        await RuntimeTokenVerifier(secret=SECRET).verify(token)
