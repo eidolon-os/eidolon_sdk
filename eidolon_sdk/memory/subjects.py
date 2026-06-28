@@ -9,30 +9,25 @@ MEMORY_CONVERSATION_TURN_BASE = "eidolon.memory.turn"
 MEMORY_COMMAND_BASE = "eidolon.memory.cmd"
 MEMORY_SYNC_BASE = "eidolon.memory.sync"
 
-_MEMORY_SPACE_ID_RE = re.compile(
-    r"^[A-Za-z0-9][A-Za-z0-9_-]{0,63}"
-    r"\.[A-Za-z0-9][A-Za-z0-9_-]{0,63}"
-    r"\.[A-Za-z0-9][A-Za-z0-9_-]{0,63}$"
-)
+_MEMORY_SPACE_ID_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$")
 
 
 def validate_memory_space_id(memory_space_id: str) -> str:
-    """Validate ``<tenant_id>.<owner_user_id>.<persona_id>`` subject suffixes."""
+    """Validate a memory realm id used as a subject suffix."""
 
     value = (memory_space_id or "").strip()
     if not _MEMORY_SPACE_ID_RE.fullmatch(value):
         raise ValueError(
-            "memory_space_id must match "
-            "<tenant_id>.<owner_user_id>.<persona_id> with safe ASCII ids; "
+            "memory_space_id must be a non-blank safe ASCII memory_realm_id; "
             f"got {memory_space_id!r}"
         )
     return value
 
 
-def derive_memory_space_id(tenant_id: str, owner_user_id: str, persona_id: str) -> str:
-    """Build and validate the canonical memory-space id."""
+def derive_memory_space_id(memory_realm_id: str) -> str:
+    """Return the canonical memory-space id for a memory realm."""
 
-    return validate_memory_space_id(f"{tenant_id}.{owner_user_id}.{persona_id}")
+    return validate_memory_space_id(memory_realm_id)
 
 
 def memory_space_subject_token(memory_space_id: str) -> str:

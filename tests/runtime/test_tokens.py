@@ -10,9 +10,9 @@ from eidolon_sdk.biz.runtime import (
     RuntimeTokenRevokedError,
     RuntimeUnauthenticatedError,
     device_revocation_keys,
+    owner_revocation_keys,
     resolve_shared_secret,
     sign_device_token,
-    user_revocation_keys,
 )
 
 
@@ -27,13 +27,25 @@ class MemoryRevocationStore:
         return b"revoked" if key in self._keys else None
 
 
-def test_sign_device_token_pins_payload_schema() -> None:
-    token, exp = sign_device_token(
+def _sign(**kwargs):
+    return sign_device_token(
         secret=SECRET,
+        device_id=kwargs.pop("device_id", "device-1"),
+        owner_id=kwargs.pop("owner_id", "owner-a"),
+        companion_id=kwargs.pop("companion_id", "companion-a"),
+        memory_realm_id=kwargs.pop("memory_realm_id", "realm-a"),
+        genome_id=kwargs.pop("genome_id", "genome-a"),
+        **kwargs,
+    )
+
+
+def test_sign_device_token_pins_payload_schema() -> None:
+    token, exp = _sign(
         device_id="web-123",
-        tenant_id="tenant-a",
-        user_id="user-a",
-        template_id="template-a",
+        owner_id="owner-a",
+        companion_id="companion-a",
+        memory_realm_id="realm-a",
+        genome_id="genome-a",
         scopes=("device", "voice"),
         ttl_seconds=60,
     )
@@ -41,30 +53,14 @@ def test_sign_device_token_pins_payload_schema() -> None:
     payload = jwt.decode(token, SECRET, algorithms=["HS256"])
 
     assert payload["device_id"] == "web-123"
-    assert payload["tenant_id"] == "tenant-a"
-    assert payload["user_id"] == "user-a"
-    assert payload["template_id"] == "template-a"
+    assert payload["owner_id"] == "owner-a"
+    assert payload["companion_id"] == "companion-a"
+    assert payload["memory_realm_id"] == "realm-a"
+    assert payload["genome_id"] == "genome-a"
     assert payload["scopes"] == ["device", "voice"]
     assert isinstance(payload["jti"], str)
     assert datetime.fromtimestamp(payload["exp"], tz=timezone.utc) == exp.replace(microsecond=0)
     assert payload["iat"] <= payload["exp"]
-
-
-def test_sign_device_token_supports_legacy_agent_arguments() -> None:
-    token, _exp = sign_device_token(
-        secret=SECRET,
-        device_id="device-1",
-        tenant_id="tenant-a",
-        user_id="user-a",
-        default_template_id="legacy-template",
-        scopes=["device"],
-        ttl_days=1,
-    )
-
-    payload = jwt.decode(token, SECRET, algorithms=["HS256"])
-
-    assert payload["template_id"] == "legacy-template"
-    assert payload["exp"] - payload["iat"] == 24 * 3600
 
 
 def test_sign_device_token_rejects_empty_secret() -> None:
@@ -72,10 +68,16 @@ def test_sign_device_token_rejects_empty_secret() -> None:
         sign_device_token(
             secret="",
             device_id="device-1",
-            tenant_id="tenant-a",
-            user_id="user-a",
-            template_id=None,
+            owner_id="owner-a",
+            companion_id="companion-a",
+            memory_realm_id="realm-a",
+            genome_id="genome-a",
         )
+
+
+def test_sign_device_token_requires_identity_claims() -> None:
+    with pytest.raises(ValueError, match="owner_id is required"):
+        _sign(owner_id="")
 
 
 def test_pairing_token_verifier_rejects_empty_secret() -> None:
@@ -84,36 +86,23 @@ def test_pairing_token_verifier_rejects_empty_secret() -> None:
 
 
 @pytest.mark.asyncio
-async def test_pairing_token_verifier_round_trips_verified_device() -> None:
-    token, exp = sign_device_token(
-        secret=SECRET,
-        device_id="device-1",
-        tenant_id="tenant-a",
-        user_id="user-a",
-        template_id="template-a",
-        scopes=("device",),
-        ttl_seconds=60,
-    )
+async def test_pairing_token_verifier_round_trips_runtime_identity() -> None:
+    token, exp = _sign(scopes=("device",), ttl_seconds=60)
 
     verified = await PairingTokenVerifier(secret=SECRET).verify(token)
 
     assert verified.device_id == "device-1"
-    assert verified.tenant_id == "tenant-a"
-    assert verified.user_id == "user-a"
-    assert verified.default_template_id == "template-a"
+    assert verified.owner_id == "owner-a"
+    assert verified.companion_id == "companion-a"
+    assert verified.memory_realm_id == "realm-a"
+    assert verified.genome_id == "genome-a"
     assert verified.scopes == ("device",)
     assert verified.exp == exp.replace(microsecond=0)
 
 
 @pytest.mark.asyncio
 async def test_pairing_token_verifier_rejects_wrong_secret() -> None:
-    token, _exp = sign_device_token(
-        secret=SECRET,
-        device_id="device-1",
-        tenant_id="tenant-a",
-        user_id="user-a",
-        template_id=None,
-    )
+    token, _exp = _sign()
 
     with pytest.raises(RuntimeUnauthenticatedError, match="invalid token"):
         await PairingTokenVerifier(secret="wrong-secret-with-enough-bytes-32").verify(token)
@@ -121,28 +110,15 @@ async def test_pairing_token_verifier_rejects_wrong_secret() -> None:
 
 @pytest.mark.asyncio
 async def test_pairing_token_verifier_rejects_expired_token() -> None:
-    token, _exp = sign_device_token(
-        secret=SECRET,
-        device_id="device-1",
-        tenant_id="tenant-a",
-        user_id="user-a",
-        template_id=None,
-        ttl_seconds=-1,
-    )
+    token, _exp = _sign(ttl_seconds=-1)
 
     with pytest.raises(RuntimeUnauthenticatedError, match="expired"):
         await PairingTokenVerifier(secret=SECRET).verify(token)
 
 
 @pytest.mark.asyncio
-async def test_pairing_token_verifier_checks_device_and_user_revocations() -> None:
-    device_token, _exp = sign_device_token(
-        secret=SECRET,
-        device_id="1c:db:a1",
-        tenant_id="tenant-a",
-        user_id="user-a",
-        template_id=None,
-    )
+async def test_pairing_token_verifier_checks_device_and_owner_revocations() -> None:
+    device_token, _exp = _sign(device_id="1c:db:a1")
     device_store = MemoryRevocationStore({device_revocation_keys("1c:db:a1")[0]})
 
     with pytest.raises(RuntimeTokenRevokedError, match="device revoked"):
@@ -150,28 +126,22 @@ async def test_pairing_token_verifier_checks_device_and_user_revocations() -> No
             device_token
         )
 
-    user_token, _exp = sign_device_token(
-        secret=SECRET,
-        device_id="device-1",
-        tenant_id="tenant-a",
-        user_id="user-a",
-        template_id=None,
-    )
-    user_store = MemoryRevocationStore({user_revocation_keys("user-a")[0]})
+    owner_token, _exp = _sign(owner_id="owner-a")
+    owner_store = MemoryRevocationStore({owner_revocation_keys("owner-a")[0]})
 
     with pytest.raises(RuntimeTokenRevokedError, match="all sessions revoked"):
-        await PairingTokenVerifier(secret=SECRET, revocation_kv=user_store).verify(user_token)
+        await PairingTokenVerifier(secret=SECRET, revocation_kv=owner_store).verify(owner_token)
 
 
-def test_revocation_keys_include_legacy_key_only_for_kv_safe_ids() -> None:
+def test_revocation_keys_include_plain_key_only_for_kv_safe_ids() -> None:
     assert device_revocation_keys("device-1") == (
         "revoked.device.ZGV2aWNlLTE",
         "revoked.device-1",
     )
     assert device_revocation_keys("1c:db:a1") == ("revoked.device.MWM6ZGI6YTE",)
-    assert user_revocation_keys("user-a") == (
-        "revoked.user.v2.dXNlci1h",
-        "revoked.user.user-a",
+    assert owner_revocation_keys("owner-a") == (
+        "revoked.owner.b3duZXItYQ",
+        "revoked.owner.owner-a",
     )
 
 
@@ -193,3 +163,19 @@ async def test_pairing_token_verifier_requires_device_id() -> None:
 
     with pytest.raises(RuntimeUnauthenticatedError, match="missing device_id"):
         await verifier.verify(token)
+
+
+@pytest.mark.asyncio
+async def test_pairing_token_verifier_requires_owner_claims() -> None:
+    exp = datetime.now(timezone.utc) + timedelta(seconds=60)
+    token = jwt.encode(
+        {
+            "device_id": "device-1",
+            "exp": int(exp.timestamp()),
+        },
+        SECRET,
+        algorithm="HS256",
+    )
+
+    with pytest.raises(RuntimeUnauthenticatedError, match="missing owner_id"):
+        await PairingTokenVerifier(secret=SECRET).verify(token)

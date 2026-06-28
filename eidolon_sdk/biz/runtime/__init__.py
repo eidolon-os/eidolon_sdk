@@ -2,22 +2,22 @@
 
 from .tokens import (
     PairingTokenVerifier,
+    RuntimeIdentity,
     RuntimeTokenRevokedError,
     RuntimeUnauthenticatedError,
-    VerifiedDevice,
     device_revocation_keys,
+    owner_revocation_keys,
     resolve_shared_secret,
     sign_device_token,
-    user_revocation_keys,
 )
 
 __all__ = [
     "PairingTokenVerifier",
+    "RuntimeIdentity",
     "RuntimeTokenRevokedError",
     "RuntimeUnauthenticatedError",
-    "VerifiedDevice",
     "device_revocation_keys",
+    "owner_revocation_keys",
     "resolve_shared_secret",
     "sign_device_token",
-    "user_revocation_keys",
 ]

@@ -13,22 +13,18 @@ from .subjects import derive_memory_space_id, validate_memory_space_id
 class MemoryActorContext(EidolonWireModel):
     """Resolved actor context carried by every memory write and recall."""
 
-    tenant_id: str
-    owner_user_id: str
-    persona_id: str
-    agent_id: str
+    owner_id: str
+    companion_id: str
+    memory_realm_id: str
     device_id: str
-    instance_id: str
     session_id: str
     memory_space_id: str = ""
 
     @field_validator(
-        "tenant_id",
-        "owner_user_id",
-        "persona_id",
-        "agent_id",
+        "owner_id",
+        "companion_id",
+        "memory_realm_id",
         "device_id",
-        "instance_id",
         "session_id",
     )
     @classmethod
@@ -40,16 +36,12 @@ class MemoryActorContext(EidolonWireModel):
 
     @model_validator(mode="after")
     def _fill_memory_space_id(self) -> "MemoryActorContext":
-        expected = derive_memory_space_id(
-            self.tenant_id,
-            self.owner_user_id,
-            self.persona_id,
-        )
+        expected = derive_memory_space_id(self.memory_realm_id)
         if self.memory_space_id:
             actual = validate_memory_space_id(self.memory_space_id)
             if self.memory_space_id != expected:
                 raise ValueError(
-                    "memory_space_id must equal <tenant_id>.<owner_user_id>.<persona_id>"
+                    "memory_space_id must equal memory_realm_id"
                 )
             object.__setattr__(self, "memory_space_id", actual)
         else:
@@ -70,26 +62,18 @@ class ConversationTurnPayload(EidolonWireModel):
 
 def build_memory_actor_context(
     *,
-    tenant_id: str,
-    owner_user_id: str,
+    owner_id: str,
     companion_id: str,
-    agent_id: str,
+    memory_realm_id: str,
     device_id: str,
-    instance_id: str,
     session_id: str,
 ) -> MemoryActorContext:
-    """Build the canonical memory actor context from product identity.
-
-    Product surfaces use ``companion_id`` for the long-lived AI companion.
-    The wire contract keeps the existing ``persona_id`` field name for now.
-    """
+    """Build the canonical memory actor context from product identity."""
 
     return MemoryActorContext(
-        tenant_id=tenant_id,
-        owner_user_id=owner_user_id,
-        persona_id=companion_id,
-        agent_id=agent_id,
+        owner_id=owner_id,
+        companion_id=companion_id,
+        memory_realm_id=memory_realm_id,
         device_id=device_id,
-        instance_id=instance_id,
         session_id=session_id,
     )

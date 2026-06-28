@@ -5,20 +5,16 @@ adapter modules.
 """
 
 from .models import (
-    AgentMetadataRecord,
-    ConsolidatorConfig,
+    CompanionRef,
     DeviceBindingRecord,
     DeviceRegistryRecord,
-    TenantSpec,
-    UserRegistryRecord,
-    UserSpec,
+    OwnerRef,
 )
 from .ports import (
-    AgentMetadataStore,
+    CompanionStore,
     DeviceBindingStore,
     DeviceStore,
-    TenantStore,
-    UserStore,
+    OwnerStore,
 )
 from .settings import (
     REGISTRY_DB_ENV,
@@ -27,19 +23,15 @@ from .settings import (
 )
 
 __all__ = [
-    "ConsolidatorConfig",
-    "AgentMetadataRecord",
-    "AgentMetadataStore",
+    "CompanionRef",
+    "CompanionStore",
     "DeviceBindingRecord",
     "DeviceBindingStore",
     "DeviceRegistryRecord",
     "DeviceStore",
+    "OwnerRef",
+    "OwnerStore",
     "REGISTRY_DB_ENV",
-    "TenantSpec",
-    "TenantStore",
-    "UserRegistryRecord",
-    "UserSpec",
-    "UserStore",
     "default_registry_db_path",
     "resolve_registry_db_path",
 ]

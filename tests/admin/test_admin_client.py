@@ -20,11 +20,10 @@ from eidolon_sdk.biz.admin import (
 
 def _expected_context() -> dict:
     return {
-        "tenant_id": "default",
-        "user_id": "manson",
-        "agent_id": "ag_1",
-        "template_id": "caretaker",
-        "memory_mcp_url": "http://127.0.0.1:8031/mcp",
+        "owner_id": "owner-a",
+        "companion_id": "companion-a",
+        "memory_realm_id": "realm-a",
+        "genome_id": "genome-a",
         "device_id": None,
         "ignored": "extra",
     }
@@ -33,31 +32,30 @@ def _expected_context() -> dict:
 def test_resolved_context_unwraps_admin_envelope() -> None:
     ctx = ResolvedContext.from_json({"context": _expected_context()})
 
-    assert ctx.tenant_id == "default"
-    assert ctx.user_id == "manson"
-    assert ctx.agent_id == "ag_1"
-    assert ctx.template_id == "caretaker"
-    assert ctx.memory_mcp_url == "http://127.0.0.1:8031/mcp"
+    assert ctx.owner_id == "owner-a"
+    assert ctx.companion_id == "companion-a"
+    assert ctx.memory_realm_id == "realm-a"
+    assert ctx.genome_id == "genome-a"
     assert ctx.device_id is None
 
 
 def test_resolved_context_accepts_flat_shape() -> None:
-    assert ResolvedContext.from_json(_expected_context()).user_id == "manson"
+    assert ResolvedContext.from_json(_expected_context()).owner_id == "owner-a"
 
 
 @pytest.mark.asyncio
-async def test_admin_client_quotes_path_and_returns_user_json() -> None:
+async def test_admin_client_quotes_path_and_returns_owner_json() -> None:
     seen: dict[str, str] = {}
 
     async def handler(request: httpx.Request) -> httpx.Response:
         seen["url"] = str(request.url)
-        return httpx.Response(200, json={"spec": {"user_id": "alice/bob"}})
+        return httpx.Response(200, json={"spec": {"owner_id": "alice/bob"}})
 
     async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as http:
-        body = await AdminClient(http, "http://admin.local").get_user("alice/bob")
+        body = await AdminClient(http, "http://admin.local").get_owner("alice/bob")
 
-    assert seen["url"] == "http://admin.local/api/users/alice%2Fbob"
-    assert body["spec"]["user_id"] == "alice/bob"
+    assert seen["url"] == "http://admin.local/api/owners/alice%2Fbob"
+    assert body["spec"]["owner_id"] == "alice/bob"
 
 
 @pytest.mark.asyncio
@@ -75,11 +73,11 @@ async def test_admin_client_maps_error_statuses_with_detail_unwrap() -> None:
     ) as http:
         client = AdminClient(http, "http://admin.local")
         with pytest.raises(AdminNotFound, match="missing"):
-            await client.get_user("ghost")
+            await client.get_owner("ghost")
         with pytest.raises(AdminPrecondition) as precondition:
             await client.resolve_device("dev")
         with pytest.raises(AdminUpstreamError) as upstream:
-            await client.get_user("alice")
+            await client.get_owner("alice")
 
     assert precondition.value.status_code == 412
     assert precondition.value.message == "not bound"
@@ -93,8 +91,8 @@ async def test_admin_client_wraps_network_failure() -> None:
         raise httpx.ConnectError("down", request=request)
 
     async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as http:
-        with pytest.raises(AdminUnreachable, match="admin GET /api/users/alice failed"):
-            await AdminClient(http, "http://admin.local").get_user("alice")
+        with pytest.raises(AdminUnreachable, match="admin GET /api/owners/alice failed"):
+            await AdminClient(http, "http://admin.local").get_owner("alice")
 
 
 @pytest.mark.asyncio
@@ -112,9 +110,9 @@ async def test_admin_resolve_client_maps_runtime_errors_and_context() -> None:
         transport=httpx.MockTransport(lambda _request: next(responses))
     ) as http:
         client = AdminResolveClient(http, "http://admin.local/")
-        assert (await client.resolve_user("manson")).user_id == "manson"
+        assert (await client.resolve_owner("owner-a")).owner_id == "owner-a"
         with pytest.raises(AdminResolveNotFound, match="unknown"):
-            await client.resolve_user("ghost")
+            await client.resolve_owner("ghost")
         with pytest.raises(AdminResolvePrecondition) as precondition:
             await client.resolve_device("dev")
         with pytest.raises(AdminResolveUpstream) as upstream:
@@ -133,4 +131,4 @@ async def test_admin_resolve_client_uses_runtime_unreachable_type() -> None:
 
     async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as http:
         with pytest.raises(AdminResolveUnreachable, match="admin GET"):
-            await AdminResolveClient(http, "http://admin.local").resolve_user("alice")
+            await AdminResolveClient(http, "http://admin.local").resolve_owner("alice")

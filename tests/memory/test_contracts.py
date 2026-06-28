@@ -23,8 +23,8 @@ from eidolon_sdk.memory.subjects import all_memory_stream_patterns
 
 
 def test_memory_subjects_are_stable() -> None:
-    memory_space_id = "default.alice.mochi"
-    token = "b64_ZGVmYXVsdC5hbGljZS5tb2NoaQ"
+    memory_space_id = "realm:owner-a:default"
+    token = "b64_cmVhbG06b3duZXItYTpkZWZhdWx0"
     assert memory_space_subject_token(memory_space_id) == token
     assert "." not in token
     assert conversation_turn_subject(memory_space_id) == (
@@ -44,35 +44,36 @@ def test_memory_subjects_are_stable() -> None:
 
 
 def test_memory_subject_memory_space_id_validation() -> None:
-    assert conversation_turn_subject("default.user_01.mochi-test") == (
-        "eidolon.memory.turn.b64_ZGVmYXVsdC51c2VyXzAxLm1vY2hpLXRlc3Q"
+    assert conversation_turn_subject("realm.owner_01.mochi-test") == (
+        "eidolon.memory.turn.b64_cmVhbG0ub3duZXJfMDEubW9jaGktdGVzdA"
     )
     with pytest.raises(ValueError):
         conversation_turn_subject("bad/user")
     with pytest.raises(ValueError):
-        conversation_turn_subject("alice")
+        conversation_turn_subject("_bad")
+    with pytest.raises(ValueError):
+        conversation_turn_subject("")
     with pytest.raises(ValueError):
         memory_command_subject("")
 
 
 def _ctx():
     return build_memory_actor_context(
-        tenant_id="default",
-        owner_user_id="alice",
-        companion_id="mochi",
-        agent_id="agent-1",
+        owner_id="owner-a",
+        companion_id="companion-a",
+        memory_realm_id="realm:owner-a:default",
         device_id="device-1",
-        instance_id="instance-1",
         session_id="s1",
     )
 
 
-def test_build_memory_actor_context_maps_companion_to_wire_persona() -> None:
+def test_build_memory_actor_context_uses_memory_realm_as_space() -> None:
     ctx = _ctx()
 
-    assert ctx.owner_user_id == "alice"
-    assert ctx.persona_id == "mochi"
-    assert ctx.memory_space_id == "default.alice.mochi"
+    assert ctx.owner_id == "owner-a"
+    assert ctx.companion_id == "companion-a"
+    assert ctx.memory_realm_id == "realm:owner-a:default"
+    assert ctx.memory_space_id == "realm:owner-a:default"
 
 
 def test_conversation_turn_payload_serializes_wire_shape() -> None:
@@ -88,14 +89,12 @@ def test_conversation_turn_payload_serializes_wire_shape() -> None:
     assert payload.model_dump(mode="json") == {
         "turn_id": "t1",
         "context": {
-            "tenant_id": "default",
-            "owner_user_id": "alice",
-            "persona_id": "mochi",
-            "agent_id": "agent-1",
+            "owner_id": "owner-a",
+            "companion_id": "companion-a",
+            "memory_realm_id": "realm:owner-a:default",
             "device_id": "device-1",
-            "instance_id": "instance-1",
             "session_id": "s1",
-            "memory_space_id": "default.alice.mochi",
+            "memory_space_id": "realm:owner-a:default",
         },
         "timestamp": "2026-06-15T00:00:00Z",
         "user_text": "hi",
@@ -110,7 +109,7 @@ def test_kg_command_predicate_contract() -> None:
 
     cmd = KgAddTripleCommand(
         request_id="req-1",
-        memory_space_id="default.alice.mochi",
+        memory_space_id="realm:owner-a:default",
         issued_at="2026-06-15T00:00:00Z",
         subject="Alice",
         predicate="likes",
@@ -121,7 +120,7 @@ def test_kg_command_predicate_contract() -> None:
     with pytest.raises(ValidationError):
         KgAddTripleCommand(
             request_id="req-2",
-            memory_space_id="default.alice.mochi",
+            memory_space_id="realm:owner-a:default",
             issued_at="2026-06-15T00:00:00Z",
             subject="Alice",
             predicate="invented_relation",
@@ -158,7 +157,7 @@ def test_memory_parsers_accept_raw_current_payloads() -> None:
     raw_command = {
         "kind": "kg_add_triple",
         "request_id": "req-1",
-        "memory_space_id": "default.alice.mochi",
+        "memory_space_id": "realm:owner-a:default",
         "issued_at": "2026-06-15T00:00:00Z",
         "subject": "Alice",
         "predicate": "likes",

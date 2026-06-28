@@ -81,11 +81,10 @@ class AdminResolveUnreachable(AdminResolveError):
 class ResolvedContext:
     """Subset of admin's resolve context used by runtime clients."""
 
-    tenant_id: str
-    user_id: str
-    agent_id: str
-    template_id: str | None
-    memory_mcp_url: str
+    owner_id: str
+    companion_id: str
+    memory_realm_id: str
+    genome_id: str
     device_id: str | None
 
     @classmethod
@@ -93,11 +92,10 @@ class ResolvedContext:
         if isinstance(data.get("context"), dict):
             data = data["context"]
         return cls(
-            tenant_id=str(data.get("tenant_id") or ""),
-            user_id=str(data.get("user_id") or ""),
-            agent_id=str(data.get("agent_id") or ""),
-            template_id=data.get("template_id"),
-            memory_mcp_url=str(data.get("memory_mcp_url") or ""),
+            owner_id=str(data.get("owner_id") or ""),
+            companion_id=str(data.get("companion_id") or ""),
+            memory_realm_id=str(data.get("memory_realm_id") or ""),
+            genome_id=str(data.get("genome_id") or ""),
             device_id=data.get("device_id"),
         )
 
@@ -149,8 +147,8 @@ class _AdminHTTPBase(ServiceHTTPClient):
 class AdminClient(_AdminHTTPBase):
     """Thin client over admin endpoints used outside admin itself."""
 
-    async def get_user(self, user_id: str) -> dict[str, Any]:
-        return await self._get_json(f"/api/users/{_quote(user_id)}")
+    async def get_owner(self, owner_id: str) -> dict[str, Any]:
+        return await self._get_json(f"/api/owners/{_quote(owner_id)}")
 
     async def resolve_device(self, device_id: str) -> dict[str, Any]:
         return await self._get_json(f"/api/resolve/device/{_quote(device_id)}")
@@ -159,9 +157,9 @@ class AdminClient(_AdminHTTPBase):
 class AdminResolveClient(_AdminHTTPBase):
     """Thin client over admin's ``/api/resolve`` runtime aggregator."""
 
-    async def resolve_user(self, user_id: str) -> ResolvedContext:
+    async def resolve_owner(self, owner_id: str) -> ResolvedContext:
         data = await self._get_json(
-            f"/api/resolve/user/{_quote(user_id)}",
+            f"/api/resolve/owner/{_quote(owner_id)}",
             precondition_exc=AdminResolvePrecondition,
             not_found_exc=AdminResolveNotFound,
             upstream_exc=AdminResolveUpstream,

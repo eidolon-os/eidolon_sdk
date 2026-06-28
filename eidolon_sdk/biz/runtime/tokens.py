@@ -34,11 +34,12 @@ class RuntimeRevocationStore(Protocol):
 
 
 @dataclass(frozen=True, slots=True)
-class VerifiedDevice:
+class RuntimeIdentity:
+    owner_id: str
+    companion_id: str
     device_id: str
-    tenant_id: str
-    user_id: str
-    default_template_id: str | None
+    memory_realm_id: str
+    genome_id: str
     scopes: tuple[str, ...]
     exp: datetime
 
@@ -66,35 +67,32 @@ def sign_device_token(
     secret: str,
     algorithm: str = "HS256",
     device_id: str,
-    tenant_id: str,
-    user_id: str,
-    template_id: str | None = None,
-    default_template_id: str | None = None,
+    owner_id: str,
+    companion_id: str,
+    memory_realm_id: str,
+    genome_id: str,
     scopes: Sequence[str] = ("device",),
     ttl_seconds: int | None = None,
-    ttl_days: int | None = None,
 ) -> tuple[str, datetime]:
-    """Return a JWT and its expiration datetime.
-
-    `template_id` is the canonical claim. `default_template_id` and
-    `ttl_days` are accepted for compatibility with older pairing-code callers.
-    """
+    """Return a JWT and its expiration datetime."""
     if not secret:
         raise ValueError("sign_device_token: secret is required (empty)")
-    if template_id is None:
-        template_id = default_template_id
+    _require_claim("device_id", device_id)
+    _require_claim("owner_id", owner_id)
+    _require_claim("companion_id", companion_id)
+    _require_claim("memory_realm_id", memory_realm_id)
+    _require_claim("genome_id", genome_id)
 
     now = datetime.now(timezone.utc)
     if ttl_seconds is None:
-        ttl_seconds = int(
-            timedelta(days=ttl_days if ttl_days is not None else 30).total_seconds()
-        )
+        ttl_seconds = int(timedelta(days=30).total_seconds())
     exp = now + timedelta(seconds=ttl_seconds)
     payload = {
         "device_id": device_id,
-        "tenant_id": tenant_id,
-        "user_id": user_id,
-        "template_id": template_id,
+        "owner_id": owner_id,
+        "companion_id": companion_id,
+        "memory_realm_id": memory_realm_id,
+        "genome_id": genome_id,
         "scopes": list(scopes),
         "jti": uuid.uuid4().hex,
         "exp": int(exp.timestamp()),
@@ -111,11 +109,11 @@ def device_revocation_keys(device_id: str) -> tuple[str, ...]:
     return tuple(keys)
 
 
-def user_revocation_keys(user_id: str) -> tuple[str, ...]:
-    """Return KV keys that revoke every active session for a user."""
-    keys = [f"revoked.user.v2.{_kv_safe_token(user_id)}"]
-    if _KV_SAFE_RE.fullmatch(user_id):
-        keys.append(f"revoked.user.{user_id}")
+def owner_revocation_keys(owner_id: str) -> tuple[str, ...]:
+    """Return KV keys that revoke every active session for an owner."""
+    keys = [f"revoked.owner.{_kv_safe_token(owner_id)}"]
+    if _KV_SAFE_RE.fullmatch(owner_id):
+        keys.append(f"revoked.owner.{owner_id}")
     return tuple(keys)
 
 
@@ -133,7 +131,7 @@ class PairingTokenVerifier:
         self._alg = algorithm
         self._kv = revocation_kv
 
-    async def verify(self, token: str) -> VerifiedDevice:
+    async def verify(self, token: str) -> RuntimeIdentity:
         try:
             payload = jwt.decode(token, self._secret, algorithms=[self._alg])
         except jwt.PyJWTError as exc:
@@ -142,27 +140,43 @@ class PairingTokenVerifier:
         device_id = payload.get("device_id")
         if not device_id:
             raise RuntimeUnauthenticatedError("token missing device_id")
-        user_id = payload.get("user_id") or ""
+        owner_id = payload.get("owner_id") or ""
+        companion_id = payload.get("companion_id") or ""
+        memory_realm_id = payload.get("memory_realm_id") or ""
+        genome_id = payload.get("genome_id") or ""
+        for claim_name, claim_value in (
+            ("owner_id", owner_id),
+            ("companion_id", companion_id),
+            ("memory_realm_id", memory_realm_id),
+            ("genome_id", genome_id),
+        ):
+            if not claim_value:
+                raise RuntimeUnauthenticatedError(f"token missing {claim_name}")
 
         if self._kv is not None:
             for key in device_revocation_keys(device_id):
                 if await self._kv.get(key):
                     raise RuntimeTokenRevokedError(f"device revoked: {device_id}")
-            if user_id:
-                for key in user_revocation_keys(user_id):
-                    if await self._kv.get(key):
-                        raise RuntimeTokenRevokedError(
-                            f"all sessions revoked for user: {user_id}"
-                        )
+            for key in owner_revocation_keys(owner_id):
+                if await self._kv.get(key):
+                    raise RuntimeTokenRevokedError(
+                        f"all sessions revoked for owner: {owner_id}"
+                    )
 
-        return VerifiedDevice(
+        return RuntimeIdentity(
             device_id=device_id,
-            tenant_id=payload.get("tenant_id", ""),
-            user_id=user_id,
-            default_template_id=payload.get("template_id"),
+            owner_id=owner_id,
+            companion_id=companion_id,
+            memory_realm_id=memory_realm_id,
+            genome_id=genome_id,
             scopes=tuple(payload.get("scopes") or ()),
             exp=datetime.fromtimestamp(payload["exp"], tz=timezone.utc),
         )
+
+
+def _require_claim(name: str, value: str) -> None:
+    if not str(value or "").strip():
+        raise ValueError(f"sign_device_token: {name} is required")
 
 
 def _kv_safe_token(value: str) -> str:
