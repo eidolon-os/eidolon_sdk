@@ -76,6 +76,17 @@ def test_build_memory_actor_context_uses_memory_realm_as_space() -> None:
     assert ctx.memory_space_id == "realm:owner-a:default"
 
 
+def test_memory_actor_context_accepts_realm_only() -> None:
+    ctx = build_memory_actor_context(memory_realm_id="realm:owner-a:default")
+
+    assert ctx.memory_realm_id == "realm:owner-a:default"
+    assert ctx.memory_space_id == "realm:owner-a:default"
+    assert ctx.owner_id is None
+    assert ctx.companion_id is None
+    assert ctx.device_id is None
+    assert ctx.session_id is None
+
+
 def test_conversation_turn_payload_serializes_wire_shape() -> None:
     payload = ConversationTurnPayload(
         turn_id="t1",

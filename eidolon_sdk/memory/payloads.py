@@ -13,26 +13,28 @@ from .subjects import derive_memory_space_id, validate_memory_space_id
 class MemoryActorContext(EidolonWireModel):
     """Resolved actor context carried by every memory write and recall."""
 
-    owner_id: str
-    companion_id: str
+    owner_id: str | None = None
+    companion_id: str | None = None
     memory_realm_id: str
-    device_id: str
-    session_id: str
+    device_id: str | None = None
+    session_id: str | None = None
     memory_space_id: str = ""
 
-    @field_validator(
-        "owner_id",
-        "companion_id",
-        "memory_realm_id",
-        "device_id",
-        "session_id",
-    )
+    @field_validator("memory_realm_id")
     @classmethod
-    def _not_blank(cls, value: str) -> str:
+    def _realm_not_blank(cls, value: str) -> str:
         text = (value or "").strip()
         if not text:
-            raise ValueError("memory actor context fields cannot be blank")
+            raise ValueError("memory_realm_id cannot be blank")
         return text
+
+    @field_validator("owner_id", "companion_id", "device_id", "session_id")
+    @classmethod
+    def _optional_text(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        text = value.strip()
+        return text or None
 
     @model_validator(mode="after")
     def _fill_memory_space_id(self) -> "MemoryActorContext":
@@ -62,13 +64,13 @@ class ConversationTurnPayload(EidolonWireModel):
 
 def build_memory_actor_context(
     *,
-    owner_id: str,
-    companion_id: str,
     memory_realm_id: str,
-    device_id: str,
-    session_id: str,
+    owner_id: str | None = None,
+    companion_id: str | None = None,
+    device_id: str | None = None,
+    session_id: str | None = None,
 ) -> MemoryActorContext:
-    """Build the canonical memory actor context from product identity."""
+    """Build the canonical memory actor context from realm identity."""
 
     return MemoryActorContext(
         owner_id=owner_id,
