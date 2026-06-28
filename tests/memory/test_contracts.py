@@ -14,6 +14,7 @@ from eidolon_sdk.memory import (
     envelope_memory_payload,
     memory_sync_subject,
     memory_command_subject,
+    memory_space_storage_name,
     memory_space_subject_token,
     parse_conversation_turn,
     parse_memory_command,
@@ -26,16 +27,13 @@ def test_memory_subjects_are_stable() -> None:
     memory_space_id = "realm:owner-a:default"
     token = "b64_cmVhbG06b3duZXItYTpkZWZhdWx0"
     assert memory_space_subject_token(memory_space_id) == token
+    assert memory_space_storage_name(memory_space_id) == token
     assert "." not in token
-    assert conversation_turn_subject(memory_space_id) == (
-        f"eidolon.memory.turn.{token}"
-    )
-    assert memory_command_subject(memory_space_id) == (
-        f"eidolon.memory.cmd.{token}"
-    )
-    assert memory_sync_subject(memory_space_id) == (
-        f"eidolon.memory.sync.{token}"
-    )
+    assert ":" not in token
+    assert "/" not in token
+    assert conversation_turn_subject(memory_space_id) == (f"eidolon.memory.turn.{token}")
+    assert memory_command_subject(memory_space_id) == (f"eidolon.memory.cmd.{token}")
+    assert memory_sync_subject(memory_space_id) == (f"eidolon.memory.sync.{token}")
     assert all_memory_stream_patterns() == [
         "eidolon.memory.turn.*",
         "eidolon.memory.cmd.*",

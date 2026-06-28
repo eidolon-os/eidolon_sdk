@@ -27,6 +27,15 @@ from .payloads import (
     MemoryActorContext,
     build_memory_actor_context,
 )
+from .runtime_route import (
+    DEFAULT_MEMORY_MCP_BASE_PORT,
+    DEFAULT_MEMORY_MCP_HOST,
+    DEFAULT_MEMORY_MCP_PATH,
+    MEMORY_MCP_PORT_SPAN,
+    MemoryRuntimeRoute,
+    memory_runtime_route_for_realm,
+    stable_memory_realm_port,
+)
 from .subjects import (
     MEMORY_COMMAND_BASE,
     MEMORY_CONVERSATION_TURN_BASE,
@@ -37,6 +46,7 @@ from .subjects import (
     derive_memory_space_id,
     memory_command_stream_pattern,
     memory_command_subject,
+    memory_space_storage_name,
     memory_space_subject_token,
     memory_sync_stream_pattern,
     memory_sync_subject,
@@ -45,8 +55,12 @@ from .subjects import (
 
 __all__ = [
     "KG_PREDICATE_VALUES",
+    "DEFAULT_MEMORY_MCP_BASE_PORT",
+    "DEFAULT_MEMORY_MCP_HOST",
+    "DEFAULT_MEMORY_MCP_PATH",
     "MEMORY_COMMAND_BASE",
     "MEMORY_CONVERSATION_TURN_BASE",
+    "MEMORY_MCP_PORT_SPAN",
     "MEMORY_SYNC_BASE",
     "MEMORY_SCHEMA_VERSION",
     "SENSITIVE_PREDICATES",
@@ -59,6 +73,7 @@ __all__ = [
     "KgInvalidateCommand",
     "MemoryEnvelope",
     "MemoryActorContext",
+    "MemoryRuntimeRoute",
     "KgPredicate",
     "MemoryCommandPayload",
     "UserConfirmedFactCommand",
@@ -69,13 +84,16 @@ __all__ = [
     "derive_memory_space_id",
     "envelope_memory_payload",
     "memory_payload_kind",
+    "memory_runtime_route_for_realm",
     "memory_command_stream_pattern",
     "memory_command_subject",
+    "memory_space_storage_name",
     "memory_space_subject_token",
     "memory_sync_stream_pattern",
     "memory_sync_subject",
     "parse_conversation_turn",
     "parse_memory_command",
+    "stable_memory_realm_port",
     "unwrap_memory_payload",
     "validate_memory_space_id",
 ]

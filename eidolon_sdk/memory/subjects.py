@@ -44,6 +44,18 @@ def memory_space_subject_token(memory_space_id: str) -> str:
     return f"b64_{encoded.rstrip('=')}"
 
 
+def memory_space_storage_name(memory_space_id: str) -> str:
+    """Encode a memory_space_id as one filesystem path segment.
+
+    The business id may contain characters that are technically allowed on
+    POSIX but confusing in tools. For example, macOS Finder renders ``:`` as
+    ``/``. Keep storage names derived, reversible, and collision-free instead
+    of using raw realm ids as directory names.
+    """
+
+    return memory_space_subject_token(memory_space_id)
+
+
 def conversation_turn_subject(memory_space_id: str) -> str:
     """Return the JetStream subject for a completed turn."""
 
