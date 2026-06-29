@@ -5,10 +5,13 @@ from __future__ import annotations
 from datetime import UTC, datetime
 from typing import Any, Literal
 
+from eidolon_sdk.biz.contracts import CONTROL_OP_ALIASES
+
 CONTROL_PROTOCOL_VERSION = 1
 
 CommandQoS = Literal["fire_and_forget", "ack", "result"]
 CommandPriority = Literal["low", "normal", "high", "urgent"]
+_CONTROL_OP_ALIAS_MAP = dict(CONTROL_OP_ALIASES)
 
 _ACK_STATUSES = {
     "accepted",
@@ -27,13 +30,18 @@ def unix_ms(dt: datetime | None = None) -> int:
     return int(value.timestamp() * 1000)
 
 
+def normalize_control_op(op: str) -> str:
+    value = op.strip()
+    return _CONTROL_OP_ALIAS_MAP.get(value, value)
+
+
 def infer_op(payload: dict[str, Any], explicit_op: str | None = None) -> str:
     if explicit_op:
-        return explicit_op
+        return normalize_control_op(explicit_op)
     for key in ("op", "type", "command"):
         value = payload.get(key)
         if isinstance(value, str) and value:
-            return value
+            return normalize_control_op(value)
     return "device.command"
 
 

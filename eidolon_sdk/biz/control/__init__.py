@@ -8,6 +8,7 @@ from .protocol import (
     command_status_from_ack,
     infer_op,
     normalize_ack_status,
+    normalize_control_op,
     unix_ms,
 )
 
@@ -19,5 +20,6 @@ __all__ = [
     "command_status_from_ack",
     "infer_op",
     "normalize_ack_status",
+    "normalize_control_op",
     "unix_ms",
 ]

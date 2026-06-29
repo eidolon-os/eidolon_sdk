@@ -8,6 +8,7 @@ from eidolon_sdk.biz.control import (
     command_status_from_ack,
     infer_op,
     normalize_ack_status,
+    normalize_control_op,
 )
 
 
@@ -51,3 +52,12 @@ def test_infer_op_and_ack_status_normalization() -> None:
     assert command_status_from_ack("unsupported") == "failed"
     assert command_status_from_ack("running") == "running"
     assert command_status_from_ack("completed") == "succeeded"
+
+
+def test_control_op_aliases_normalize_to_wire_ops() -> None:
+    assert normalize_control_op("identify") == "device.identify"
+    assert normalize_control_op("refresh_config") == "config.refresh"
+    assert normalize_control_op("wake") == "room.join"
+    assert normalize_control_op("display.render") == "display.render"
+    assert infer_op({}, explicit_op="identify") == "device.identify"
+    assert infer_op({"op": "refresh_config"}) == "config.refresh"

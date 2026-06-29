@@ -48,6 +48,18 @@ def test_control_ops_are_stable() -> None:
     assert c.CONTROL_OP_ROOM_JOIN == "room.join"
     assert c.CONTROL_OP_PLAYBACK_STOP == "playback.stop"
     assert c.CONTROL_OP_CONFIG_REFRESH == "config.refresh"
+    assert c.CONTROL_OP_DEVICE_IDENTIFY == "device.identify"
+    assert c.VALID_CONTROL_OPS == {
+        "room.join",
+        "playback.stop",
+        "config.refresh",
+        "device.identify",
+    }
+    assert c.CONTROL_OP_ALIASES == {
+        ("wake", "room.join"),
+        ("refresh_config", "config.refresh"),
+        ("identify", "device.identify"),
+    }
 
 
 def test_audio_state_known_keys_are_current_contract() -> None:
