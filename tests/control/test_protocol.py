@@ -36,9 +36,6 @@ def test_build_command_envelope_pins_wire_shape() -> None:
         "dst": {"type": "device", "id": "esp32-1"},
         "payload": {"reason": "test"},
         "caps": ["ack.v1", "result.v1"],
-        "type": "config.refresh",
-        "command_id": "cmd-1",
-        "device_id": "esp32-1",
     }
 
 

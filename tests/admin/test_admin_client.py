@@ -39,10 +39,6 @@ def test_resolved_context_unwraps_admin_envelope() -> None:
     assert ctx.device_id is None
 
 
-def test_resolved_context_accepts_flat_shape() -> None:
-    assert ResolvedContext.from_json(_expected_context()).owner_id == "owner-a"
-
-
 @pytest.mark.asyncio
 async def test_admin_client_quotes_path_and_returns_owner_json() -> None:
     seen: dict[str, str] = {}
@@ -75,7 +71,7 @@ async def test_admin_client_maps_error_statuses_with_detail_unwrap() -> None:
         with pytest.raises(AdminNotFound, match="missing"):
             await client.get_owner("ghost")
         with pytest.raises(AdminPrecondition) as precondition:
-            await client.resolve_device("dev")
+            await client.get_owner("not-ready")
         with pytest.raises(AdminUpstreamError) as upstream:
             await client.get_owner("alice")
 

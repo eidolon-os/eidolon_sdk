@@ -86,17 +86,20 @@ class ResolvedContext:
     memory_realm_id: str
     genome_id: str
     device_id: str | None
+    interaction_mode: str | None = None
 
     @classmethod
     def from_json(cls, data: dict[str, Any]) -> "ResolvedContext":
-        if isinstance(data.get("context"), dict):
-            data = data["context"]
+        context = data.get("context")
+        if not isinstance(context, dict):
+            raise ValueError("admin resolve response missing context")
         return cls(
-            owner_id=str(data.get("owner_id") or ""),
-            companion_id=str(data.get("companion_id") or ""),
-            memory_realm_id=str(data.get("memory_realm_id") or ""),
-            genome_id=str(data.get("genome_id") or ""),
-            device_id=data.get("device_id"),
+            owner_id=str(context.get("owner_id") or ""),
+            companion_id=str(context.get("companion_id") or ""),
+            memory_realm_id=str(context.get("memory_realm_id") or ""),
+            genome_id=str(context.get("genome_id") or ""),
+            device_id=context.get("device_id"),
+            interaction_mode=context.get("interaction_mode"),
         )
 
 
@@ -149,12 +152,6 @@ class AdminClient(_AdminHTTPBase):
 
     async def get_owner(self, owner_id: str) -> dict[str, Any]:
         return await self._get_json(f"/api/owners/{_quote(owner_id)}")
-
-    async def resolve_device(self, device_id: str) -> dict[str, Any]:
-        return await self._get_json(f"/api/resolve/device/{_quote(device_id)}")
-
-    async def resolve_owner(self, owner_id: str) -> dict[str, Any]:
-        return await self._get_json(f"/api/resolve/owner/{_quote(owner_id)}")
 
 
 class AdminResolveClient(_AdminHTTPBase):

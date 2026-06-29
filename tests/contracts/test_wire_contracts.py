@@ -50,9 +50,8 @@ def test_control_ops_are_stable() -> None:
     assert c.CONTROL_OP_CONFIG_REFRESH == "config.refresh"
 
 
-def test_known_keys_include_deprecated_manual_interrupt() -> None:
-    # Deprecated but retained: firmware still emitting it must not be rejected.
-    assert "manual_interrupt" in c.CLIENT_AUDIO_STATE_KNOWN_KEYS
+def test_audio_state_known_keys_are_current_contract() -> None:
+    assert "manual_interrupt" not in c.CLIENT_AUDIO_STATE_KNOWN_KEYS
     # Every declared wire field is a known key.
     for field in ("input_mode", "ptt", "playback_state", "mic_muted", "schema_v"):
         assert field in c.CLIENT_AUDIO_STATE_KNOWN_KEYS

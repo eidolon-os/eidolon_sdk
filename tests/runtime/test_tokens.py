@@ -14,7 +14,6 @@ from eidolon_sdk.biz.runtime import (
     owner_revocation_keys,
     resolve_shared_secret,
     session_revocation_keys,
-    sign_device_token,
     sign_runtime_token,
 )
 
@@ -31,9 +30,12 @@ class MemoryRevocationStore:
 
 
 def _sign(**kwargs):
-    return sign_device_token(
+    device_id = kwargs.pop("device_id", "device-1")
+    return sign_runtime_token(
         secret=SECRET,
-        device_id=kwargs.pop("device_id", "device-1"),
+        actor_kind="device",
+        actor_id=device_id,
+        device_id=device_id,
         owner_id=kwargs.pop("owner_id", "owner-a"),
         companion_id=kwargs.pop("companion_id", "companion-a"),
         memory_realm_id=kwargs.pop("memory_realm_id", "realm-a"),
@@ -42,7 +44,7 @@ def _sign(**kwargs):
     )
 
 
-def test_sign_device_token_pins_payload_schema() -> None:
+def test_sign_runtime_token_pins_device_payload_schema() -> None:
     token, exp = _sign(
         device_id="web-123",
         owner_id="owner-a",
@@ -69,10 +71,12 @@ def test_sign_device_token_pins_payload_schema() -> None:
     assert payload["iat"] <= payload["exp"]
 
 
-def test_sign_device_token_rejects_empty_secret() -> None:
+def test_sign_runtime_token_rejects_empty_secret() -> None:
     with pytest.raises(ValueError, match="secret is required"):
-        sign_device_token(
+        sign_runtime_token(
             secret="",
+            actor_kind="device",
+            actor_id="device-1",
             device_id="device-1",
             owner_id="owner-a",
             companion_id="companion-a",
@@ -81,7 +85,7 @@ def test_sign_device_token_rejects_empty_secret() -> None:
         )
 
 
-def test_sign_device_token_requires_identity_claims() -> None:
+def test_sign_runtime_token_requires_identity_claims() -> None:
     with pytest.raises(ValueError, match="owner_id is required"):
         _sign(owner_id="")
 
@@ -141,24 +145,12 @@ async def test_runtime_token_verifier_checks_device_and_owner_revocations() -> N
         await RuntimeTokenVerifier(secret=SECRET, revocation_kv=owner_store).verify(owner_token)
 
 
-def test_revocation_keys_include_plain_key_only_for_kv_safe_ids() -> None:
-    assert device_revocation_keys("device-1") == (
-        "revoked.device.ZGV2aWNlLTE",
-        "revoked.device-1",
-    )
+def test_revocation_keys_are_canonical_encoded_keys() -> None:
+    assert device_revocation_keys("device-1") == ("revoked.device.ZGV2aWNlLTE",)
     assert device_revocation_keys("1c:db:a1") == ("revoked.device.MWM6ZGI6YTE",)
-    assert owner_revocation_keys("owner-a") == (
-        "revoked.owner.b3duZXItYQ",
-        "revoked.owner.owner-a",
-    )
-    assert session_revocation_keys("web/s1") == (
-        "revoked.session.d2ViL3Mx",
-        "revoked.session.web/s1",
-    )
-    assert jti_revocation_keys("jti-1") == (
-        "revoked.jti.anRpLTE",
-        "revoked.jti.jti-1",
-    )
+    assert owner_revocation_keys("owner-a") == ("revoked.owner.b3duZXItYQ",)
+    assert session_revocation_keys("web/s1") == ("revoked.session.d2ViL3Mx",)
+    assert jti_revocation_keys("jti-1") == ("revoked.jti.anRpLTE",)
 
 
 def test_resolve_shared_secret_prefers_argument_then_file(tmp_path) -> None:
@@ -198,7 +190,7 @@ async def test_runtime_token_verifier_accepts_owner_actor_without_device_id() ->
 
 
 @pytest.mark.asyncio
-async def test_runtime_token_verifier_requires_actor_or_legacy_device_id() -> None:
+async def test_runtime_token_verifier_requires_actor_claims() -> None:
     exp = datetime.now(timezone.utc) + timedelta(seconds=60)
     token = jwt.encode({"exp": int(exp.timestamp())}, SECRET, algorithm="HS256")
 
@@ -213,6 +205,8 @@ async def test_runtime_token_verifier_requires_owner_claims() -> None:
     exp = datetime.now(timezone.utc) + timedelta(seconds=60)
     token = jwt.encode(
         {
+            "actor_kind": "device",
+            "actor_id": "device-1",
             "device_id": "device-1",
             "exp": int(exp.timestamp()),
         },

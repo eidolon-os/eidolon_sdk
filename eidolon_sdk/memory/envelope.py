@@ -1,9 +1,4 @@
-"""Versioned memory wire envelopes.
-
-The envelope is optional for v1 consumers: parsers accept both legacy raw
-payloads and the versioned envelope shape. This lets projects migrate producers
-without breaking existing memory workers.
-"""
+"""Versioned memory wire envelopes."""
 
 from __future__ import annotations
 
@@ -64,21 +59,21 @@ def envelope_memory_payload(
 
 
 def unwrap_memory_payload(data: MemoryEnvelope | dict[str, Any]) -> dict[str, Any]:
-    """Return raw payload data from either an envelope or a legacy payload."""
+    """Return raw payload data from a versioned memory envelope."""
     if isinstance(data, MemoryEnvelope):
         return dict(data.payload)
     if data.get("schema_version") == MEMORY_SCHEMA_VERSION and isinstance(
         data.get("payload"), dict
     ):
         return dict(data["payload"])
-    return dict(data)
+    raise ValueError("memory payload must use the versioned envelope")
 
 
 def parse_conversation_turn(data: MemoryEnvelope | dict[str, Any]) -> ConversationTurnPayload:
-    """Validate a conversation-turn payload from envelope or legacy wire data."""
+    """Validate a conversation-turn payload from versioned wire data."""
     return _TURN_ADAPTER.validate_python(unwrap_memory_payload(data))
 
 
 def parse_memory_command(data: MemoryEnvelope | dict[str, Any]) -> MemoryCommandPayload:
-    """Validate a memory command payload from envelope or legacy wire data."""
+    """Validate a memory command payload from versioned wire data."""
     return _COMMAND_ADAPTER.validate_python(unwrap_memory_payload(data))

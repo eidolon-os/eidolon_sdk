@@ -110,11 +110,7 @@ PlaybackState = Literal["idle", "agent_speaking", "unknown"]
 
 # Every key a client may legitimately put in a client.audio_state body. The
 # parser validates against this so a typo (``ppt`` instead of ``ptt``) is caught
-# loudly instead of silently ignored. ``manual_interrupt`` is DEPRECATED — the
-# energy-gate barge-in fast-path was removed (residual echo tripped it) and the
-# policy layer ignores it — but it stays a KNOWN key so firmware still emitting
-# it does not trip the unknown-key check. It may be re-activated for devices with
-# qualified clean AEC; do not repurpose the name.
+# loudly instead of silently ignored.
 CLIENT_AUDIO_STATE_KNOWN_KEYS = frozenset(
     {
         "type",
@@ -122,7 +118,6 @@ CLIENT_AUDIO_STATE_KNOWN_KEYS = frozenset(
         "seq",
         "input_mode",
         "ptt",
-        "manual_interrupt",
         "playback_state",
         "mic_muted",
         "rms",

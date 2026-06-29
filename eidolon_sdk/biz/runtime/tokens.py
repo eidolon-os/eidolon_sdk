@@ -1,4 +1,4 @@
-"""Runtime device JWT contract shared by Eidolon Python projects."""
+"""Runtime actor JWT contract shared by Eidolon Python projects."""
 
 from __future__ import annotations
 
@@ -7,13 +7,11 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-import re
 from typing import Protocol
 import uuid
 
 import jwt
 
-_KV_SAFE_RE = re.compile(r"^[A-Za-z0-9._/-]+$")
 _SHARED_SECRET_FILE = Path("~/eidolon/run/jwt-secret").expanduser()
 
 
@@ -115,72 +113,24 @@ def sign_runtime_token(
     return jwt.encode(payload, secret, algorithm=algorithm), exp
 
 
-def sign_device_token(
-    *,
-    secret: str,
-    algorithm: str = "HS256",
-    device_id: str,
-    owner_id: str,
-    companion_id: str,
-    memory_realm_id: str,
-    genome_id: str,
-    scopes: Sequence[str] = ("device",),
-    ttl_seconds: int | None = None,
-) -> tuple[str, datetime]:
-    """Return a device-origin runtime JWT.
-
-    Kept as the public compatibility wrapper for existing ESP32/admin-test
-    callers. New non-device entrances should call ``sign_runtime_token`` and
-    choose their actor kind explicitly.
-    """
-    try:
-        return sign_runtime_token(
-            secret=secret,
-            algorithm=algorithm,
-            actor_kind="device",
-            actor_id=device_id,
-            device_id=device_id,
-            owner_id=owner_id,
-            companion_id=companion_id,
-            memory_realm_id=memory_realm_id,
-            genome_id=genome_id,
-            scopes=scopes,
-            ttl_seconds=ttl_seconds,
-        )
-    except ValueError as exc:
-        raise ValueError(str(exc).replace("sign_runtime_token", "sign_device_token")) from exc
-
-
 def device_revocation_keys(device_id: str) -> tuple[str, ...]:
     """Return KV keys that revoke a single device id."""
-    keys = [f"revoked.device.{_kv_safe_token(device_id)}"]
-    if _KV_SAFE_RE.fullmatch(device_id):
-        keys.append(f"revoked.{device_id}")
-    return tuple(keys)
+    return (f"revoked.device.{_kv_safe_token(device_id)}",)
 
 
 def owner_revocation_keys(owner_id: str) -> tuple[str, ...]:
     """Return KV keys that revoke every active session for an owner."""
-    keys = [f"revoked.owner.{_kv_safe_token(owner_id)}"]
-    if _KV_SAFE_RE.fullmatch(owner_id):
-        keys.append(f"revoked.owner.{owner_id}")
-    return tuple(keys)
+    return (f"revoked.owner.{_kv_safe_token(owner_id)}",)
 
 
 def session_revocation_keys(session_id: str) -> tuple[str, ...]:
     """Return KV keys that revoke one runtime session."""
-    keys = [f"revoked.session.{_kv_safe_token(session_id)}"]
-    if _KV_SAFE_RE.fullmatch(session_id):
-        keys.append(f"revoked.session.{session_id}")
-    return tuple(keys)
+    return (f"revoked.session.{_kv_safe_token(session_id)}",)
 
 
 def jti_revocation_keys(jti: str) -> tuple[str, ...]:
     """Return KV keys that revoke one concrete JWT id."""
-    keys = [f"revoked.jti.{_kv_safe_token(jti)}"]
-    if _KV_SAFE_RE.fullmatch(jti):
-        keys.append(f"revoked.jti.{jti}")
-    return tuple(keys)
+    return (f"revoked.jti.{_kv_safe_token(jti)}",)
 
 
 class RuntimeTokenVerifier:
@@ -207,12 +157,7 @@ class RuntimeTokenVerifier:
         actor_kind = str(payload.get("actor_kind") or "").strip()
         actor_id = str(payload.get("actor_id") or "").strip()
         if not actor_kind or not actor_id:
-            if not device_id:
-                raise RuntimeUnauthenticatedError(
-                    "token missing actor_kind/actor_id or legacy device_id"
-                )
-            actor_kind = "device"
-            actor_id = str(device_id)
+            raise RuntimeUnauthenticatedError("token missing actor_kind/actor_id")
         owner_id = payload.get("owner_id") or ""
         companion_id = payload.get("companion_id") or ""
         memory_realm_id = payload.get("memory_realm_id") or ""

@@ -57,8 +57,6 @@ def build_command_envelope(
     session-local best-effort controls by explicitly stamping
     ``src.type=channel``.
 
-    The trailing compatibility fields are intentionally part of the SDK
-    contract while older ESP32 firmware and admin traces still read them.
     """
 
     resolved_op = infer_op(payload, op)
@@ -76,9 +74,6 @@ def build_command_envelope(
         "payload": payload,
         "caps": ["ack.v1", "result.v1"],
     }
-    body["type"] = resolved_op
-    body["command_id"] = command_id
-    body["device_id"] = device_id
     return body
 
 

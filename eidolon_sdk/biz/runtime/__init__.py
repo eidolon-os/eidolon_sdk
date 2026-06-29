@@ -10,7 +10,6 @@ from .tokens import (
     owner_revocation_keys,
     resolve_shared_secret,
     session_revocation_keys,
-    sign_device_token,
     sign_runtime_token,
 )
 
@@ -24,6 +23,5 @@ __all__ = [
     "owner_revocation_keys",
     "resolve_shared_secret",
     "session_revocation_keys",
-    "sign_device_token",
     "sign_runtime_token",
 ]

@@ -155,7 +155,7 @@ def test_memory_envelope_wraps_and_parses_conversation_turn() -> None:
     assert parse_conversation_turn(envelope) == payload
 
 
-def test_memory_parsers_accept_raw_current_payloads() -> None:
+def test_memory_parsers_require_versioned_envelope() -> None:
     raw_turn = {
         "turn_id": "t1",
         "context": _ctx().model_dump(mode="json"),
@@ -173,7 +173,7 @@ def test_memory_parsers_accept_raw_current_payloads() -> None:
         "object": "tea",
     }
 
-    assert parse_conversation_turn(raw_turn).turn_id == "t1"
-    command = parse_memory_command(raw_command)
-    assert isinstance(command, KgAddTripleCommand)
-    assert command.predicate == "likes"
+    with pytest.raises(ValueError, match="versioned envelope"):
+        parse_conversation_turn(raw_turn)
+    with pytest.raises(ValueError, match="versioned envelope"):
+        parse_memory_command(raw_command)
