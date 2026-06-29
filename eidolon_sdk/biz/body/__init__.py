@@ -1,0 +1,49 @@
+"""Body-device semantic protocol shared across Eidolon projects."""
+
+from eidolon_sdk.biz.body.capabilities import (
+    BODY_OP_DEVICE_IDENTIFY,
+    BODY_OP_DEVICE_REBOOT,
+    BODY_OP_DISPLAY_UPDATE,
+    BODY_OP_ROOM_LEAVE,
+    BODY_OP_SAFETY_STOP,
+    BODY_OP_SOUND_PLAY,
+    BODY_OP_VOLUME_SET,
+    KNOWN_BODY_CAPABILITIES,
+    capabilities_from_json,
+    capability_from_json,
+)
+from eidolon_sdk.biz.body.models import (
+    BodyCapability,
+    BodyCommand,
+    BodyCommandResult,
+    BodyCommandStatus,
+    BodyDevice,
+    BodyDeviceStatus,
+    BodyRiskLevel,
+    capability_to_dict,
+    command_result_to_dict,
+    device_to_dict,
+)
+
+__all__ = [
+    "BODY_OP_DEVICE_IDENTIFY",
+    "BODY_OP_DEVICE_REBOOT",
+    "BODY_OP_DISPLAY_UPDATE",
+    "BODY_OP_ROOM_LEAVE",
+    "BODY_OP_SAFETY_STOP",
+    "BODY_OP_SOUND_PLAY",
+    "BODY_OP_VOLUME_SET",
+    "KNOWN_BODY_CAPABILITIES",
+    "BodyCapability",
+    "BodyCommand",
+    "BodyCommandResult",
+    "BodyCommandStatus",
+    "BodyDevice",
+    "BodyDeviceStatus",
+    "BodyRiskLevel",
+    "capabilities_from_json",
+    "capability_from_json",
+    "capability_to_dict",
+    "command_result_to_dict",
+    "device_to_dict",
+]
