@@ -7,3 +7,14 @@ build/
 __pycache__/
 **/.trash/
 *.py[cod]
+
+# Benchmark artifacts
+benchmarks/runs/
+benchmark/runs/
+reports/benchmark*/
+reports/*benchmark*/
+reports/*_benchmark_*/
+reports/memory_perf_*/
+reports/memory_quality_*/
+reports/memory_multi_device_*/
+reports/e2e_*/
