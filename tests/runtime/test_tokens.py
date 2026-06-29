@@ -97,13 +97,14 @@ def test_runtime_token_verifier_rejects_empty_secret() -> None:
 
 @pytest.mark.asyncio
 async def test_runtime_token_verifier_round_trips_runtime_identity() -> None:
-    token, exp = _sign(scopes=("device",), ttl_seconds=60)
+    token, exp = _sign(scopes=("device",), session_id="session-1", ttl_seconds=60)
 
     verified = await RuntimeTokenVerifier(secret=SECRET).verify(token)
 
     assert verified.device_id == "device-1"
     assert verified.actor_kind == "device"
     assert verified.actor_id == "device-1"
+    assert verified.session_id == "session-1"
     assert verified.owner_id == "owner-a"
     assert verified.companion_id == "companion-a"
     assert verified.memory_realm_id == "realm-a"

@@ -38,6 +38,7 @@ class RuntimeIdentity:
     owner_id: str
     companion_id: str
     device_id: str | None
+    session_id: str | None
     memory_realm_id: str
     genome_id: str
     scopes: tuple[str, ...]
@@ -198,6 +199,7 @@ class RuntimeTokenVerifier:
             actor_kind=actor_kind,
             actor_id=actor_id,
             device_id=str(device_id) if device_id else None,
+            session_id=str(payload.get("session_id") or "") or None,
             owner_id=owner_id,
             companion_id=companion_id,
             memory_realm_id=memory_realm_id,
