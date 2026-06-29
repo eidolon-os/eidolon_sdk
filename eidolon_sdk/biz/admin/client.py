@@ -153,9 +153,22 @@ class AdminClient(_AdminHTTPBase):
     async def resolve_device(self, device_id: str) -> dict[str, Any]:
         return await self._get_json(f"/api/resolve/device/{_quote(device_id)}")
 
+    async def resolve_owner(self, owner_id: str) -> dict[str, Any]:
+        return await self._get_json(f"/api/resolve/owner/{_quote(owner_id)}")
+
 
 class AdminResolveClient(_AdminHTTPBase):
     """Thin client over admin's ``/api/resolve`` runtime aggregator."""
+
+    async def resolve_owner(self, owner_id: str) -> ResolvedContext:
+        data = await self._get_json(
+            f"/api/resolve/owner/{_quote(owner_id)}",
+            precondition_exc=AdminResolvePrecondition,
+            not_found_exc=AdminResolveNotFound,
+            upstream_exc=AdminResolveUpstream,
+            unreachable_exc=AdminResolveUnreachable,
+        )
+        return ResolvedContext.from_json(data)
 
     async def resolve_device(self, device_id: str) -> ResolvedContext:
         data = await self._get_json(

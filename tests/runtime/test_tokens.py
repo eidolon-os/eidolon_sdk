@@ -10,9 +10,12 @@ from eidolon_sdk.biz.runtime import (
     RuntimeTokenVerifier,
     RuntimeUnauthenticatedError,
     device_revocation_keys,
+    jti_revocation_keys,
     owner_revocation_keys,
     resolve_shared_secret,
+    session_revocation_keys,
     sign_device_token,
+    sign_runtime_token,
 )
 
 
@@ -53,6 +56,9 @@ def test_sign_device_token_pins_payload_schema() -> None:
     payload = jwt.decode(token, SECRET, algorithms=["HS256"])
 
     assert payload["device_id"] == "web-123"
+    assert payload["runtime_token_version"] == 2
+    assert payload["actor_kind"] == "device"
+    assert payload["actor_id"] == "web-123"
     assert payload["owner_id"] == "owner-a"
     assert payload["companion_id"] == "companion-a"
     assert payload["memory_realm_id"] == "realm-a"
@@ -92,6 +98,8 @@ async def test_runtime_token_verifier_round_trips_runtime_identity() -> None:
     verified = await RuntimeTokenVerifier(secret=SECRET).verify(token)
 
     assert verified.device_id == "device-1"
+    assert verified.actor_kind == "device"
+    assert verified.actor_id == "device-1"
     assert verified.owner_id == "owner-a"
     assert verified.companion_id == "companion-a"
     assert verified.memory_realm_id == "realm-a"
@@ -143,6 +151,14 @@ def test_revocation_keys_include_plain_key_only_for_kv_safe_ids() -> None:
         "revoked.owner.b3duZXItYQ",
         "revoked.owner.owner-a",
     )
+    assert session_revocation_keys("web/s1") == (
+        "revoked.session.d2ViL3Mx",
+        "revoked.session.web/s1",
+    )
+    assert jti_revocation_keys("jti-1") == (
+        "revoked.jti.anRpLTE",
+        "revoked.jti.jti-1",
+    )
 
 
 def test_resolve_shared_secret_prefers_argument_then_file(tmp_path) -> None:
@@ -155,13 +171,40 @@ def test_resolve_shared_secret_prefers_argument_then_file(tmp_path) -> None:
 
 
 @pytest.mark.asyncio
-async def test_runtime_token_verifier_requires_device_id() -> None:
+async def test_runtime_token_verifier_accepts_owner_actor_without_device_id() -> None:
+    token, exp = sign_runtime_token(
+        secret=SECRET,
+        actor_kind="owner",
+        actor_id="owner-a",
+        owner_id="owner-a",
+        companion_id="companion-a",
+        memory_realm_id="realm-a",
+        genome_id="genome-a",
+        scopes=("web",),
+        ttl_seconds=60,
+    )
+
+    verified = await RuntimeTokenVerifier(secret=SECRET).verify(token)
+
+    assert verified.actor_kind == "owner"
+    assert verified.actor_id == "owner-a"
+    assert verified.device_id is None
+    assert verified.owner_id == "owner-a"
+    assert verified.companion_id == "companion-a"
+    assert verified.memory_realm_id == "realm-a"
+    assert verified.genome_id == "genome-a"
+    assert verified.scopes == ("web",)
+    assert verified.exp == exp.replace(microsecond=0)
+
+
+@pytest.mark.asyncio
+async def test_runtime_token_verifier_requires_actor_or_legacy_device_id() -> None:
     exp = datetime.now(timezone.utc) + timedelta(seconds=60)
     token = jwt.encode({"exp": int(exp.timestamp())}, SECRET, algorithm="HS256")
 
     verifier = RuntimeTokenVerifier(secret=SECRET)
 
-    with pytest.raises(RuntimeUnauthenticatedError, match="missing device_id"):
+    with pytest.raises(RuntimeUnauthenticatedError, match="missing actor_kind"):
         await verifier.verify(token)
 
 

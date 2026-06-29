@@ -35,9 +35,11 @@ class RuntimeRevocationStore(Protocol):
 
 @dataclass(frozen=True, slots=True)
 class RuntimeIdentity:
+    actor_kind: str
+    actor_id: str
     owner_id: str
     companion_id: str
-    device_id: str
+    device_id: str | None
     memory_realm_id: str
     genome_id: str
     scopes: tuple[str, ...]
@@ -62,6 +64,57 @@ def resolve_shared_secret(
     return ""
 
 
+def sign_runtime_token(
+    *,
+    secret: str,
+    algorithm: str = "HS256",
+    actor_kind: str,
+    actor_id: str,
+    owner_id: str,
+    companion_id: str,
+    memory_realm_id: str,
+    genome_id: str,
+    device_id: str | None = None,
+    session_id: str | None = None,
+    scopes: Sequence[str] = (),
+    ttl_seconds: int | None = None,
+) -> tuple[str, datetime]:
+    """Return a JWT and its expiration datetime."""
+    if not secret:
+        raise ValueError("sign_runtime_token: secret is required (empty)")
+    _require_claim("actor_kind", actor_kind)
+    _require_claim("actor_id", actor_id)
+    _require_claim("owner_id", owner_id)
+    _require_claim("companion_id", companion_id)
+    _require_claim("memory_realm_id", memory_realm_id)
+    _require_claim("genome_id", genome_id)
+
+    now = datetime.now(timezone.utc)
+    if ttl_seconds is None:
+        ttl_seconds = int(timedelta(days=30).total_seconds())
+    exp = now + timedelta(seconds=ttl_seconds)
+    payload = {
+        "runtime_token_version": 2,
+        "actor_kind": actor_kind,
+        "actor_id": actor_id,
+        "owner_id": owner_id,
+        "companion_id": companion_id,
+        "memory_realm_id": memory_realm_id,
+        "genome_id": genome_id,
+        "scopes": list(scopes),
+        "jti": uuid.uuid4().hex,
+        "exp": int(exp.timestamp()),
+        "iat": int(now.timestamp()),
+    }
+    if device_id is not None:
+        _require_claim("device_id", device_id)
+        payload["device_id"] = device_id
+    if session_id is not None:
+        _require_claim("session_id", session_id)
+        payload["session_id"] = session_id
+    return jwt.encode(payload, secret, algorithm=algorithm), exp
+
+
 def sign_device_token(
     *,
     secret: str,
@@ -74,31 +127,28 @@ def sign_device_token(
     scopes: Sequence[str] = ("device",),
     ttl_seconds: int | None = None,
 ) -> tuple[str, datetime]:
-    """Return a JWT and its expiration datetime."""
-    if not secret:
-        raise ValueError("sign_device_token: secret is required (empty)")
-    _require_claim("device_id", device_id)
-    _require_claim("owner_id", owner_id)
-    _require_claim("companion_id", companion_id)
-    _require_claim("memory_realm_id", memory_realm_id)
-    _require_claim("genome_id", genome_id)
+    """Return a device-origin runtime JWT.
 
-    now = datetime.now(timezone.utc)
-    if ttl_seconds is None:
-        ttl_seconds = int(timedelta(days=30).total_seconds())
-    exp = now + timedelta(seconds=ttl_seconds)
-    payload = {
-        "device_id": device_id,
-        "owner_id": owner_id,
-        "companion_id": companion_id,
-        "memory_realm_id": memory_realm_id,
-        "genome_id": genome_id,
-        "scopes": list(scopes),
-        "jti": uuid.uuid4().hex,
-        "exp": int(exp.timestamp()),
-        "iat": int(now.timestamp()),
-    }
-    return jwt.encode(payload, secret, algorithm=algorithm), exp
+    Kept as the public compatibility wrapper for existing ESP32/admin-test
+    callers. New non-device entrances should call ``sign_runtime_token`` and
+    choose their actor kind explicitly.
+    """
+    try:
+        return sign_runtime_token(
+            secret=secret,
+            algorithm=algorithm,
+            actor_kind="device",
+            actor_id=device_id,
+            device_id=device_id,
+            owner_id=owner_id,
+            companion_id=companion_id,
+            memory_realm_id=memory_realm_id,
+            genome_id=genome_id,
+            scopes=scopes,
+            ttl_seconds=ttl_seconds,
+        )
+    except ValueError as exc:
+        raise ValueError(str(exc).replace("sign_runtime_token", "sign_device_token")) from exc
 
 
 def device_revocation_keys(device_id: str) -> tuple[str, ...]:
@@ -114,6 +164,22 @@ def owner_revocation_keys(owner_id: str) -> tuple[str, ...]:
     keys = [f"revoked.owner.{_kv_safe_token(owner_id)}"]
     if _KV_SAFE_RE.fullmatch(owner_id):
         keys.append(f"revoked.owner.{owner_id}")
+    return tuple(keys)
+
+
+def session_revocation_keys(session_id: str) -> tuple[str, ...]:
+    """Return KV keys that revoke one runtime session."""
+    keys = [f"revoked.session.{_kv_safe_token(session_id)}"]
+    if _KV_SAFE_RE.fullmatch(session_id):
+        keys.append(f"revoked.session.{session_id}")
+    return tuple(keys)
+
+
+def jti_revocation_keys(jti: str) -> tuple[str, ...]:
+    """Return KV keys that revoke one concrete JWT id."""
+    keys = [f"revoked.jti.{_kv_safe_token(jti)}"]
+    if _KV_SAFE_RE.fullmatch(jti):
+        keys.append(f"revoked.jti.{jti}")
     return tuple(keys)
 
 
@@ -138,8 +204,15 @@ class RuntimeTokenVerifier:
             raise RuntimeUnauthenticatedError(f"invalid token: {exc}") from exc
 
         device_id = payload.get("device_id")
-        if not device_id:
-            raise RuntimeUnauthenticatedError("token missing device_id")
+        actor_kind = str(payload.get("actor_kind") or "").strip()
+        actor_id = str(payload.get("actor_id") or "").strip()
+        if not actor_kind or not actor_id:
+            if not device_id:
+                raise RuntimeUnauthenticatedError(
+                    "token missing actor_kind/actor_id or legacy device_id"
+                )
+            actor_kind = "device"
+            actor_id = str(device_id)
         owner_id = payload.get("owner_id") or ""
         companion_id = payload.get("companion_id") or ""
         memory_realm_id = payload.get("memory_realm_id") or ""
@@ -154,17 +227,32 @@ class RuntimeTokenVerifier:
                 raise RuntimeUnauthenticatedError(f"token missing {claim_name}")
 
         if self._kv is not None:
-            for key in device_revocation_keys(device_id):
-                if await self._kv.get(key):
-                    raise RuntimeTokenRevokedError(f"device revoked: {device_id}")
+            if device_id:
+                for key in device_revocation_keys(str(device_id)):
+                    if await self._kv.get(key):
+                        raise RuntimeTokenRevokedError(f"device revoked: {device_id}")
             for key in owner_revocation_keys(owner_id):
                 if await self._kv.get(key):
                     raise RuntimeTokenRevokedError(
                         f"all sessions revoked for owner: {owner_id}"
                     )
+            session_id = str(payload.get("session_id") or "").strip()
+            if session_id:
+                for key in session_revocation_keys(session_id):
+                    if await self._kv.get(key):
+                        raise RuntimeTokenRevokedError(
+                            f"session revoked: {session_id}"
+                        )
+            jti = str(payload.get("jti") or "").strip()
+            if jti:
+                for key in jti_revocation_keys(jti):
+                    if await self._kv.get(key):
+                        raise RuntimeTokenRevokedError(f"token revoked: {jti}")
 
         return RuntimeIdentity(
-            device_id=device_id,
+            actor_kind=actor_kind,
+            actor_id=actor_id,
+            device_id=str(device_id) if device_id else None,
             owner_id=owner_id,
             companion_id=companion_id,
             memory_realm_id=memory_realm_id,
@@ -176,7 +264,7 @@ class RuntimeTokenVerifier:
 
 def _require_claim(name: str, value: str) -> None:
     if not str(value or "").strip():
-        raise ValueError(f"sign_device_token: {name} is required")
+        raise ValueError(f"sign_runtime_token: {name} is required")
 
 
 def _kv_safe_token(value: str) -> str:
