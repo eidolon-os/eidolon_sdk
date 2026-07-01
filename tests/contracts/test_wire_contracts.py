@@ -63,9 +63,15 @@ def test_control_ops_are_stable() -> None:
 
 
 def test_audio_state_known_keys_are_current_contract() -> None:
-    assert "manual_interrupt" not in c.CLIENT_AUDIO_STATE_KNOWN_KEYS
     # Every declared wire field is a known key.
-    for field in ("input_mode", "ptt", "playback_state", "mic_muted", "schema_v"):
+    for field in (
+        "input_mode",
+        "ptt",
+        "manual_interrupt",
+        "playback_state",
+        "mic_muted",
+        "schema_v",
+    ):
         assert field in c.CLIENT_AUDIO_STATE_KNOWN_KEYS
 
 

@@ -118,6 +118,7 @@ CLIENT_AUDIO_STATE_KNOWN_KEYS = frozenset(
         "seq",
         "input_mode",
         "ptt",
+        "manual_interrupt",
         "playback_state",
         "mic_muted",
         "rms",
