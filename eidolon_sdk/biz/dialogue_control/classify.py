@@ -129,7 +129,9 @@ def _hard_stop_speech_pattern(
     return False
 
 
-_CLAUSE_SEPARATORS = "，,。.；;！!？? "
+# Clause punctuation only — never whitespace, which would shred English
+# stop phrases like "stop talking".
+_CLAUSE_SEPARATORS = "，,。.；;！!？?、"
 
 
 def _split_clauses(text: str) -> list[str]:
