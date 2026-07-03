@@ -1,0 +1,344 @@
+"""Deterministic dialogue-control lexicons (Tier0 policy assets).
+
+Canonical home of the hard-stop / topic-switch / correction / backchannel
+word lists previously owned by eidolon_channel. These are policy assets, not
+a trained classifier: entries favour precision over recall so the fast cancel
+path never fires on ordinary content ("不要讲英文怎么说" is a question, not a
+stop). Both eidolon_channel (fast path) and eidolon_agent (slow-path
+confirmation) must consume this module — never fork the lists locally.
+"""
+
+from __future__ import annotations
+
+_HARD_STOP_ZH: tuple[str, ...] = (
+    "停",
+    "停一下",
+    "停一停",
+    "先停",
+    "先停一下",
+    "停下来",
+    "你先停",
+    "你先停一下",
+    "先别说",
+    "先别说了",
+    "别说了",
+    "不要再说了",
+    "不要说了",
+    "不用说了",
+    "不用讲了",
+    "别讲了",
+    "打住",
+    "打断一下",
+    "暂停",
+    "暂停一下",
+    "先暂停",
+    "够了",
+    "可以了",
+    "先这样",
+    "先到这",
+    "先到这里",
+    "到此为止",
+    "闭嘴",
+    "先别讲了",
+)
+
+_HARD_STOP_EN: tuple[str, ...] = (
+    "stop",
+    "stop talking",
+    "stop speaking",
+    "please stop",
+    "pause",
+    "pause for a second",
+    "be quiet",
+    "shut up",
+    "that's enough",
+    "let's stop",
+)
+
+DEFAULT_HARD_STOP_PREFIX_LEXICON: tuple[str, ...] = (
+    "别说",
+    "先别说",
+    "别讲",
+    "先别讲",
+    "不要说",
+    "不要再说",
+    "不要讲",
+    "不要再讲",
+    "不用说",
+    "不用讲",
+    "停下",
+    "先停",
+    "你先停",
+)
+
+# Tier0 hard-stop speech patterns are still deterministic policy assets, not a
+# trained classifier. They cover high-precision "stop speaking" commands
+# without adding one-off phrases for every ASR variant.
+DEFAULT_HARD_STOP_NEGATION_PREFIXES: tuple[str, ...] = (
+    "别",
+    "先别",
+    "你别",
+    "你先别",
+    "不要",
+    "先不要",
+    "你不要",
+    "你先不要",
+    "不要再",
+    "别再",
+    "不用",
+    "先不用",
+)
+
+DEFAULT_HARD_STOP_SPEECH_VERBS: tuple[str, ...] = (
+    "说",
+    "讲",
+    "聊",
+    "念",
+    "播",
+    "解释",
+    "继续说",
+    "继续讲",
+    "继续聊",
+)
+
+DEFAULT_HARD_STOP_CONTROL_SUFFIXES: tuple[str, ...] = (
+    "",
+    "了",
+    "啦",
+    "啊",
+    "呀",
+    "吧",
+    "呢",
+    "一下",
+    "一会",
+    "一会儿",
+    "先",
+    "现在",
+    "好吗",
+    "行吗",
+    "可以吗",
+)
+
+_TOPIC_SWITCH_ZH: tuple[str, ...] = (
+    "换个话题",
+    "换一个话题",
+    "换个主题",
+    "换一个主题",
+    "换个方向",
+    "换个说法",
+    "换一个说法",
+    "换个内容",
+    "换一个内容",
+    "换一件事",
+    "换个问题",
+    "换一个问题",
+    "跳过这个",
+    "这个跳过",
+    "先跳过",
+    "跳到下一个",
+    "下一个话题",
+    "不聊这个",
+    "不说这个",
+    "别说这个",
+    "别聊这个",
+    "这个不聊了",
+    "这个先不聊",
+    "这个先不说",
+    "这个不用了",
+    "这个算了",
+    "算了换个",
+    "算了别说这个",
+    "说点别的",
+    "聊点别的",
+    "说别的",
+    "聊别的",
+    "我们说点别的",
+    "我们聊点",
+    "我们聊别的",
+    "我们换个",
+    "我们换一个",
+    "我们换个话题",
+    "我们换一个话题",
+    "刚才那个不用了",
+)
+
+_TOPIC_SWITCH_EN: tuple[str, ...] = (
+    "change topic",
+    "change the topic",
+    "switch topic",
+    "switch topics",
+    "new topic",
+    "next topic",
+    "another topic",
+    "different topic",
+    "let's change topic",
+    "let's change the topic",
+    "let's switch topic",
+    "let's switch topics",
+    "skip this",
+    "skip that",
+    "move on",
+    "let's move on",
+    "talk about something else",
+    "let's talk about something else",
+)
+
+_CORRECTION_ZH: tuple[str, ...] = (
+    "不是",
+    "不是的",
+    "不是这个",
+    "不是这样",
+    "不是那样",
+    "不是这个意思",
+    "不对",
+    "不对不对",
+    "错了",
+    "说错了",
+    "你说错了",
+    "理解错了",
+    "你理解错了",
+    "听错了",
+    "你听错了",
+    "我不是说",
+    "我不是要",
+    "等一下",
+    "等等",
+    "等下",
+    "等会",
+    "先等一下",
+    "先等等",
+    "慢着",
+    "等我说完",
+    "我补充一下",
+    "我纠正一下",
+    "纠正一下",
+    "我改一下",
+    "我重说",
+    "我重新说",
+    "我重新问",
+    "重新来",
+    "重来一下",
+    "我不是这个意思",
+    "我的意思是",
+    "我是说",
+    "我是想说",
+    "我想说的是",
+    "我刚说错了",
+    "我刚才",
+    "我刚才说",
+    "我刚才说错了",
+)
+
+_CORRECTION_EN: tuple[str, ...] = (
+    "no that's not",
+    "not that",
+    "that's not what i mean",
+    "that's not what i meant",
+    "i mean",
+    "what i mean is",
+    "i meant",
+    "i said it wrong",
+    "i misspoke",
+    "let me correct",
+    "let me rephrase",
+    "let me say that again",
+    "wait",
+    "wait a second",
+    "one second",
+    "hold on a second",
+    "actually",
+)
+
+DEFAULT_CORRECTION_EXCLUSION_LEXICON: tuple[str, ...] = (
+    "是不是",
+    "是不是说",
+    "是不是应该",
+    "是不是可以",
+    "对不对",
+    "对不对呀",
+    "对不对呢",
+    "不对吗",
+    "不对么",
+)
+
+DEFAULT_HARD_STOP_LEXICON: tuple[str, ...] = _HARD_STOP_ZH + _HARD_STOP_EN
+DEFAULT_TOPIC_SWITCH_LEXICON: tuple[str, ...] = _TOPIC_SWITCH_ZH + _TOPIC_SWITCH_EN
+DEFAULT_CORRECTION_LEXICON: tuple[str, ...] = _CORRECTION_ZH + _CORRECTION_EN
+
+# Single-token fragments that are too weak to cancel, but useful enough to duck
+# early while waiting for the next ASR interim. Keep this list tiny: entries
+# only gate attention admission and must not be treated as intent by themselves.
+DEFAULT_ATTENTION_EARLY_DUCK_PREFIX_LEXICON: tuple[str, ...] = ("换",)
+
+BACKCHANNEL_WORDS: frozenset[str] = frozenset(
+    {
+        # Chinese acknowledgements
+        "嗯",
+        "嗯嗯",
+        "嗯哼",
+        "哦",
+        "哦哦",
+        "啊",
+        "啊啊",
+        "好",
+        "好的",
+        "好吧",
+        "可以",
+        "行",
+        "行的",
+        "对",
+        "对啊",
+        "对的",
+        "对呀",
+        "是",
+        "是啊",
+        "是的",
+        "是呀",
+        "没错",
+        "嗯对",
+        "嗯好",
+        # English / Pinyin acknowledgements
+        "ok",
+        "okay",
+        "yes",
+        "yeah",
+        "yep",
+        "uh-huh",
+        "mhm",
+        "right",
+        "sure",
+    }
+)
+BACKCHANNEL_COMPOUND_CHARS = "嗯哦啊好对是"
+
+NOISE_LIKE_TRANSCRIPTIONS: frozenset[str] = frozenset(
+    {
+        "啊",
+        "嗯",
+        "哈",
+        "咳",
+        "咳咳",
+        "嗯哼",
+        "啊啊",
+        "啊啊啊",
+        "啊啊啊啊",
+        "嗯啊",
+        "哎",
+        "哎呀",
+        "哦",
+        "哦哦",
+        "唉",
+    }
+)
+REPEATED_NOISE_CHARS = "啊嗯哈咳哎哦唉"
+
+INTERRUPT_TEXT_TRAILING_CHARS = "。.!？?！,， "
+
+ASR_EXACT_CANONICALIZATIONS: dict[str, str] = {
+    # Bailian/FunASR can briefly emit the homophone "亭" before resolving the
+    # hard-stop phrase "停一下". Exact-only keeps ordinary words like "亭子"
+    # out of the fast cancel path.
+    "亭": "停",
+}
+
+ASR_PREFIX_CANONICALIZATIONS: tuple[tuple[str, str], ...] = ()
