@@ -47,11 +47,13 @@ def test_audio_state_vocabulary_is_stable() -> None:
 def test_control_ops_are_stable() -> None:
     assert c.CONTROL_OP_ROOM_JOIN == "room.join"
     assert c.CONTROL_OP_PLAYBACK_STOP == "playback.stop"
+    assert c.CONTROL_OP_PTT_TURN_STATUS == "ptt.turn_status"
     assert c.CONTROL_OP_CONFIG_REFRESH == "config.refresh"
     assert c.CONTROL_OP_DEVICE_IDENTIFY == "device.identify"
     assert c.VALID_CONTROL_OPS == {
         "room.join",
         "playback.stop",
+        "ptt.turn_status",
         "config.refresh",
         "device.identify",
     }

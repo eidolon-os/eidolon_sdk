@@ -132,12 +132,14 @@ CLIENT_AUDIO_STATE_KNOWN_KEYS = frozenset(
 # --------------------------------------------------------------------------- #
 CONTROL_OP_ROOM_JOIN = "room.join"
 CONTROL_OP_PLAYBACK_STOP = "playback.stop"
+CONTROL_OP_PTT_TURN_STATUS = "ptt.turn_status"
 CONTROL_OP_CONFIG_REFRESH = "config.refresh"
 CONTROL_OP_DEVICE_IDENTIFY = "device.identify"
 VALID_CONTROL_OPS = frozenset(
     {
         CONTROL_OP_ROOM_JOIN,
         CONTROL_OP_PLAYBACK_STOP,
+        CONTROL_OP_PTT_TURN_STATUS,
         CONTROL_OP_CONFIG_REFRESH,
         CONTROL_OP_DEVICE_IDENTIFY,
     }

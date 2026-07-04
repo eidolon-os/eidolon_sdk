@@ -67,6 +67,7 @@ def test_esp32_topics_header_matches_python_wire_contract() -> None:
 
     assert strings["kControlOpRoomJoin"] == c.CONTROL_OP_ROOM_JOIN
     assert strings["kControlOpPlaybackStop"] == c.CONTROL_OP_PLAYBACK_STOP
+    assert strings["kControlOpPttTurnStatus"] == c.CONTROL_OP_PTT_TURN_STATUS
     assert strings["kControlOpConfigRefresh"] == c.CONTROL_OP_CONFIG_REFRESH
     assert strings["kControlOpDeviceIdentify"] == c.CONTROL_OP_DEVICE_IDENTIFY
 
