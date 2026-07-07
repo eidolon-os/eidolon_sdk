@@ -41,6 +41,12 @@ CONTROL_TOPIC = "eidolon.control"
 COMPANION_UI_STATE_TOPIC = "eidolon.ui_state"
 SESSION_CONTROL_TOPIC = "eidolon.session_control"
 
+# LiveKit Agents framework data-stream topics. These are SDK-level contract
+# constants because device and bridge participants subscribe to them directly;
+# a LiveKit SDK upgrade changing one of these names must fail loudly in tests.
+LIVEKIT_TRANSCRIPTION_TOPIC = "lk.transcription"
+LIVEKIT_AGENT_SESSION_TOPIC = "lk.agent.session"
+
 # --------------------------------------------------------------------------- #
 # Session metadata bus — stamped by hub into LiveKit participant_metadata,     #
 # resolved once by channel before AgentSession construction.                   #

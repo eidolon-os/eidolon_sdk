@@ -16,6 +16,8 @@ def test_topic_names_are_stable() -> None:
     assert c.CONTROL_TOPIC == "eidolon.control"
     assert c.COMPANION_UI_STATE_TOPIC == "eidolon.ui_state"
     assert c.SESSION_CONTROL_TOPIC == "eidolon.session_control"
+    assert c.LIVEKIT_TRANSCRIPTION_TOPIC == "lk.transcription"
+    assert c.LIVEKIT_AGENT_SESSION_TOPIC == "lk.agent.session"
 
 
 def test_session_metadata_enums_are_stable() -> None:

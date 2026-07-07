@@ -57,6 +57,7 @@ def test_esp32_topics_header_matches_python_wire_contract() -> None:
     assert strings["kClientAudioStateTopic"] == c.CLIENT_AUDIO_STATE_TOPIC
     assert strings["kUiStateTopic"] == c.COMPANION_UI_STATE_TOPIC
     assert strings["kSessionControlTopic"] == c.SESSION_CONTROL_TOPIC
+    assert strings["kTranscriptionTopic"] == c.LIVEKIT_TRANSCRIPTION_TOPIC
 
     assert strings["kClientAudioStateType"] == c.CLIENT_AUDIO_STATE_TYPE
     assert strings["kInputModeAuto"] == c.INPUT_MODE_AUTO
