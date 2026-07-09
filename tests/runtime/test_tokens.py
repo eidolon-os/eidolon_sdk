@@ -40,6 +40,9 @@ def _sign(**kwargs):
         companion_id=kwargs.pop("companion_id", "companion-a"),
         memory_realm_id=kwargs.pop("memory_realm_id", "realm-a"),
         genome_id=kwargs.pop("genome_id", "genome-a"),
+        schema_version=kwargs.pop("schema_version", "eidolon.persona_genome.v1"),
+        genome_hash=kwargs.pop("genome_hash", "pgv1_testhash"),
+        compiler_version=kwargs.pop("compiler_version", "eidolon.persona_compiler.v1"),
         **kwargs,
     )
 
@@ -58,13 +61,16 @@ def test_sign_runtime_token_pins_device_payload_schema() -> None:
     payload = jwt.decode(token, SECRET, algorithms=["HS256"])
 
     assert payload["device_id"] == "web-123"
-    assert payload["runtime_token_version"] == 2
+    assert payload["runtime_token_version"] == 3
     assert payload["actor_kind"] == "device"
     assert payload["actor_id"] == "web-123"
     assert payload["owner_id"] == "owner-a"
     assert payload["companion_id"] == "companion-a"
     assert payload["memory_realm_id"] == "realm-a"
     assert payload["genome_id"] == "genome-a"
+    assert payload["schema_version"] == "eidolon.persona_genome.v1"
+    assert payload["genome_hash"] == "pgv1_testhash"
+    assert payload["compiler_version"] == "eidolon.persona_compiler.v1"
     assert payload["scopes"] == ["device", "voice"]
     assert isinstance(payload["jti"], str)
     assert datetime.fromtimestamp(payload["exp"], tz=timezone.utc) == exp.replace(microsecond=0)
@@ -82,6 +88,9 @@ def test_sign_runtime_token_rejects_empty_secret() -> None:
             companion_id="companion-a",
             memory_realm_id="realm-a",
             genome_id="genome-a",
+            schema_version="eidolon.persona_genome.v1",
+            genome_hash="pgv1_testhash",
+            compiler_version="eidolon.persona_compiler.v1",
         )
 
 
@@ -109,6 +118,9 @@ async def test_runtime_token_verifier_round_trips_runtime_identity() -> None:
     assert verified.companion_id == "companion-a"
     assert verified.memory_realm_id == "realm-a"
     assert verified.genome_id == "genome-a"
+    assert verified.schema_version == "eidolon.persona_genome.v1"
+    assert verified.genome_hash == "pgv1_testhash"
+    assert verified.compiler_version == "eidolon.persona_compiler.v1"
     assert verified.scopes == ("device",)
     assert verified.exp == exp.replace(microsecond=0)
 
@@ -173,6 +185,9 @@ async def test_runtime_token_verifier_accepts_owner_actor_without_device_id() ->
         companion_id="companion-a",
         memory_realm_id="realm-a",
         genome_id="genome-a",
+        schema_version="eidolon.persona_genome.v1",
+        genome_hash="pgv1_testhash",
+        compiler_version="eidolon.persona_compiler.v1",
         scopes=("web",),
         ttl_seconds=60,
     )
@@ -186,6 +201,7 @@ async def test_runtime_token_verifier_accepts_owner_actor_without_device_id() ->
     assert verified.companion_id == "companion-a"
     assert verified.memory_realm_id == "realm-a"
     assert verified.genome_id == "genome-a"
+    assert verified.genome_hash == "pgv1_testhash"
     assert verified.scopes == ("web",)
     assert verified.exp == exp.replace(microsecond=0)
 

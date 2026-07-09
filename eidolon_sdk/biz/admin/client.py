@@ -85,6 +85,9 @@ class ResolvedContext:
     companion_id: str
     memory_realm_id: str
     genome_id: str
+    schema_version: str
+    genome_hash: str
+    compiler_version: str
     device_id: str | None
     interaction_mode: str | None = None
 
@@ -98,6 +101,9 @@ class ResolvedContext:
             companion_id=str(context.get("companion_id") or ""),
             memory_realm_id=str(context.get("memory_realm_id") or ""),
             genome_id=str(context.get("genome_id") or ""),
+            schema_version=str(context.get("schema_version") or ""),
+            genome_hash=str(context.get("genome_hash") or ""),
+            compiler_version=str(context.get("compiler_version") or ""),
             device_id=context.get("device_id"),
             interaction_mode=context.get("interaction_mode"),
         )
