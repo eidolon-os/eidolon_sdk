@@ -43,7 +43,7 @@ class RuntimeIdentity:
     genome_id: str
     schema_version: str
     genome_hash: str
-    compiler_version: str
+    realizer_version: str
     scopes: tuple[str, ...]
     exp: datetime
 
@@ -78,7 +78,7 @@ def sign_runtime_token(
     genome_id: str,
     schema_version: str,
     genome_hash: str,
-    compiler_version: str,
+    realizer_version: str,
     device_id: str | None = None,
     session_id: str | None = None,
     scopes: Sequence[str] = (),
@@ -95,7 +95,7 @@ def sign_runtime_token(
     _require_claim("genome_id", genome_id)
     _require_claim("schema_version", schema_version)
     _require_claim("genome_hash", genome_hash)
-    _require_claim("compiler_version", compiler_version)
+    _require_claim("realizer_version", realizer_version)
 
     now = datetime.now(timezone.utc)
     if ttl_seconds is None:
@@ -111,7 +111,7 @@ def sign_runtime_token(
         "genome_id": genome_id,
         "schema_version": schema_version,
         "genome_hash": genome_hash,
-        "compiler_version": compiler_version,
+        "realizer_version": realizer_version,
         "scopes": list(scopes),
         "jti": uuid.uuid4().hex,
         "exp": int(exp.timestamp()),
@@ -177,7 +177,7 @@ class RuntimeTokenVerifier:
         genome_id = payload.get("genome_id") or ""
         schema_version = payload.get("schema_version") or ""
         genome_hash = payload.get("genome_hash") or ""
-        compiler_version = payload.get("compiler_version") or ""
+        realizer_version = payload.get("realizer_version") or ""
         for claim_name, claim_value in (
             ("owner_id", owner_id),
             ("companion_id", companion_id),
@@ -185,7 +185,7 @@ class RuntimeTokenVerifier:
             ("genome_id", genome_id),
             ("schema_version", schema_version),
             ("genome_hash", genome_hash),
-            ("compiler_version", compiler_version),
+            ("realizer_version", realizer_version),
         ):
             if not claim_value:
                 raise RuntimeUnauthenticatedError(f"token missing {claim_name}")
@@ -224,7 +224,7 @@ class RuntimeTokenVerifier:
             genome_id=genome_id,
             schema_version=schema_version,
             genome_hash=genome_hash,
-            compiler_version=compiler_version,
+            realizer_version=realizer_version,
             scopes=tuple(payload.get("scopes") or ()),
             exp=datetime.fromtimestamp(payload["exp"], tz=timezone.utc),
         )

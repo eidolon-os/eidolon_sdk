@@ -24,13 +24,15 @@ def _expected_context() -> dict:
         "companion_id": "companion-a",
         "memory_realm_id": "realm-a",
         "genome_id": "genome-a",
+        "schema_version": "eidolon.persona_genome",
+        "genome_hash": "pg_test",
+        "realizer_version": "eidolon.persona_realizer",
         "device_id": None,
-        "ignored": "extra",
     }
 
 
 def test_resolved_context_unwraps_admin_envelope() -> None:
-    ctx = ResolvedContext.from_json({"context": _expected_context()})
+    ctx = ResolvedContext.from_resolve_response({"context": _expected_context()})
 
     assert ctx.owner_id == "owner-a"
     assert ctx.companion_id == "companion-a"

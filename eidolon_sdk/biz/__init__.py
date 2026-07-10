@@ -1,26 +1,30 @@
 """Shared Eidolon business contracts."""
 
 from .persona import (
-    PERSONA_COMPILER_VERSION,
-    PERSONA_GENOME_SCHEMA_VERSION,
+    PERSONA_GENOME_SCHEMA,
+    PERSONA_REALIZER,
+    PersonaAuthoringDraft,
     PersonaEvolutionProposalEvent,
-    PersonaGenomeV1,
+    PersonaGenome,
     PersonaObservationEvent,
     PersonaTraitState,
     ResolvedRuntimeIdentity,
+    build_persona_genome_from_draft,
     normalize_persona_genome,
     persona_genome_hash,
     persona_genome_to_json,
 )
 
 __all__ = [
-    "PERSONA_COMPILER_VERSION",
-    "PERSONA_GENOME_SCHEMA_VERSION",
+    "PERSONA_GENOME_SCHEMA",
+    "PERSONA_REALIZER",
+    "PersonaAuthoringDraft",
     "PersonaEvolutionProposalEvent",
-    "PersonaGenomeV1",
+    "PersonaGenome",
     "PersonaObservationEvent",
     "PersonaTraitState",
     "ResolvedRuntimeIdentity",
+    "build_persona_genome_from_draft",
     "normalize_persona_genome",
     "persona_genome_hash",
     "persona_genome_to_json",
