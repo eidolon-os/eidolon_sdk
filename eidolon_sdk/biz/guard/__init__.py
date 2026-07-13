@@ -1,0 +1,41 @@
+"""Versioned ATK Guard control-plane contracts."""
+
+from .protocol import (
+    GUARD_SCHEMA_VERSION,
+    GUARD_RUNTIME_SCHEMA_VERSION,
+    GUARD_PRESENCE_ABSENT_TYPE,
+    GUARD_PRESENCE_CANDIDATE_TYPE,
+    SILENT_PRESENCE_POLICY_ID,
+    GuardPolicyAction,
+    GuardPolicyActionAck,
+    GuardPresenceAbsent,
+    GuardPresenceCandidate,
+    GuardPresenceVerified,
+    GuardSilentPresenceConfig,
+    GuardRuntimeConfig,
+    normalize_guard_policy_config,
+    normalize_guard_runtime_config,
+    parse_guard_message,
+    parse_guard_policy_config,
+    parse_guard_runtime_config,
+)
+
+__all__ = [
+    "GUARD_SCHEMA_VERSION",
+    "GUARD_RUNTIME_SCHEMA_VERSION",
+    "GUARD_PRESENCE_CANDIDATE_TYPE",
+    "GUARD_PRESENCE_ABSENT_TYPE",
+    "SILENT_PRESENCE_POLICY_ID",
+    "GuardPolicyAction",
+    "GuardPolicyActionAck",
+    "GuardPresenceAbsent",
+    "GuardPresenceCandidate",
+    "GuardPresenceVerified",
+    "GuardSilentPresenceConfig",
+    "GuardRuntimeConfig",
+    "normalize_guard_policy_config",
+    "normalize_guard_runtime_config",
+    "parse_guard_message",
+    "parse_guard_policy_config",
+    "parse_guard_runtime_config",
+]

@@ -14,6 +14,7 @@ from pathlib import Path
 import pytest
 
 from eidolon_sdk.biz import contracts as c
+from eidolon_sdk.biz import guard
 
 
 def _workspace_root() -> Path:
@@ -71,7 +72,10 @@ def test_esp32_topics_header_matches_python_wire_contract() -> None:
     assert strings["kControlOpPlaybackStop"] == c.CONTROL_OP_PLAYBACK_STOP
     assert strings["kControlOpPttTurnStatus"] == c.CONTROL_OP_PTT_TURN_STATUS
     assert strings["kControlOpConfigRefresh"] == c.CONTROL_OP_CONFIG_REFRESH
+    assert strings["kControlOpGuardRuntimeSync"] == c.CONTROL_OP_GUARD_RUNTIME_SYNC
     assert strings["kControlOpDeviceIdentify"] == c.CONTROL_OP_DEVICE_IDENTIFY
+    assert strings["kGuardPresenceCandidateType"] == guard.GUARD_PRESENCE_CANDIDATE_TYPE
+    assert strings["kGuardPresenceAbsentType"] == guard.GUARD_PRESENCE_ABSENT_TYPE
 
     assert strings["kInteractionModeHalfDuplex"] == c.INTERACTION_MODE_HALF_DUPLEX
     assert strings["kInteractionModeFullDuplex"] == c.INTERACTION_MODE_FULL_DUPLEX

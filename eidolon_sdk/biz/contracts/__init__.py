@@ -141,6 +141,13 @@ CONTROL_OP_PLAYBACK_STOP = "playback.stop"
 CONTROL_OP_PTT_TURN_STATUS = "ptt.turn_status"
 CONTROL_OP_CONFIG_REFRESH = "config.refresh"
 CONTROL_OP_DEVICE_IDENTIFY = "device.identify"
+# Device-local diagnostic for an ATK guard. It samples only local camera frames
+# and returns aggregate measurements over the command-result channel.
+CONTROL_OP_GUARD_VISION_BENCHMARK = "guard.vision.benchmark"
+# Binding-local runtime reconciliation. The command contains only a desired
+# state and revision; the device obtains its parameters from the signed Guard
+# runtime-config pull endpoint.
+CONTROL_OP_GUARD_RUNTIME_SYNC = "guard.runtime.sync"
 VALID_CONTROL_OPS = frozenset(
     {
         CONTROL_OP_ROOM_JOIN,
@@ -148,6 +155,8 @@ VALID_CONTROL_OPS = frozenset(
         CONTROL_OP_PTT_TURN_STATUS,
         CONTROL_OP_CONFIG_REFRESH,
         CONTROL_OP_DEVICE_IDENTIFY,
+        CONTROL_OP_GUARD_VISION_BENCHMARK,
+        CONTROL_OP_GUARD_RUNTIME_SYNC,
     }
 )
 CONTROL_OP_ALIASES = frozenset(

@@ -18,6 +18,7 @@ BODY_OP_ROOM_LEAVE = "room.leave"
 BODY_OP_VOLUME_SET = "volume.set"
 BODY_OP_DEVICE_REBOOT = "device.reboot"
 BODY_OP_SAFETY_STOP = "safety.stop"
+BODY_OP_PRESENCE_SET = "body.presence.set"
 
 
 KNOWN_BODY_CAPABILITIES: dict[str, BodyCapability] = {
@@ -91,6 +92,33 @@ KNOWN_BODY_CAPABILITIES: dict[str, BodyCapability] = {
         name=BODY_OP_SAFETY_STOP,
         description="Immediately stop motion or other safety-critical activity.",
         risk_level="critical",
+    ),
+    BODY_OP_PRESENCE_SET: BodyCapability(
+        name=BODY_OP_PRESENCE_SET,
+        description="Set a low-risk local presence state on a body device.",
+        input_schema={
+            "type": "object",
+            "properties": {
+                "state": {"type": "string"},
+                "guard_epoch": {"type": "integer"},
+                "correlation_id": {"type": "string"},
+                "action_id": {"type": "string"},
+            },
+            "required": ["state", "guard_epoch", "correlation_id", "action_id"],
+            "additionalProperties": False,
+        },
+        result_schema={
+            "type": "object",
+            "properties": {
+                "action_id": {"type": "string"},
+                "state": {"type": "string"},
+                "applied": {"type": "boolean"},
+            },
+            "required": ["action_id", "applied"],
+            "additionalProperties": True,
+        },
+        risk_level="low",
+        requires_ack=True,
     ),
 }
 

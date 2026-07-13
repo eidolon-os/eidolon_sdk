@@ -52,12 +52,16 @@ def test_control_ops_are_stable() -> None:
     assert c.CONTROL_OP_PTT_TURN_STATUS == "ptt.turn_status"
     assert c.CONTROL_OP_CONFIG_REFRESH == "config.refresh"
     assert c.CONTROL_OP_DEVICE_IDENTIFY == "device.identify"
+    assert c.CONTROL_OP_GUARD_VISION_BENCHMARK == "guard.vision.benchmark"
+    assert c.CONTROL_OP_GUARD_RUNTIME_SYNC == "guard.runtime.sync"
     assert c.VALID_CONTROL_OPS == {
         "room.join",
         "playback.stop",
         "ptt.turn_status",
         "config.refresh",
         "device.identify",
+        "guard.vision.benchmark",
+        "guard.runtime.sync",
     }
     assert c.CONTROL_OP_ALIASES == {
         ("wake", "room.join"),
