@@ -148,6 +148,9 @@ CONTROL_OP_GUARD_VISION_BENCHMARK = "guard.vision.benchmark"
 # state and revision; the device obtains its parameters from the signed Guard
 # runtime-config pull endpoint.
 CONTROL_OP_GUARD_RUNTIME_SYNC = "guard.runtime.sync"
+# Owner-level profile reconciliation. The command is media-free; the device
+# pulls its manifest and opaque references from signed Guard endpoints.
+CONTROL_OP_GUARD_OWNER_FACE_PROFILE_SYNC = "guard.owner_face_profile.sync"
 VALID_CONTROL_OPS = frozenset(
     {
         CONTROL_OP_ROOM_JOIN,
@@ -157,6 +160,7 @@ VALID_CONTROL_OPS = frozenset(
         CONTROL_OP_DEVICE_IDENTIFY,
         CONTROL_OP_GUARD_VISION_BENCHMARK,
         CONTROL_OP_GUARD_RUNTIME_SYNC,
+        CONTROL_OP_GUARD_OWNER_FACE_PROFILE_SYNC,
     }
 )
 CONTROL_OP_ALIASES = frozenset(

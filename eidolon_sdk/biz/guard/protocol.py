@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from typing import Annotated, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, TypeAdapter, field_validator, model_validator
@@ -11,6 +12,7 @@ SILENT_PRESENCE_POLICY_ID = "silent_presence"
 GUARD_RUNTIME_SCHEMA_VERSION = 1
 GUARD_PRESENCE_CANDIDATE_TYPE = "guard.presence.candidate"
 GUARD_PRESENCE_ABSENT_TYPE = "guard.presence.absent"
+_SIGNAL_KEY_RE = re.compile(r"^[a-z][a-z0-9_.]{0,63}$")
 
 
 class GuardSilentPresenceConfig(BaseModel):
@@ -89,7 +91,7 @@ class _GuardMessage(BaseModel):
     cannot silently enter the P0 control plane.
     """
 
-    model_config = ConfigDict(extra="forbid", frozen=True, strict=True)
+    model_config = ConfigDict(extra="forbid", frozen=True, strict=True, allow_inf_nan=False)
 
     schema_v: Literal[GUARD_SCHEMA_VERSION] = GUARD_SCHEMA_VERSION
     guard_companion_id: str = Field(min_length=1, max_length=64)
@@ -100,7 +102,7 @@ class _GuardMessage(BaseModel):
 
 
 class GuardCameraFact(BaseModel):
-    model_config = ConfigDict(extra="forbid", frozen=True, strict=True)
+    model_config = ConfigDict(extra="forbid", frozen=True, strict=True, allow_inf_nan=False)
 
     frame_hash: str | None = Field(default=None, min_length=8, max_length=128)
     motion_score: float | None = Field(default=None, ge=0)
@@ -108,15 +110,30 @@ class GuardCameraFact(BaseModel):
 
 class GuardPresenceCandidate(_GuardMessage):
     type: Literal[GUARD_PRESENCE_CANDIDATE_TYPE] = GUARD_PRESENCE_CANDIDATE_TYPE
-    signals: dict[str, float | int | bool] = Field(default_factory=dict)
+    # Bounded, named scalar telemetry leaves room for future local detectors
+    # without becoming an unbounded metadata or media tunnel.
+    signals: dict[str, float | int | bool] = Field(default_factory=dict, max_length=16)
     camera: GuardCameraFact | None = None
     raw_retention: Literal["none"] = "none"
     debounce_ms: int = Field(default=0, ge=0, le=600_000)
 
+    @field_validator("signals")
+    @classmethod
+    def _signals_use_bounded_extension_keys(
+        cls, value: dict[str, float | int | bool]
+    ) -> dict[str, float | int | bool]:
+        for key in value:
+            if _SIGNAL_KEY_RE.fullmatch(key) is None:
+                raise ValueError("guard signal names must be lowercase dotted identifiers")
+        return value
+
 
 class GuardPresenceVerified(_GuardMessage):
     type: Literal["guard.presence.verified"] = "guard.presence.verified"
-    verifier: Literal["fixture", "channel"] = "fixture"
+    # Verified facts are not emitted by the production ATK ingress yet.  Keep
+    # the contract fixture-only until a real verifier has an authenticated
+    # producer and an end-to-end delivery path.
+    verifier: Literal["fixture"] = "fixture"
     verdict: Literal["present", "unknown", "rejected"]
     confidence: float | None = Field(default=None, ge=0, le=1)
     raw_retention: Literal["none"] = "none"
@@ -137,7 +154,6 @@ class GuardPolicyAction(_GuardMessage):
         "mission_control.annotate",
         "mission_control.clear",
         "body.presence.set",
-        "body.look_at",
     ]
     subscriber: str = Field(default="mission_control_fixture", min_length=1, max_length=128)
     payload: dict[str, str | int | float | bool | None] = Field(default_factory=dict)

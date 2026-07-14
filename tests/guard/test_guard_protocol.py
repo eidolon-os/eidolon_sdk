@@ -50,6 +50,46 @@ def test_guard_contract_rejects_unknown_versions() -> None:
         parse_guard_message(payload)
 
 
+def test_guard_protocol_rejects_unimplemented_verifier_and_action() -> None:
+    verified = {
+        **_candidate(),
+        "type": "guard.presence.verified",
+        "verifier": "channel",
+        "verdict": "present",
+    }
+    with pytest.raises(ValidationError):
+        parse_guard_message(verified)
+
+    action = {
+        "type": "guard.policy.action",
+        "schema_v": 1,
+        "guard_companion_id": "guard-owner-1",
+        "device_id": "atk-1",
+        "correlation_id": "corr-1",
+        "guard_epoch": 2,
+        "ts_ms": 1_700_000_000_000,
+        "action_id": "action-1",
+        "policy_id": "silent_presence",
+        "action": "body.look_at",
+    }
+    with pytest.raises(ValidationError):
+        parse_guard_message(action)
+
+
+@pytest.mark.parametrize(
+    "signals",
+    [
+        {"bad signal": 1},
+        {f"signal_{index}": index for index in range(17)},
+    ],
+)
+def test_guard_candidate_bounds_extension_telemetry(signals: dict) -> None:
+    payload = _candidate()
+    payload["signals"] = signals
+    with pytest.raises(ValidationError):
+        parse_guard_message(payload)
+
+
 @pytest.mark.parametrize(
     "patch",
     [

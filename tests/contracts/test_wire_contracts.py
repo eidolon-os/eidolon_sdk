@@ -54,6 +54,10 @@ def test_control_ops_are_stable() -> None:
     assert c.CONTROL_OP_DEVICE_IDENTIFY == "device.identify"
     assert c.CONTROL_OP_GUARD_VISION_BENCHMARK == "guard.vision.benchmark"
     assert c.CONTROL_OP_GUARD_RUNTIME_SYNC == "guard.runtime.sync"
+    assert (
+        c.CONTROL_OP_GUARD_OWNER_FACE_PROFILE_SYNC
+        == "guard.owner_face_profile.sync"
+    )
     assert c.VALID_CONTROL_OPS == {
         "room.join",
         "playback.stop",
@@ -62,6 +66,7 @@ def test_control_ops_are_stable() -> None:
         "device.identify",
         "guard.vision.benchmark",
         "guard.runtime.sync",
+        "guard.owner_face_profile.sync",
     }
     assert c.CONTROL_OP_ALIASES == {
         ("wake", "room.join"),
