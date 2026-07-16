@@ -11,6 +11,7 @@ from .kg import (
     KgInvalidateCommand,
     KgPredicate,
     MemoryCommandPayload,
+    PrivacyMutationCommand,
     UserConfirmedFactCommand,
 )
 from .envelope import (
@@ -76,6 +77,7 @@ __all__ = [
     "MemoryRuntimeRoute",
     "KgPredicate",
     "MemoryCommandPayload",
+    "PrivacyMutationCommand",
     "UserConfirmedFactCommand",
     "all_memory_stream_patterns",
     "build_memory_actor_context",

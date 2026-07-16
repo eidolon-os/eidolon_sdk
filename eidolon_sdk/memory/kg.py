@@ -113,6 +113,24 @@ class UserConfirmedFactCommand(_BaseMemoryCommand):
     extensions: dict[str, dict[str, Any]] = Field(default_factory=dict)
 
 
+class PrivacyMutationCommand(_BaseMemoryCommand):
+    """Apply an explicitly confirmed privacy mutation to exact drawer IDs."""
+
+    kind: Literal["privacy_mutation"] = "privacy_mutation"
+    action: Literal["archive", "delete"]
+    drawer_ids: list[str] = Field(min_length=1, max_length=100)
+    preview_id: str = Field(min_length=1)
+    target: str = ""
+
+    @field_validator("drawer_ids")
+    @classmethod
+    def _valid_drawer_ids(cls, values: list[str]) -> list[str]:
+        cleaned = list(dict.fromkeys(value.strip() for value in values if value.strip()))
+        if not cleaned or any(not value.startswith("drawer_") for value in cleaned):
+            raise ValueError("drawer_ids must contain MemPalace drawer IDs")
+        return cleaned
+
+
 class DeviceSyncEvent(EidolonWireModel):
     """One offline memory event replayed from a device outbox."""
 
@@ -135,6 +153,7 @@ MemoryCommandPayload = (
     | KgInvalidateCommand
     | ConsolidatorIngestThemeCommand
     | UserConfirmedFactCommand
+    | PrivacyMutationCommand
     | DeviceSyncBatchPayload
 )
 """Discriminated union; route on the ``kind`` field."""

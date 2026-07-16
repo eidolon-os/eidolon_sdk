@@ -9,6 +9,7 @@ from eidolon_sdk.memory import (
     SENSITIVE_PREDICATES,
     ConversationTurnPayload,
     KgAddTripleCommand,
+    PrivacyMutationCommand,
     build_memory_actor_context,
     conversation_turn_subject,
     envelope_memory_payload,
@@ -134,6 +135,30 @@ def test_kg_command_predicate_contract() -> None:
             subject="Alice",
             predicate="invented_relation",
             object="tea",
+        )
+
+
+def test_privacy_mutation_command_is_exact_id_only() -> None:
+    command = PrivacyMutationCommand(
+        request_id="privacy-1",
+        memory_space_id="realm:owner-a:default",
+        issued_at="2026-06-15T00:00:00Z",
+        action="delete",
+        drawer_ids=["drawer_a", "drawer_b", "drawer_a"],
+        preview_id="preview-1",
+    )
+    parsed = parse_memory_command(envelope_memory_payload(command))
+
+    assert isinstance(parsed, PrivacyMutationCommand)
+    assert parsed.drawer_ids == ["drawer_a", "drawer_b"]
+    with pytest.raises(ValidationError, match="drawer_ids"):
+        PrivacyMutationCommand(
+            request_id="privacy-2",
+            memory_space_id="realm:owner-a:default",
+            issued_at="2026-06-15T00:00:00Z",
+            action="delete",
+            drawer_ids=["natural language target"],
+            preview_id="preview-2",
         )
 
 
