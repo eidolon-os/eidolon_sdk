@@ -5,7 +5,12 @@ from __future__ import annotations
 import pytest
 from pydantic import ValidationError
 
-from eidolon_sdk.memory import MemoryIntent
+from eidolon_sdk.memory import (
+    MemoryIntent,
+    MemoryIntentCommand,
+    envelope_memory_payload,
+    parse_memory_command,
+)
 
 
 def _intent(**updates) -> MemoryIntent:
@@ -63,3 +68,27 @@ def test_authority_and_operation_are_closed_contracts() -> None:
         _intent(authority="system_guess")
     with pytest.raises(ValidationError):
         _intent(operation_hint="supersede")
+
+
+def test_memory_intent_command_is_the_only_explicit_intent_wire_shape() -> None:
+    intent = _intent()
+    command = MemoryIntentCommand(
+        request_id="request-1",
+        memory_space_id=intent.memory_space_id,
+        issued_at="2026-07-16T00:00:00Z",
+        issuer="agent",
+        intent=intent,
+    )
+    parsed = parse_memory_command(envelope_memory_payload(command))
+    assert isinstance(parsed, MemoryIntentCommand)
+    assert parsed.intent.intent_id == intent.intent_id
+
+
+def test_memory_intent_command_rejects_cross_realm_intent() -> None:
+    with pytest.raises(ValidationError):
+        MemoryIntentCommand(
+            request_id="request-1",
+            memory_space_id="r:bob:default",
+            issued_at="2026-07-16T00:00:00Z",
+            intent=_intent(),
+        )

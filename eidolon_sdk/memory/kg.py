@@ -4,9 +4,10 @@ from __future__ import annotations
 
 from typing import Any, Literal
 
-from pydantic import Field, field_validator
+from pydantic import Field, field_validator, model_validator
 
 from ._model import EidolonWireModel
+from .intent import MemoryIntent
 from .subjects import validate_memory_space_id
 
 KgPredicate = Literal[
@@ -96,21 +97,17 @@ class ConsolidatorIngestThemeCommand(_BaseMemoryCommand):
     confidence: float = Field(ge=0.0, le=1.0, default=0.7)
 
 
-class UserConfirmedFactCommand(_BaseMemoryCommand):
-    kind: Literal["user_confirm_fact"] = "user_confirm_fact"
-    text: str = Field(min_length=1)
-    wing: str
-    memory_type: str = "profile"
-    importance: int = Field(ge=1, le=5, default=5)
-    confidence: float = Field(ge=0.0, le=1.0, default=0.99)
-    tags: list[str] = Field(default_factory=list)
-    scope: Literal["global", "persona", "agent", "device", "session"] = "persona"
-    visibility: Literal["all_devices", "current_device", "private"] = "all_devices"
-    source_device_id: str = ""
-    target_device_id: str | None = None
-    source_instance_id: str = ""
-    session_id: str = ""
-    extensions: dict[str, dict[str, Any]] = Field(default_factory=dict)
+class MemoryIntentCommand(_BaseMemoryCommand):
+    """Submit one explicit business intent through the Realm command stream."""
+
+    kind: Literal["memory_intent"] = "memory_intent"
+    intent: MemoryIntent
+
+    @model_validator(mode="after")
+    def _same_memory_space(self) -> MemoryIntentCommand:
+        if self.intent.memory_space_id != self.memory_space_id:
+            raise ValueError("intent memory_space_id must match command memory_space_id")
+        return self
 
 
 class PrivacyMutationCommand(_BaseMemoryCommand):
@@ -152,7 +149,7 @@ MemoryCommandPayload = (
     KgAddTripleCommand
     | KgInvalidateCommand
     | ConsolidatorIngestThemeCommand
-    | UserConfirmedFactCommand
+    | MemoryIntentCommand
     | PrivacyMutationCommand
     | DeviceSyncBatchPayload
 )
