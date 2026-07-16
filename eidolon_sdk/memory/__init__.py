@@ -14,6 +14,12 @@ from .kg import (
     PrivacyMutationCommand,
     UserConfirmedFactCommand,
 )
+from .intent import (
+    MemoryIntent,
+    MemoryIntentAuthority,
+    MemoryIntentOperation,
+    MemoryIntentType,
+)
 from .envelope import (
     MEMORY_SCHEMA_VERSION,
     MemoryEnvelope,
@@ -77,6 +83,10 @@ __all__ = [
     "MemoryRuntimeRoute",
     "KgPredicate",
     "MemoryCommandPayload",
+    "MemoryIntent",
+    "MemoryIntentAuthority",
+    "MemoryIntentOperation",
+    "MemoryIntentType",
     "PrivacyMutationCommand",
     "UserConfirmedFactCommand",
     "all_memory_stream_patterns",
