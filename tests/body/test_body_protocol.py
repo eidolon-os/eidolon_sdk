@@ -1,9 +1,7 @@
 from __future__ import annotations
 
 from eidolon_sdk.biz.body import (
-    BODY_OP_DEVICE_IDENTIFY,
     BODY_OP_PRESENCE_SET,
-    BODY_OP_SOUND_PLAY,
     BodyCommandResult,
     capabilities_from_json,
     command_result_to_dict,
@@ -17,14 +15,17 @@ def test_capabilities_from_json_accepts_ops_list() -> None:
     assert capabilities[0].input_schema["required"] == ["sound"]
 
 
-def test_capabilities_from_json_defaults_known_esp32_body_ops() -> None:
+def test_capabilities_from_json_does_not_guess_ops_from_device_kind() -> None:
     capabilities = capabilities_from_json({}, device_kind="esp-box-3")
+    assert capabilities == ()
 
-    names = {item.name for item in capabilities}
-    assert BODY_OP_SOUND_PLAY in names
-    assert BODY_OP_DEVICE_IDENTIFY in names
-    assert "room.join" in names
-    assert BODY_OP_PRESENCE_SET not in names
+
+def test_capabilities_from_json_can_filter_unknown_ops() -> None:
+    capabilities = capabilities_from_json(
+        {"ops": ["device.roll_call", "vendor.unreviewed"]},
+        known_only=True,
+    )
+    assert [item.name for item in capabilities] == ["device.roll_call"]
 
 
 def test_presence_set_is_explicit_body_capability() -> None:

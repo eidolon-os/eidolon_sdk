@@ -41,10 +41,10 @@ class DeviceRegistryRecord(BaseModel):
     last_seen: str = ""
     metadata: dict = Field(default_factory=dict)
     # Device-declared capability manifest (capability_to_dict shape), submitted at
-    # registration. Empty means "not declared" — the persistence layer then
-    # preserves any operator/onboarding-authored capabilities rather than clearing
-    # them. Non-empty replaces them (the device is source of truth for its own body).
+    # registration. ``capabilities_declared`` distinguishes an explicit empty
+    # manifest (clear stale ops) from requests that do not carry a manifest.
     capabilities: list[dict] = Field(default_factory=list)
+    capabilities_declared: bool = False
 
 
 class DeviceBindingRecord(BaseModel):

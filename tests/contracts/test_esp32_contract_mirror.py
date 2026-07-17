@@ -25,6 +25,13 @@ def _esp32_topics_header() -> Path:
     return _workspace_root() / "eidolon-client-esp32/main/eidolon/eidolon_topics.h"
 
 
+def _esp32_source(relative: str) -> str:
+    path = _workspace_root() / "eidolon-client-esp32" / relative
+    if not path.exists():
+        pytest.skip("ESP32 client checkout is not present beside eidolon_sdk")
+    return path.read_text(encoding="utf-8")
+
+
 def _cpp_string_constants(header: str) -> dict[str, str]:
     return dict(
         re.findall(
@@ -74,10 +81,33 @@ def test_esp32_topics_header_matches_python_wire_contract() -> None:
     assert strings["kControlOpConfigRefresh"] == c.CONTROL_OP_CONFIG_REFRESH
     assert strings["kControlOpGuardRuntimeSync"] == c.CONTROL_OP_GUARD_RUNTIME_SYNC
     assert strings["kControlOpDeviceIdentify"] == c.CONTROL_OP_DEVICE_IDENTIFY
+    assert strings["kControlOpDeviceRollCall"] == c.CONTROL_OP_DEVICE_ROLL_CALL
     assert strings["kGuardPresenceCandidateType"] == guard.GUARD_PRESENCE_CANDIDATE_TYPE
     assert strings["kGuardPresenceAbsentType"] == guard.GUARD_PRESENCE_ABSENT_TYPE
+    assert strings["kGuardOwnerPresenceType"] == guard.GUARD_OWNER_PRESENCE_TYPE
 
     assert strings["kInteractionModeHalfDuplex"] == c.INTERACTION_MODE_HALF_DUPLEX
     assert strings["kInteractionModeFullDuplex"] == c.INTERACTION_MODE_FULL_DUPLEX
     assert strings["kSessionIntentUserInitiated"] == c.SESSION_INTENT_USER_INITIATED
     assert strings["kSessionIntentProactive"] == c.SESSION_INTENT_PROACTIVE
+
+
+def test_esp32_registration_and_roll_call_handler_match_e2e_contract() -> None:
+    hub_types = _esp32_source("main/eidolon/hub_types.h")
+    registration = _esp32_source("main/eidolon/hub_config_client.cc")
+    controller = _esp32_source("main/eidolon/eidolon_voice_controller.cc")
+    feedback = _esp32_source("main/eidolon/eidolon_local_feedback.cc")
+
+    assert 'kTxtRegisterUrl = "register_url"' in hub_types
+    assert "kTxtConfigUrl" not in hub_types
+    assert r'\"name\":\"device.roll_call\"' in registration
+    assert r'\"name\":\"ATK Guard\"' in registration
+    assert r'\"kind\":\"atk-guard\"' in registration
+    assert 'SignRequest(\n        "POST"' in registration
+    assert (
+        "{kControlOpDeviceRollCall, &EidolonVoiceController::HandleDeviceRollCallCommand}"
+        in controller
+    )
+    assert "PlayRollCallFeedback()" in controller
+    assert 'AckCommand(command, "completed", "OK", "", "{\\\"played\\\":true}")' in controller
+    assert "esp_err_t PlayRollCallFeedback()" in feedback

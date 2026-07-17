@@ -2,6 +2,7 @@
 
 from eidolon_sdk.biz.body.capabilities import (
     BODY_OP_DEVICE_IDENTIFY,
+    BODY_OP_DEVICE_ROLL_CALL,
     BODY_OP_DEVICE_REBOOT,
     BODY_OP_DISPLAY_UPDATE,
     BODY_OP_PRESENCE_SET,
@@ -28,6 +29,7 @@ from eidolon_sdk.biz.body.models import (
 
 __all__ = [
     "BODY_OP_DEVICE_IDENTIFY",
+    "BODY_OP_DEVICE_ROLL_CALL",
     "BODY_OP_DEVICE_REBOOT",
     "BODY_OP_DISPLAY_UPDATE",
     "BODY_OP_PRESENCE_SET",

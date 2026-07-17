@@ -14,6 +14,7 @@ from eidolon_sdk.biz.contracts import (
 BODY_OP_SOUND_PLAY = "sound.play"
 BODY_OP_DISPLAY_UPDATE = "display.update"
 BODY_OP_DEVICE_IDENTIFY = "device.identify"
+BODY_OP_DEVICE_ROLL_CALL = "device.roll_call"
 BODY_OP_ROOM_LEAVE = "room.leave"
 BODY_OP_VOLUME_SET = "volume.set"
 BODY_OP_DEVICE_REBOOT = "device.reboot"
@@ -54,6 +55,26 @@ KNOWN_BODY_CAPABILITIES: dict[str, BodyCapability] = {
             "properties": {"reason": {"type": "string"}},
             "additionalProperties": True,
         },
+    ),
+    BODY_OP_DEVICE_ROLL_CALL: BodyCapability(
+        name=BODY_OP_DEVICE_ROLL_CALL,
+        description=(
+            "Respond when the user asks whether this device is present or calls it by name. "
+            "The device plays its local roll-call cue."
+        ),
+        input_schema={
+            "type": "object",
+            "properties": {},
+            "additionalProperties": False,
+        },
+        result_schema={
+            "type": "object",
+            "properties": {"played": {"type": "boolean"}},
+            "required": ["played"],
+            "additionalProperties": True,
+        },
+        risk_level="low",
+        requires_ack=True,
     ),
     CONTROL_OP_ROOM_JOIN: BodyCapability(
         name=CONTROL_OP_ROOM_JOIN,
@@ -150,7 +171,12 @@ def capability_from_json(value: Any) -> BodyCapability | None:
     )
 
 
-def capabilities_from_json(value: Any, *, device_kind: str = "unknown") -> tuple[BodyCapability, ...]:
+def capabilities_from_json(
+    value: Any,
+    *,
+    device_kind: str = "unknown",
+    known_only: bool = False,
+) -> tuple[BodyCapability, ...]:
     raw_items: list[Any]
     if isinstance(value, dict):
         if isinstance(value.get("capabilities"), list):
@@ -166,28 +192,15 @@ def capabilities_from_json(value: Any, *, device_kind: str = "unknown") -> tuple
     else:
         raw_items = []
 
-    capabilities = [item for raw in raw_items if (item := capability_from_json(raw)) is not None]
+    capabilities = [
+        item
+        for raw in raw_items
+        if (item := capability_from_json(raw)) is not None
+        and (not known_only or item.name in KNOWN_BODY_CAPABILITIES)
+    ]
     if capabilities:
         return tuple(_dedupe_capabilities(capabilities))
-    if _is_default_body_device_kind(device_kind):
-        return tuple(
-            KNOWN_BODY_CAPABILITIES[name]
-            for name in (
-                BODY_OP_SOUND_PLAY,
-                BODY_OP_DISPLAY_UPDATE,
-                BODY_OP_DEVICE_IDENTIFY,
-                CONTROL_OP_ROOM_JOIN,
-                BODY_OP_ROOM_LEAVE,
-                CONTROL_OP_PLAYBACK_STOP,
-                BODY_OP_VOLUME_SET,
-            )
-        )
     return ()
-
-
-def _is_default_body_device_kind(device_kind: str) -> bool:
-    normalized = device_kind.strip().lower()
-    return any(token in normalized for token in ("esp", "box", "speaker", "screen", "display"))
 
 
 def _dedupe_capabilities(items: list[BodyCapability]) -> list[BodyCapability]:
