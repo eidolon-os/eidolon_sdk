@@ -8,11 +8,12 @@ one envelope:
 * host Vision Worker (T2): ``sense.fatigue`` and ``sense.event`` distilled from
   gated image bursts, attributed to the model that produced them.
 
-They are siblings of the ``guard.*`` contracts (see ``eidolon_sdk.biz.guard``):
-the same active-GuardBinding-scoped ingress, the same envelope discipline
-(bounded scalar signals, enums, no raw media / embeddings / owner identity),
-and the same ``extra="forbid"`` strictness so pixels can never leak into the
-control plane.
+They are **owner-scoped ambient** facts (D1 ADR): the observing device belongs
+to the owner, and whichever companion is currently engaged consumes them — the
+facts are NOT pinned to a companion. Envelope discipline mirrors ``guard.*``
+(bounded scalar signals, enums, no raw media / embeddings / biometric identity,
+``extra="forbid"`` so pixels never leak into the control plane), but the scope
+key is ``owner_id`` + ``device_id`` and is decoupled from GuardBinding.
 """
 
 from __future__ import annotations
@@ -42,19 +43,21 @@ def _validate_signal_keys(
 class _SenseMessage(BaseModel):
     """Common envelope for sense.* facts on the ``eidolon.control`` data topic.
 
-    Mirrors the guard envelope so both planes flow through the same active
-    GuardBinding validation. Raw frames, audio, biometric templates,
-    embeddings, media URLs, and any owner identity are intentionally absent;
-    receivers reject unknown fields so those payloads cannot enter the plane.
+    Owner-scoped (D1 ADR): the fact is attributed to an owner + the observing
+    device, NOT to a companion — whichever companion is currently engaged
+    consumes it. The ingress derives/validates the owner from the authenticated
+    device identity. Raw frames, audio, biometric templates, embeddings and
+    media URLs are intentionally absent; receivers reject unknown fields so
+    those payloads cannot enter the plane.
     """
 
     model_config = ConfigDict(extra="forbid", frozen=True, strict=True, allow_inf_nan=False)
 
     schema_v: Literal[SENSE_SCHEMA_VERSION] = SENSE_SCHEMA_VERSION
-    guard_companion_id: str = Field(min_length=1, max_length=64)
+    owner_id: str = Field(min_length=1, max_length=64)
     device_id: str = Field(min_length=1, max_length=128)
     correlation_id: str = Field(min_length=1, max_length=96)
-    guard_epoch: int = Field(ge=0)
+    epoch: int = Field(ge=0)
     ts_ms: int = Field(ge=0)
 
 

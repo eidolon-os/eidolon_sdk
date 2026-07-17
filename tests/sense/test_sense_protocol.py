@@ -16,10 +16,10 @@ from eidolon_sdk.biz.sense import (
 def _envelope() -> dict:
     return {
         "schema_v": 1,
-        "guard_companion_id": "guard-owner-1",
+        "owner_id": "owner-1",
         "device_id": "atk-1",
         "correlation_id": "sn-boot1-r5-e3",
-        "guard_epoch": 3,
+        "epoch": 3,
         "ts_ms": 1_700_000_000_000,
     }
 
@@ -97,9 +97,11 @@ def test_event_reports_bounded_class_only() -> None:
         {"image": "aGVsbG8="},
         {"frame": [1, 2, 3]},
         {"embedding": [0.1, 0.2]},
-        {"owner_id": "manson"},
         {"photo_url": "https://x/y.jpg"},
         {"unknown_field": 1},
+        # owner-scoped (D1): the fact must NOT carry a companion pin
+        {"companion_id": "guard-1"},
+        {"guard_companion_id": "guard-1"},
     ],
 )
 def test_rejects_sensitive_or_unknown_fields(sensitive: dict) -> None:
@@ -115,7 +117,7 @@ def test_rejects_unknown_schema_version() -> None:
 @pytest.mark.parametrize(
     "patch",
     [
-        {"guard_epoch": "3"},
+        {"epoch": "3"},
         {"ts_ms": "1700000000000"},
         {"confidence": "0.5"},
     ],
