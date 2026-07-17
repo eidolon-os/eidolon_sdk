@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from typing import Any
-
 from eidolon_sdk.biz.body.models import BodyCapability
 from eidolon_sdk.biz.contracts import (
     CONTROL_OP_CONFIG_REFRESH,
@@ -142,73 +140,3 @@ KNOWN_BODY_CAPABILITIES: dict[str, BodyCapability] = {
         requires_ack=True,
     ),
 }
-
-
-def capability_from_json(value: Any) -> BodyCapability | None:
-    if isinstance(value, str):
-        return KNOWN_BODY_CAPABILITIES.get(value) or BodyCapability(name=value)
-    if not isinstance(value, dict):
-        return None
-    name = str(value.get("name") or value.get("op") or "").strip()
-    if not name:
-        return None
-    base = KNOWN_BODY_CAPABILITIES.get(name)
-    return BodyCapability(
-        name=name,
-        description=str(value.get("description") or (base.description if base else "")),
-        input_schema=dict(value.get("input_schema") or value.get("schema") or (base.input_schema if base else {})),
-        result_schema=dict(value.get("result_schema") or (base.result_schema if base else {})),
-        side_effect=bool(value.get("side_effect", base.side_effect if base else True)),
-        requires_online=bool(value.get("requires_online", base.requires_online if base else True)),
-        requires_ack=bool(value.get("requires_ack", base.requires_ack if base else True)),
-        risk_level=value.get("risk_level") or (base.risk_level if base else "low"),
-        requires_confirmation=bool(
-            value.get(
-                "requires_confirmation",
-                base.requires_confirmation if base else False,
-            )
-        ),
-    )
-
-
-def capabilities_from_json(
-    value: Any,
-    *,
-    device_kind: str = "unknown",
-    known_only: bool = False,
-) -> tuple[BodyCapability, ...]:
-    raw_items: list[Any]
-    if isinstance(value, dict):
-        if isinstance(value.get("capabilities"), list):
-            raw_items = list(value["capabilities"])
-        elif isinstance(value.get("ops"), list):
-            raw_items = list(value["ops"])
-        elif isinstance(value.get("body"), list):
-            raw_items = list(value["body"])
-        else:
-            raw_items = [key for key, enabled in value.items() if enabled is True]
-    elif isinstance(value, list):
-        raw_items = list(value)
-    else:
-        raw_items = []
-
-    capabilities = [
-        item
-        for raw in raw_items
-        if (item := capability_from_json(raw)) is not None
-        and (not known_only or item.name in KNOWN_BODY_CAPABILITIES)
-    ]
-    if capabilities:
-        return tuple(_dedupe_capabilities(capabilities))
-    return ()
-
-
-def _dedupe_capabilities(items: list[BodyCapability]) -> list[BodyCapability]:
-    seen: set[str] = set()
-    out: list[BodyCapability] = []
-    for item in items:
-        if item.name in seen:
-            continue
-        seen.add(item.name)
-        out.append(item)
-    return out

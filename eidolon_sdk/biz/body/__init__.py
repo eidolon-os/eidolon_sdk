@@ -11,8 +11,6 @@ from eidolon_sdk.biz.body.capabilities import (
     BODY_OP_SOUND_PLAY,
     BODY_OP_VOLUME_SET,
     KNOWN_BODY_CAPABILITIES,
-    capabilities_from_json,
-    capability_from_json,
 )
 from eidolon_sdk.biz.body.models import (
     BodyCapability,
@@ -25,6 +23,20 @@ from eidolon_sdk.biz.body.models import (
     capability_to_dict,
     command_result_to_dict,
     device_to_dict,
+)
+from eidolon_sdk.biz.body.manifest import (
+    CapabilityDeclaration,
+    CapabilityManifest,
+    MAX_CAPABILITIES_PER_DEVICE,
+    validate_capability_arguments,
+)
+from eidolon_sdk.biz.body.blackboard import (
+    DEVICE_BLACKBOARD_BUCKET,
+    DEVICE_BLACKBOARD_SCHEMA_VERSION,
+    OwnerDeviceBlackboardSnapshot,
+    RuntimeDeviceEntry,
+    capability_manifest_revision,
+    owner_device_blackboard_key,
 )
 
 __all__ = [
@@ -45,8 +57,16 @@ __all__ = [
     "BodyDevice",
     "BodyDeviceStatus",
     "BodyRiskLevel",
-    "capabilities_from_json",
-    "capability_from_json",
+    "DEVICE_BLACKBOARD_BUCKET",
+    "DEVICE_BLACKBOARD_SCHEMA_VERSION",
+    "CapabilityDeclaration",
+    "CapabilityManifest",
+    "MAX_CAPABILITIES_PER_DEVICE",
+    "OwnerDeviceBlackboardSnapshot",
+    "RuntimeDeviceEntry",
+    "capability_manifest_revision",
+    "owner_device_blackboard_key",
+    "validate_capability_arguments",
     "capability_to_dict",
     "command_result_to_dict",
     "device_to_dict",

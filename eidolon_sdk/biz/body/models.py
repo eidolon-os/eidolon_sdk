@@ -32,6 +32,7 @@ BodyRiskLevel = Literal["low", "medium", "high", "critical"]
 @dataclass(frozen=True, slots=True)
 class BodyCapability:
     name: str
+    version: int = 1
     description: str = ""
     input_schema: dict[str, Any] = field(default_factory=dict)
     result_schema: dict[str, Any] = field(default_factory=dict)
@@ -47,6 +48,7 @@ class BodyDevice:
     device_id: str
     name: str = ""
     aliases: tuple[str, ...] = ()
+    provider_companion_id: str = ""
     kind: str = "unknown"
     status: BodyDeviceStatus = "unknown"
     is_current_device: bool = False
@@ -98,6 +100,7 @@ def device_to_dict(device: BodyDevice) -> dict[str, Any]:
         "device_id": device.device_id,
         "name": device.name,
         "aliases": list(device.aliases),
+        "provider_companion_id": device.provider_companion_id,
         "kind": device.kind,
         "status": device.status,
         "is_current_device": device.is_current_device,
@@ -110,6 +113,7 @@ def device_to_dict(device: BodyDevice) -> dict[str, Any]:
 def capability_to_dict(capability: BodyCapability) -> dict[str, Any]:
     return {
         "name": capability.name,
+        "version": capability.version,
         "description": capability.description,
         "input_schema": capability.input_schema,
         "result_schema": capability.result_schema,
