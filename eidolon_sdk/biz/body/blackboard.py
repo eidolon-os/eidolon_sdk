@@ -17,7 +17,7 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 from eidolon_sdk.biz.body.manifest import CapabilityDeclaration, CapabilityManifest
 
 DEVICE_BLACKBOARD_BUCKET = "EIDOLON_RUNTIME_DEVICES"
-DEVICE_BLACKBOARD_SCHEMA_VERSION = 1
+DEVICE_BLACKBOARD_SCHEMA_VERSION = 2
 
 RuntimeDeviceStatus = Literal["registered_waiting_transport", "online"]
 CapabilityVisibility = Literal["owner", "bound_companion"]
@@ -49,6 +49,7 @@ class RuntimeDeviceEntry(BaseModel):
     device_id: str = Field(min_length=1, max_length=128)
     registration_id: str = Field(min_length=1, max_length=128)
     provider_companion_id: str | None = Field(default=None, max_length=128)
+    provider_companion_name: str = Field(default="", max_length=128)
     name: str = Field(default="", max_length=128)
     aliases: tuple[str, ...] = Field(default_factory=tuple, max_length=32)
     visibility: CapabilityVisibility = "owner"
@@ -62,9 +63,14 @@ class RuntimeDeviceEntry(BaseModel):
     participant_sid: str = Field(default="", max_length=128)
     presence_revision: str = Field(default="", max_length=128)
 
-    def capability(self, name: str) -> CapabilityDeclaration | None:
+    def capability(self, name: str, version: int | None = None) -> CapabilityDeclaration | None:
+        """Find a declared capability, optionally pinned to an exact version.
+
+        Name-only lookup is for discovery and policy checks. Command execution
+        must pass ``version`` so dispatch cannot silently cross contract versions.
+        """
         for capability in self.capabilities:
-            if capability.name == name:
+            if capability.name == name and (version is None or capability.version == version):
                 return capability
         return None
 
@@ -76,7 +82,7 @@ class RuntimeDeviceEntry(BaseModel):
 class OwnerDeviceBlackboardSnapshot(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
 
-    schema_version: Literal[1] = DEVICE_BLACKBOARD_SCHEMA_VERSION
+    schema_version: Literal[2] = DEVICE_BLACKBOARD_SCHEMA_VERSION
     owner_id: str = Field(min_length=1, max_length=64)
     epoch: str = Field(min_length=1, max_length=128)
     revision: int = Field(ge=1)

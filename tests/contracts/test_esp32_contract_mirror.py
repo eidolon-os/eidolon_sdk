@@ -100,14 +100,18 @@ def test_esp32_registration_and_roll_call_handler_match_e2e_contract() -> None:
 
     assert 'kTxtRegisterUrl = "register_url"' in hub_types
     assert "kTxtConfigUrl" not in hub_types
-    assert r'\"name\":\"device.roll_call\"' in registration
-    assert r'\"name\":\"ATK Guard\"' in registration
-    assert r'\"kind\":\"atk-guard\"' in registration
+    assert r"\"name\":\"device.roll_call\"" in registration
+    assert (
+        r'\"device\":{\"name\":\"" BOARD_NAME "\",'
+        r'\"kind\":\"" BOARD_TYPE "\"}' in registration
+    )
+    assert r"\"version\":1" in registration
     assert 'SignRequest(\n        "POST"' in registration
     assert (
-        "{kControlOpDeviceRollCall, &EidolonVoiceController::HandleDeviceRollCallCommand}"
-        in controller
+        "{kControlOpDeviceRollCall, 1, "
+        "&EidolonVoiceController::HandleDeviceRollCallCommand}" in controller
     )
+    assert "command.capability_version != entry.capability_version" in controller
     assert "PlayRollCallFeedback()" in controller
-    assert 'AckCommand(command, "completed", "OK", "", "{\\\"played\\\":true}")' in controller
+    assert 'AckCommand(command, "completed", "OK", "", "{\\"played\\":true}")' in controller
     assert "esp_err_t PlayRollCallFeedback()" in feedback

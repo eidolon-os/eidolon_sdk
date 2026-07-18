@@ -51,6 +51,7 @@ def build_command_envelope(
     device_id: str,
     payload: dict[str, Any],
     op: str | None = None,
+    capability_version: int | None = None,
     ttl_ms: int = 30_000,
     qos: CommandQoS = "ack",
     priority: CommandPriority = "normal",
@@ -82,6 +83,10 @@ def build_command_envelope(
         "payload": payload,
         "caps": ["ack.v1", "result.v1"],
     }
+    if capability_version is not None:
+        if capability_version < 1:
+            raise ValueError("capability_version must be positive")
+        body["capability_version"] = capability_version
     return body
 
 

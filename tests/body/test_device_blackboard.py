@@ -36,6 +36,7 @@ def _entry(device_id: str, *, companion_id: str, visibility: str = "owner"):
         device_id=device_id,
         registration_id=f"reg-{device_id}",
         provider_companion_id=companion_id,
+        provider_companion_name=f"Companion {companion_id}",
         name=device_id,
         visibility=visibility,
         capabilities=manifest.capabilities,
@@ -55,6 +56,14 @@ def test_owner_key_is_stable_opaque_and_nats_safe():
     assert first.startswith("owner.") and first.endswith(".current")
 
 
+def test_capability_supports_discovery_and_exact_execution_lookup():
+    entry = _entry("guard", companion_id="guard")
+
+    assert entry.capability("device.roll_call") is not None
+    assert entry.capability("device.roll_call", 1) is not None
+    assert entry.capability("device.roll_call", 2) is None
+
+
 def test_snapshot_round_trip_and_companion_visibility():
     now = datetime.now(UTC)
     snapshot = OwnerDeviceBlackboardSnapshot(
@@ -66,21 +75,21 @@ def test_snapshot_round_trip_and_companion_visibility():
         updated_at=now,
         devices={
             "shared": _entry("shared", companion_id="guard"),
-            "private": _entry(
-                "private", companion_id="guard", visibility="bound_companion"
-            ),
+            "private": _entry("private", companion_id="guard", visibility="bound_companion"),
         },
     )
     restored = OwnerDeviceBlackboardSnapshot.from_bytes(
         snapshot.to_bytes(), expected_owner_id="owner-1"
     )
 
-    assert [item.device_id for item in restored.visible_devices(
-        requester_companion_id="box", now=now
-    )] == ["shared"]
-    assert [item.device_id for item in restored.visible_devices(
-        requester_companion_id="guard", now=now
-    )] == ["private", "shared"]
+    assert restored.schema_version == 2
+    assert restored.devices["shared"].provider_companion_name == "Companion guard"
+    assert [
+        item.device_id for item in restored.visible_devices(requester_companion_id="box", now=now)
+    ] == ["shared"]
+    assert [
+        item.device_id for item in restored.visible_devices(requester_companion_id="guard", now=now)
+    ] == ["private", "shared"]
 
 
 def test_snapshot_fails_closed_after_hub_or_device_lease_expires():
@@ -122,6 +131,4 @@ def test_snapshot_rejects_cross_owner_read():
         updated_at=now,
     )
     with pytest.raises(ValueError, match="owner mismatch"):
-        OwnerDeviceBlackboardSnapshot.from_bytes(
-            snapshot.to_bytes(), expected_owner_id="owner-2"
-        )
+        OwnerDeviceBlackboardSnapshot.from_bytes(snapshot.to_bytes(), expected_owner_id="owner-2")

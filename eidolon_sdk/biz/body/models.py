@@ -49,6 +49,7 @@ class BodyDevice:
     name: str = ""
     aliases: tuple[str, ...] = ()
     provider_companion_id: str = ""
+    provider_companion_name: str = ""
     kind: str = "unknown"
     status: BodyDeviceStatus = "unknown"
     is_current_device: bool = False
@@ -56,12 +57,12 @@ class BodyDevice:
     control_room_name: str = ""
     capabilities: tuple[BodyCapability, ...] = ()
 
-    def supports(self, op: str) -> bool:
-        return any(capability.name == op for capability in self.capabilities)
+    def supports(self, op: str, version: int | None = None) -> bool:
+        return self.capability(op, version) is not None
 
-    def capability(self, op: str) -> BodyCapability | None:
+    def capability(self, op: str, version: int | None = None) -> BodyCapability | None:
         for capability in self.capabilities:
-            if capability.name == op:
+            if capability.name == op and (version is None or capability.version == version):
                 return capability
         return None
 
@@ -70,6 +71,7 @@ class BodyDevice:
 class BodyCommand:
     target_device_id: str
     op: str
+    capability_version: int | None = None
     payload: dict[str, Any] = field(default_factory=dict)
     qos: CommandQoS = "ack"
     ttl_ms: int = 30_000
@@ -84,6 +86,7 @@ class BodyCommandResult:
     device_id: str
     op: str
     status: BodyCommandStatus
+    capability_version: int | None = None
     message: str = ""
     ack: dict[str, Any] | None = None
     result: Any = None
@@ -101,6 +104,7 @@ def device_to_dict(device: BodyDevice) -> dict[str, Any]:
         "name": device.name,
         "aliases": list(device.aliases),
         "provider_companion_id": device.provider_companion_id,
+        "provider_companion_name": device.provider_companion_name,
         "kind": device.kind,
         "status": device.status,
         "is_current_device": device.is_current_device,
@@ -130,6 +134,7 @@ def command_result_to_dict(result: BodyCommandResult) -> dict[str, Any]:
         "command_id": result.command_id,
         "device_id": result.device_id,
         "op": result.op,
+        "capability_version": result.capability_version,
         "status": result.status,
         "message": result.message,
         "ack": result.ack,
