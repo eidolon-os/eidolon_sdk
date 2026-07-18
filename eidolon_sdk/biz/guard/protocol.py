@@ -12,6 +12,7 @@ SILENT_PRESENCE_POLICY_ID = "silent_presence"
 GUARD_RUNTIME_SCHEMA_VERSION = 1
 GUARD_PRESENCE_CANDIDATE_TYPE = "guard.presence.candidate"
 GUARD_PRESENCE_ABSENT_TYPE = "guard.presence.absent"
+GUARD_OWNER_PRESENCE_TYPE = "guard.owner_presence"
 _SIGNAL_KEY_RE = re.compile(r"^[a-z][a-z0-9_.]{0,63}$")
 
 
@@ -69,6 +70,11 @@ class GuardRuntimeConfig(BaseModel):
     candidate_debounce_ms: int = Field(default=1_000, ge=200, le=600_000)
     absence_timeout_ms: int = Field(default=180_000, ge=400, le=3_600_000)
     consecutive_capture_failures: int = Field(default=5, ge=1, le=100)
+    owner_face_interval_ms: int = Field(default=1_500, ge=500, le=60_000)
+    owner_presence_enter_ms: int = Field(default=2_500, ge=500, le=60_000)
+    owner_presence_exit_ms: int = Field(default=12_000, ge=1_000, le=600_000)
+    owner_presence_heartbeat_ms: int = Field(default=10_000, ge=1_000, le=300_000)
+    owner_presence_lease_ms: int = Field(default=30_000, ge=5_000, le=600_000)
 
     @model_validator(mode="after")
     def _validate_runtime_relations(self) -> "GuardRuntimeConfig":
@@ -80,6 +86,12 @@ class GuardRuntimeConfig(BaseModel):
             raise ValueError("candidate_debounce_ms must be at least sample_interval_ms")
         if self.absence_timeout_ms < self.sample_interval_ms * 2:
             raise ValueError("absence_timeout_ms must be at least twice sample_interval_ms")
+        if self.owner_presence_enter_ms < self.owner_face_interval_ms:
+            raise ValueError("owner_presence_enter_ms must be at least owner_face_interval_ms")
+        if self.owner_presence_exit_ms < self.owner_face_interval_ms * 2:
+            raise ValueError("owner_presence_exit_ms must be at least twice owner_face_interval_ms")
+        if self.owner_presence_heartbeat_ms >= self.owner_presence_lease_ms:
+            raise ValueError("owner_presence_heartbeat_ms must be less than owner_presence_lease_ms")
         return self
 
 
@@ -146,6 +158,25 @@ class GuardPresenceAbsent(_GuardMessage):
     raw_retention: Literal["none"] = "none"
 
 
+class GuardOwnerPresence(_GuardMessage):
+    """Leased owner-presence fact from a locally applied profile."""
+
+    type: Literal[GUARD_OWNER_PRESENCE_TYPE] = GUARD_OWNER_PRESENCE_TYPE
+    state: Literal["present", "absent"]
+    profile_revision: int = Field(ge=1)
+    sequence: int = Field(ge=1)
+    lease_ms: int = Field(ge=0, le=600_000)
+    raw_retention: Literal["none"] = "none"
+
+    @model_validator(mode="after")
+    def _validate_lease(self) -> "GuardOwnerPresence":
+        if self.state == "present" and self.lease_ms < 5_000:
+            raise ValueError("present owner presence requires a lease of at least 5000ms")
+        if self.state == "absent" and self.lease_ms != 0:
+            raise ValueError("absent owner presence must have lease_ms=0")
+        return self
+
+
 class GuardPolicyAction(_GuardMessage):
     type: Literal["guard.policy.action"] = "guard.policy.action"
     action_id: str = Field(min_length=1, max_length=96)
@@ -172,6 +203,7 @@ GuardMessage = Annotated[
     GuardPresenceCandidate
     | GuardPresenceVerified
     | GuardPresenceAbsent
+    | GuardOwnerPresence
     | GuardPolicyAction
     | GuardPolicyActionAck,
     Field(discriminator="type"),

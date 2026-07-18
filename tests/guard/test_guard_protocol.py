@@ -4,6 +4,7 @@ import pytest
 from pydantic import ValidationError
 
 from eidolon_sdk.biz.guard import (
+    GuardOwnerPresence,
     GuardPresenceCandidate,
     normalize_guard_policy_config,
     normalize_guard_runtime_config,
@@ -11,6 +12,23 @@ from eidolon_sdk.biz.guard import (
     parse_guard_policy_config,
     parse_guard_runtime_config,
 )
+
+
+def _owner_presence(*, state: str = "present", sequence: int = 1) -> dict:
+    return {
+        "type": "guard.owner_presence",
+        "schema_v": 1,
+        "guard_companion_id": "guard-owner-1",
+        "device_id": "atk-1",
+        "correlation_id": "op-boot1-r5-e3",
+        "guard_epoch": 3,
+        "ts_ms": 1_700_000_000_000,
+        "state": state,
+        "profile_revision": 5,
+        "sequence": sequence,
+        "lease_ms": 30_000 if state == "present" else 0,
+        "raw_retention": "none",
+    }
 
 
 def _candidate() -> dict:
@@ -33,6 +51,37 @@ def test_candidate_contract_is_versioned_and_privacy_bounded() -> None:
     message = parse_guard_message(_candidate())
     assert isinstance(message, GuardPresenceCandidate)
     assert message.raw_retention == "none"
+
+
+def test_owner_presence_contract_is_stateful_leased_and_privacy_bounded() -> None:
+    message = parse_guard_message(_owner_presence())
+    assert isinstance(message, GuardOwnerPresence)
+    assert message.state == "present"
+    assert message.lease_ms == 30_000
+
+    absent = parse_guard_message(_owner_presence(state="absent", sequence=4))
+    assert isinstance(absent, GuardOwnerPresence)
+    assert absent.state == "absent"
+    assert absent.lease_ms == 0
+
+
+@pytest.mark.parametrize(
+    "patch",
+    [
+        {"lease_ms": 0},
+        {"state": "absent", "lease_ms": 30_000},
+        {"profile_revision": 0},
+        {"sequence": 0},
+        {"owner_id": "owner-1"},
+        {"similarity": 0.9},
+        {"faces": 1},
+    ],
+)
+def test_owner_presence_rejects_invalid_or_sensitive_shape(patch: dict) -> None:
+    payload = _owner_presence()
+    payload.update(patch)
+    with pytest.raises(ValidationError):
+        parse_guard_message(payload)
 
 
 @pytest.mark.parametrize("field", ["raw_image", "audio", "face_embedding", "template"])
@@ -163,6 +212,11 @@ def test_guard_runtime_config_is_versioned_and_normalized() -> None:
         "candidate_debounce_ms": 1000,
         "absence_timeout_ms": 180000,
         "consecutive_capture_failures": 5,
+        "owner_face_interval_ms": 1500,
+        "owner_presence_enter_ms": 2500,
+        "owner_presence_exit_ms": 12000,
+        "owner_presence_heartbeat_ms": 10000,
+        "owner_presence_lease_ms": 30000,
     }
 
 
