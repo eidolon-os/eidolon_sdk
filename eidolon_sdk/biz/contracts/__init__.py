@@ -51,13 +51,26 @@ LIVEKIT_AGENT_SESSION_TOPIC = "lk.agent.session"
 # Session metadata bus — stamped by hub into LiveKit participant_metadata,     #
 # resolved once by channel before AgentSession construction.                   #
 # --------------------------------------------------------------------------- #
-# interaction_mode: the duplex profile of the session.
+# interaction_mode: the duplex profile of the session. Three modes:
+#   full_duplex — open mic + device AEC + barge-in (user can interrupt the agent).
+#                 Device has a validated AEC reference (e.g. esp-box-3).
+#   half_duplex — auto-record after session start (no button), NO device AEC; the
+#                 mic is closed while the agent speaks (not interruptible). STT is
+#                 committed via the same end-of-turn (EOT) judgment as full_duplex.
+#                 For boards without a clean AEC reference (e.g. m5stack-stackchan).
+#   ptt         — push-to-talk: mic open only while the device button is held;
+#                 button release is the explicit end-of-turn. Mic closed otherwise.
+#                 For wearables / button devices (e.g. waveshare 2.06).
+# NOTE: half_duplex previously WAS push-to-talk; ptt is now its own mode and
+# half_duplex means auto-record-no-barge-in. All producers/consumers (device
+# firmware header, hub stamping, channel routing) must agree in lockstep.
 INTERACTION_MODE_HALF_DUPLEX = "half_duplex"
 INTERACTION_MODE_FULL_DUPLEX = "full_duplex"
+INTERACTION_MODE_PTT = "ptt"
 VALID_INTERACTION_MODES = frozenset(
-    {INTERACTION_MODE_HALF_DUPLEX, INTERACTION_MODE_FULL_DUPLEX}
+    {INTERACTION_MODE_HALF_DUPLEX, INTERACTION_MODE_FULL_DUPLEX, INTERACTION_MODE_PTT}
 )
-InteractionMode = Literal["half_duplex", "full_duplex"]
+InteractionMode = Literal["half_duplex", "full_duplex", "ptt"]
 
 # session_intent: why this voice session exists.
 SESSION_INTENT_USER_INITIATED = "user_initiated"

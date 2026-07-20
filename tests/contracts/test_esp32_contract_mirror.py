@@ -88,6 +88,7 @@ def test_esp32_topics_header_matches_python_wire_contract() -> None:
 
     assert strings["kInteractionModeHalfDuplex"] == c.INTERACTION_MODE_HALF_DUPLEX
     assert strings["kInteractionModeFullDuplex"] == c.INTERACTION_MODE_FULL_DUPLEX
+    assert strings["kInteractionModePtt"] == c.INTERACTION_MODE_PTT
     assert strings["kSessionIntentUserInitiated"] == c.SESSION_INTENT_USER_INITIATED
     assert strings["kSessionIntentProactive"] == c.SESSION_INTENT_PROACTIVE
 

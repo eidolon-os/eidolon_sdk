@@ -23,7 +23,8 @@ def test_topic_names_are_stable() -> None:
 def test_session_metadata_enums_are_stable() -> None:
     assert c.INTERACTION_MODE_HALF_DUPLEX == "half_duplex"
     assert c.INTERACTION_MODE_FULL_DUPLEX == "full_duplex"
-    assert c.VALID_INTERACTION_MODES == {"half_duplex", "full_duplex"}
+    assert c.INTERACTION_MODE_PTT == "ptt"
+    assert c.VALID_INTERACTION_MODES == {"half_duplex", "full_duplex", "ptt"}
     assert c.SESSION_INTENT_USER_INITIATED == "user_initiated"
     assert c.SESSION_INTENT_PROACTIVE == "proactive_initiated"
     assert c.VALID_SESSION_INTENTS == {"user_initiated", "proactive_initiated"}
