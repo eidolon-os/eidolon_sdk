@@ -63,15 +63,15 @@ class GuardRuntimeConfig(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True, strict=True)
 
     schema_v: Literal[GUARD_RUNTIME_SCHEMA_VERSION] = GUARD_RUNTIME_SCHEMA_VERSION
-    sample_interval_ms: int = Field(default=500, ge=200, le=60_000)
+    sample_interval_ms: int = Field(default=200, ge=200, le=60_000)
     preview_interval_ms: int = Field(default=1_000, ge=200, le=60_000)
     motion_threshold: int = Field(default=18, ge=0, le=255)
     motion_clear_threshold: int = Field(default=9, ge=0, le=255)
     candidate_debounce_ms: int = Field(default=1_000, ge=200, le=600_000)
     absence_timeout_ms: int = Field(default=180_000, ge=400, le=3_600_000)
     consecutive_capture_failures: int = Field(default=5, ge=1, le=100)
-    owner_face_interval_ms: int = Field(default=1_500, ge=500, le=60_000)
-    owner_presence_enter_ms: int = Field(default=2_500, ge=500, le=60_000)
+    owner_face_interval_ms: int = Field(default=500, ge=500, le=60_000)
+    owner_presence_enter_ms: int = Field(default=600, ge=500, le=60_000)
     owner_presence_exit_ms: int = Field(default=12_000, ge=1_000, le=600_000)
     owner_presence_heartbeat_ms: int = Field(default=10_000, ge=1_000, le=300_000)
     owner_presence_lease_ms: int = Field(default=30_000, ge=5_000, le=600_000)

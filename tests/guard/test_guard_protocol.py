@@ -205,15 +205,15 @@ def test_silent_presence_policy_config_rejects_unsupported_or_sensitive_values(
 def test_guard_runtime_config_is_versioned_and_normalized() -> None:
     assert normalize_guard_runtime_config({}) == {
         "schema_v": 1,
-        "sample_interval_ms": 500,
+        "sample_interval_ms": 200,
         "preview_interval_ms": 1000,
         "motion_threshold": 18,
         "motion_clear_threshold": 9,
         "candidate_debounce_ms": 1000,
         "absence_timeout_ms": 180000,
         "consecutive_capture_failures": 5,
-        "owner_face_interval_ms": 1500,
-        "owner_presence_enter_ms": 2500,
+        "owner_face_interval_ms": 500,
+        "owner_presence_enter_ms": 600,
         "owner_presence_exit_ms": 12000,
         "owner_presence_heartbeat_ms": 10000,
         "owner_presence_lease_ms": 30000,

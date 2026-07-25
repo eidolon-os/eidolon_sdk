@@ -14,6 +14,7 @@ from pathlib import Path
 import pytest
 
 from eidolon_sdk.biz import contracts as c
+from eidolon_sdk.biz import events
 from eidolon_sdk.biz import guard
 
 
@@ -61,7 +62,17 @@ def test_esp32_topics_header_matches_python_wire_contract() -> None:
     ints = _cpp_int_constants(header)
 
     assert ints["kWireSchemaVersion"] == c.WIRE_SCHEMA_VERSION
+    assert ints["kDeviceEventSchemaVersion"] == events.EVENT_SCHEMA_VERSION
     assert strings["kControlTopic"] == c.CONTROL_TOPIC
+    assert strings["kEventTopic"] == c.EVENT_TOPIC
+    assert (
+        strings["kAmbientPresenceChangedType"]
+        == events.AMBIENT_PRESENCE_CHANGED_TYPE
+    )
+    assert (
+        strings["kIdentityOwnerPresenceConfirmedType"]
+        == events.IDENTITY_OWNER_PRESENCE_CONFIRMED_TYPE
+    )
     assert strings["kClientAudioStateTopic"] == c.CLIENT_AUDIO_STATE_TOPIC
     assert strings["kUiStateTopic"] == c.COMPANION_UI_STATE_TOPIC
     assert strings["kSessionControlTopic"] == c.SESSION_CONTROL_TOPIC
