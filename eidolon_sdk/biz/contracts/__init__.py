@@ -11,11 +11,12 @@ Why one place: these strings used to be hand-copied across hub (py), channel
 silently. Centralizing them is the platform foundation that makes adding a new
 device a matter of *declaring capability*, not chasing scattered literals.
 
-Client-side constants (TS for web, a C++ header for esp32) are exported FROM
-this module (see Track A2) so all four surfaces agree by construction.
+Non-Python clients keep lightweight language-native mirrors of this module.
+Cross-repository contract tests keep those mirrors aligned with this source.
 
-This module is pure constants + frozenset validity sets — no imports from other
-``eidolon_sdk`` submodules — so it can never introduce an import cycle.
+This module is pure constants, frozenset validity sets, and normalization
+helpers — no imports from other ``eidolon_sdk`` submodules — so it can never
+introduce an import cycle.
 """
 
 from __future__ import annotations
@@ -74,12 +75,27 @@ VALID_INTERACTION_MODES = frozenset(
 InteractionMode = Literal["half_duplex", "full_duplex", "ptt"]
 
 # session_intent: why this voice session exists.
+SESSION_INTENT_FIELD = "session_intent"
 SESSION_INTENT_USER_INITIATED = "user_initiated"
 SESSION_INTENT_PROACTIVE = "proactive_initiated"
 VALID_SESSION_INTENTS = frozenset(
     {SESSION_INTENT_USER_INITIATED, SESSION_INTENT_PROACTIVE}
 )
 SessionIntent = Literal["user_initiated", "proactive_initiated"]
+
+
+def normalize_session_intent(
+    raw: str | None, *, default: str = SESSION_INTENT_USER_INITIATED
+) -> str:
+    """Resolve an untrusted wire value to a supported session intent.
+
+    Missing and unknown values deliberately degrade to a normal user-driven
+    session. Proactive behavior must always be explicitly requested.
+    """
+
+    candidate = (raw or "").strip().lower()
+    return candidate if candidate in VALID_SESSION_INTENTS else default
+
 
 # --------------------------------------------------------------------------- #
 # session_end — server → device teardown notice (eidolon.session_control).     #
