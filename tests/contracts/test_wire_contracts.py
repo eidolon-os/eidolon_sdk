@@ -27,13 +27,22 @@ def test_session_metadata_enums_are_stable() -> None:
     assert c.VALID_INTERACTION_MODES == {"half_duplex", "full_duplex", "ptt"}
     assert c.SESSION_INTENT_FIELD == "session_intent"
     assert c.SESSION_INTENT_USER_INITIATED == "user_initiated"
+    assert c.SESSION_INTENT_PRESENCE == "presence_initiated"
     assert c.SESSION_INTENT_PROACTIVE == "proactive_initiated"
-    assert c.VALID_SESSION_INTENTS == {"user_initiated", "proactive_initiated"}
+    assert c.VALID_SESSION_INTENTS == {
+        "user_initiated",
+        "presence_initiated",
+        "proactive_initiated",
+    }
 
 
 def test_session_intent_normalization_is_defensive() -> None:
     assert c.normalize_session_intent(None) == c.SESSION_INTENT_USER_INITIATED
     assert c.normalize_session_intent("unknown") == c.SESSION_INTENT_USER_INITIATED
+    assert (
+        c.normalize_session_intent(" PRESENCE_INITIATED ")
+        == c.SESSION_INTENT_PRESENCE
+    )
     assert c.normalize_session_intent(" PROACTIVE_INITIATED ") == c.SESSION_INTENT_PROACTIVE
 
 

@@ -101,6 +101,7 @@ def test_esp32_topics_header_matches_python_wire_contract() -> None:
     assert strings["kInteractionModeFullDuplex"] == c.INTERACTION_MODE_FULL_DUPLEX
     assert strings["kInteractionModePtt"] == c.INTERACTION_MODE_PTT
     assert strings["kSessionIntentUserInitiated"] == c.SESSION_INTENT_USER_INITIATED
+    assert strings["kSessionIntentPresence"] == c.SESSION_INTENT_PRESENCE
     assert strings["kSessionIntentProactive"] == c.SESSION_INTENT_PROACTIVE
 
 
@@ -123,6 +124,7 @@ def test_esp32_registration_and_roll_call_handler_match_e2e_contract() -> None:
         "{kControlOpDeviceRollCall, 1, "
         "&EidolonVoiceController::HandleDeviceRollCallCommand}" in controller
     )
+    assert "pending_session_intent_ = kSessionIntentPresence;" in controller
     assert "command.capability_version != entry.capability_version" in controller
     assert "PlayRollCallFeedback()" in controller
     assert 'AckCommand(command, "completed", "OK", "", "{\\"played\\":true}")' in controller

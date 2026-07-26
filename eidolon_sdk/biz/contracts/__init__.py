@@ -75,13 +75,26 @@ VALID_INTERACTION_MODES = frozenset(
 InteractionMode = Literal["half_duplex", "full_duplex", "ptt"]
 
 # session_intent: why this voice session exists.
+#   user_initiated      — explicit user JOIN; canned welcome + normal idle.
+#   presence_initiated  — verified owner-presence wake; canned welcome +
+#                         bounded no-response idle.
+#   proactive_initiated — a report/action opens the session; no canned welcome.
 SESSION_INTENT_FIELD = "session_intent"
 SESSION_INTENT_USER_INITIATED = "user_initiated"
+SESSION_INTENT_PRESENCE = "presence_initiated"
 SESSION_INTENT_PROACTIVE = "proactive_initiated"
 VALID_SESSION_INTENTS = frozenset(
-    {SESSION_INTENT_USER_INITIATED, SESSION_INTENT_PROACTIVE}
+    {
+        SESSION_INTENT_USER_INITIATED,
+        SESSION_INTENT_PRESENCE,
+        SESSION_INTENT_PROACTIVE,
+    }
 )
-SessionIntent = Literal["user_initiated", "proactive_initiated"]
+SessionIntent = Literal[
+    "user_initiated",
+    "presence_initiated",
+    "proactive_initiated",
+]
 
 
 def normalize_session_intent(
