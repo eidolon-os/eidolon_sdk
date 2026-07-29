@@ -1,19 +1,20 @@
 from __future__ import annotations
 
-import copy
-
 import pytest
 from pydantic import ValidationError
 
 from eidolon_sdk.biz.contracts import EVENT_TOPIC
 from eidolon_sdk.biz.events import (
-    AMBIENT_PRESENCE_CHANGED_TYPE,
+    AMBIENT_PRESENCE_STATE_TYPE,
+    COMPANION_FLOW_NODE_TYPE,
     EVENT_DEFAULT_TTL_MS,
     EVENT_MAX_CLOCK_SKEW_MS,
     EVENT_MAX_BYTES,
     IDENTITY_OWNER_PRESENCE_CONFIRMED_TYPE,
-    AmbientPresenceChanged,
+    IDENTITY_OWNER_PRESENCE_CHANGED_TYPE,
+    AmbientPresenceState,
     IdentityOwnerPresenceConfirmed,
+    IdentityOwnerPresenceChanged,
     normalize_device_event,
     parse_device_event,
 )
@@ -26,14 +27,17 @@ def _ambient(**patch: object) -> dict[str, object]:
         "event_id": "evt-radar-1",
         "flow_id": "flow-radar-1",
         "causation_id": "",
-        "type": AMBIENT_PRESENCE_CHANGED_TYPE,
+        "type": AMBIENT_PRESENCE_STATE_TYPE,
         "source": {"device_id": "box3-01", "component": "radar"},
         "occurred_at_ms": 10_000,
         "expires_at_ms": 10_000 + EVENT_DEFAULT_TTL_MS,
         "payload": {
             "state": "present",
             "modality": "mmwave",
-            "edge": "vacant_to_present",
+            "presence_epoch": 1,
+            "sequence": 1,
+            "lease_ms": 15_000,
+            "observation": "edge",
         },
     }
     payload.update(patch)
@@ -52,28 +56,57 @@ def _confirmed(**patch: object) -> dict[str, object]:
         "occurred_at_ms": 10_500,
         "expires_at_ms": 13_000,
         "payload": {
+            "ambient_source_device_id": "box3-01",
+            "ambient_presence_epoch": 1,
             "profile_revision": 7,
             "guard_epoch": 12,
             "presence_sequence": 33,
             "evidence": "local_owner_face",
             "raw_retention": "none",
+            "lease_ms": 30_000,
         },
     }
     payload.update(patch)
     return payload
 
 
+def _presence_changed(state: str = "present") -> dict[str, object]:
+    lease_ms = 30_000 if state == "present" else 0
+    return {
+        "schema_v": 1,
+        "kind": "event",
+        "event_id": f"evt-owner-{state}",
+        "flow_id": "owner-presence-12",
+        "causation_id": "",
+        "type": IDENTITY_OWNER_PRESENCE_CHANGED_TYPE,
+        "source": {"device_id": "atk-01", "component": "owner_presence"},
+        "occurred_at_ms": 10_500,
+        "expires_at_ms": 13_000,
+        "payload": {
+            "state": state,
+            "profile_revision": 7,
+            "guard_epoch": 12,
+            "presence_sequence": 34,
+            "lease_ms": lease_ms,
+            "evidence": "face_gated_person_presence",
+            "raw_retention": "none",
+        },
+    }
+
+
 def test_topic_and_event_types_are_stable_contracts() -> None:
     assert EVENT_TOPIC == "eidolon.event"
-    assert AMBIENT_PRESENCE_CHANGED_TYPE == "ambient.presence.changed"
+    assert AMBIENT_PRESENCE_STATE_TYPE == "ambient.presence.state"
     assert IDENTITY_OWNER_PRESENCE_CONFIRMED_TYPE == "identity.owner_presence.confirmed"
+    assert IDENTITY_OWNER_PRESENCE_CHANGED_TYPE == "identity.owner_presence.changed"
 
 
 def test_parse_ambient_presence_event() -> None:
     event = parse_device_event(_ambient(), now_ms=12_999)
 
-    assert isinstance(event, AmbientPresenceChanged)
+    assert isinstance(event, AmbientPresenceState)
     assert event.payload.state == "present"
+    assert event.payload.lease_ms == 15_000
     assert event.flow_id == "flow-radar-1"
 
 
@@ -82,7 +115,45 @@ def test_parse_owner_confirmation_event() -> None:
 
     assert isinstance(event, IdentityOwnerPresenceConfirmed)
     assert event.causation_id == "evt-radar-1"
+    assert event.payload.ambient_source_device_id == "box3-01"
+    assert event.payload.ambient_presence_epoch == 1
     assert event.payload.raw_retention == "none"
+
+
+def test_rejects_legacy_owner_confirmation_without_ambient_identity() -> None:
+    event = _confirmed()
+    payload = dict(event["payload"])  # type: ignore[arg-type]
+    payload.pop("ambient_source_device_id")
+    payload.pop("ambient_presence_epoch")
+    event["payload"] = payload
+
+    with pytest.raises(ValidationError, match="ambient_source_device_id"):
+        parse_device_event(event)
+
+
+def test_parse_companion_flow_progress_node() -> None:
+    event = _ambient(
+        event_id="evt-flow-1",
+        causation_id="evt-radar-1",
+        type=COMPANION_FLOW_NODE_TYPE,
+        payload={
+            "stage": "atk.owner_verification",
+            "status": "running",
+            "label": "ATK verifying owner",
+        },
+    )
+
+    parsed = parse_device_event(event, now_ms=12_999)
+    assert parsed.payload.stage == "atk.owner_verification"
+
+
+@pytest.mark.parametrize("state", ["present", "absent"])
+def test_parse_owner_presence_lifecycle_lease(state: str) -> None:
+    event = parse_device_event(_presence_changed(state), now_ms=12_999)
+
+    assert isinstance(event, IdentityOwnerPresenceChanged)
+    assert event.payload.state == state
+    assert event.payload.lease_ms == (30_000 if state == "present" else 0)
 
 
 def test_normalization_keeps_complete_explicit_wire_shape() -> None:
@@ -146,14 +217,24 @@ def test_rejects_unknown_fields_at_every_level() -> None:
         parse_device_event(nested)
 
 
-def test_rejects_mismatched_presence_state_and_edge() -> None:
+def test_rejects_mismatched_ambient_presence_lease() -> None:
     event = _ambient()
-    payload = copy.deepcopy(event["payload"])
+    payload = dict(event["payload"])  # type: ignore[arg-type]
     assert isinstance(payload, dict)
     payload["state"] = "vacant"
     event["payload"] = payload
 
-    with pytest.raises(ValidationError, match="state must match edge"):
+    with pytest.raises(ValidationError, match="vacant.*lease"):
+        parse_device_event(event)
+
+
+def test_rejects_vacant_ambient_heartbeat() -> None:
+    event = _ambient()
+    payload = dict(event["payload"])  # type: ignore[arg-type]
+    payload.update(state="vacant", lease_ms=0, observation="heartbeat")
+    event["payload"] = payload
+
+    with pytest.raises(ValidationError, match="vacant.*heartbeat"):
         parse_device_event(event)
 
 

@@ -77,9 +77,10 @@ InteractionMode = Literal["half_duplex", "full_duplex", "ptt"]
 # session_intent: why this voice session exists.
 #   user_initiated      — explicit user JOIN; canned welcome + normal idle.
 #   presence_initiated  — verified owner-presence wake; canned welcome +
-#                         bounded no-response idle.
+#                         externally governed renewable owner lease.
 #   proactive_initiated — a report/action opens the session; no canned welcome.
 SESSION_INTENT_FIELD = "session_intent"
+SESSION_FLOW_ID_FIELD = "session_flow_id"
 SESSION_INTENT_USER_INITIATED = "user_initiated"
 SESSION_INTENT_PRESENCE = "presence_initiated"
 SESSION_INTENT_PROACTIVE = "proactive_initiated"
@@ -108,6 +109,15 @@ def normalize_session_intent(
 
     candidate = (raw or "").strip().lower()
     return candidate if candidate in VALID_SESSION_INTENTS else default
+
+
+def normalize_session_flow_id(raw: str | None) -> str | None:
+    """Bound an optional cross-device correlation id for session metadata."""
+
+    candidate = (raw or "").strip()
+    if not candidate or len(candidate) > 96:
+        return None
+    return candidate
 
 
 # --------------------------------------------------------------------------- #

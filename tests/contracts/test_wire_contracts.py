@@ -26,6 +26,7 @@ def test_session_metadata_enums_are_stable() -> None:
     assert c.INTERACTION_MODE_PTT == "ptt"
     assert c.VALID_INTERACTION_MODES == {"half_duplex", "full_duplex", "ptt"}
     assert c.SESSION_INTENT_FIELD == "session_intent"
+    assert c.SESSION_FLOW_ID_FIELD == "session_flow_id"
     assert c.SESSION_INTENT_USER_INITIATED == "user_initiated"
     assert c.SESSION_INTENT_PRESENCE == "presence_initiated"
     assert c.SESSION_INTENT_PROACTIVE == "proactive_initiated"
@@ -44,6 +45,9 @@ def test_session_intent_normalization_is_defensive() -> None:
         == c.SESSION_INTENT_PRESENCE
     )
     assert c.normalize_session_intent(" PROACTIVE_INITIATED ") == c.SESSION_INTENT_PROACTIVE
+    assert c.normalize_session_flow_id(" flow-123 ") == "flow-123"
+    assert c.normalize_session_flow_id("") is None
+    assert c.normalize_session_flow_id("x" * 97) is None
 
 
 def test_session_end_reasons_are_stable() -> None:

@@ -19,8 +19,10 @@ EVENT_DEFAULT_TTL_MS = 3_000
 EVENT_MAX_CLOCK_SKEW_MS = 1_000
 EVENT_MAX_BYTES = 2_048
 
-AMBIENT_PRESENCE_CHANGED_TYPE = "ambient.presence.changed"
+AMBIENT_PRESENCE_STATE_TYPE = "ambient.presence.state"
 IDENTITY_OWNER_PRESENCE_CONFIRMED_TYPE = "identity.owner_presence.confirmed"
+IDENTITY_OWNER_PRESENCE_CHANGED_TYPE = "identity.owner_presence.changed"
+COMPANION_FLOW_NODE_TYPE = "companion.flow.node"
 
 _COMPONENT_RE = re.compile(r"^[a-z][a-z0-9_.-]{0,63}$")
 
@@ -41,21 +43,24 @@ class EventSource(BaseModel):
         return value
 
 
-class AmbientPresencePayload(BaseModel):
+class AmbientPresenceStatePayload(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True, strict=True)
 
     state: Literal["present", "vacant"]
     modality: Literal["mmwave"] = "mmwave"
-    edge: Literal["vacant_to_present", "present_to_vacant"]
+    presence_epoch: int = Field(ge=1, le=4_294_967_295)
+    sequence: int = Field(ge=1, le=4_294_967_295)
+    lease_ms: int = Field(ge=0, le=60_000)
+    observation: Literal["edge", "snapshot", "heartbeat"]
 
     @model_validator(mode="after")
-    def _state_matches_edge(self) -> "AmbientPresencePayload":
-        expected_state = {
-            "vacant_to_present": "present",
-            "present_to_vacant": "vacant",
-        }[self.edge]
-        if self.state != expected_state:
-            raise ValueError("ambient presence state must match edge")
+    def _lease_matches_state(self) -> "AmbientPresenceStatePayload":
+        if self.state == "present" and self.lease_ms == 0:
+            raise ValueError("present ambient presence requires a lease")
+        if self.state == "vacant" and self.lease_ms != 0:
+            raise ValueError("vacant ambient presence cannot carry a lease")
+        if self.state == "vacant" and self.observation == "heartbeat":
+            raise ValueError("vacant ambient presence cannot be a heartbeat")
         return self
 
 
@@ -64,11 +69,46 @@ class OwnerPresenceConfirmedPayload(BaseModel):
 
     model_config = ConfigDict(extra="forbid", frozen=True, strict=True)
 
+    ambient_source_device_id: str = Field(min_length=1, max_length=128)
+    ambient_presence_epoch: int = Field(ge=1, le=4_294_967_295)
     profile_revision: int = Field(ge=1)
-    guard_epoch: int = Field(ge=0)
-    presence_sequence: int = Field(ge=1)
+    guard_epoch: int = Field(ge=0, le=4_294_967_295)
+    presence_sequence: int = Field(ge=1, le=4_294_967_295)
     evidence: Literal["local_owner_face"] = "local_owner_face"
     raw_retention: Literal["none"] = "none"
+    lease_ms: int = Field(ge=1, le=120_000)
+
+
+class OwnerPresenceChangedPayload(BaseModel):
+    """Renewable, source-scoped lease for an already face-gated owner."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True, strict=True)
+
+    state: Literal["present", "absent"]
+    profile_revision: int = Field(ge=1)
+    guard_epoch: int = Field(ge=0, le=4_294_967_295)
+    presence_sequence: int = Field(ge=1, le=4_294_967_295)
+    lease_ms: int = Field(ge=0, le=120_000)
+    evidence: Literal["face_gated_person_presence"] = "face_gated_person_presence"
+    raw_retention: Literal["none"] = "none"
+
+    @model_validator(mode="after")
+    def _lease_matches_state(self) -> "OwnerPresenceChangedPayload":
+        if self.state == "present" and self.lease_ms == 0:
+            raise ValueError("present owner presence requires a lease")
+        if self.state == "absent" and self.lease_ms != 0:
+            raise ValueError("absent owner presence cannot carry a lease")
+        return self
+
+
+class CompanionFlowNodePayload(BaseModel):
+    """Small semantic progress fact used by cross-device flow observers."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True, strict=True)
+
+    stage: str = Field(min_length=1, max_length=64, pattern=r"^[a-z][a-z0-9_.-]*$")
+    status: Literal["running", "completed", "timeout", "failed"]
+    label: str = Field(min_length=1, max_length=96)
 
 
 class _DeviceEvent(BaseModel):
@@ -93,12 +133,12 @@ class _DeviceEvent(BaseModel):
         return self
 
 
-class AmbientPresenceChanged(_DeviceEvent):
-    type: Literal[AMBIENT_PRESENCE_CHANGED_TYPE] = AMBIENT_PRESENCE_CHANGED_TYPE
-    payload: AmbientPresencePayload
+class AmbientPresenceState(_DeviceEvent):
+    type: Literal[AMBIENT_PRESENCE_STATE_TYPE] = AMBIENT_PRESENCE_STATE_TYPE
+    payload: AmbientPresenceStatePayload
 
     @model_validator(mode="after")
-    def _ambient_event_is_a_root_fact(self) -> "AmbientPresenceChanged":
+    def _ambient_event_is_a_root_fact(self) -> "AmbientPresenceState":
         if self.causation_id:
             raise ValueError("ambient presence event must not have causation_id")
         return self
@@ -117,8 +157,27 @@ class IdentityOwnerPresenceConfirmed(_DeviceEvent):
         return self
 
 
+class IdentityOwnerPresenceChanged(_DeviceEvent):
+    type: Literal[IDENTITY_OWNER_PRESENCE_CHANGED_TYPE] = IDENTITY_OWNER_PRESENCE_CHANGED_TYPE
+    payload: OwnerPresenceChangedPayload
+
+    @model_validator(mode="after")
+    def _presence_lease_is_a_root_fact(self) -> "IdentityOwnerPresenceChanged":
+        if self.causation_id:
+            raise ValueError("owner presence lifecycle event must not have causation_id")
+        return self
+
+
+class CompanionFlowNode(_DeviceEvent):
+    type: Literal[COMPANION_FLOW_NODE_TYPE] = COMPANION_FLOW_NODE_TYPE
+    payload: CompanionFlowNodePayload
+
+
 DeviceEvent = Annotated[
-    AmbientPresenceChanged | IdentityOwnerPresenceConfirmed,
+    AmbientPresenceState
+    | IdentityOwnerPresenceConfirmed
+    | IdentityOwnerPresenceChanged
+    | CompanionFlowNode,
     Field(discriminator="type"),
 ]
 

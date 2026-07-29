@@ -66,8 +66,8 @@ def test_esp32_topics_header_matches_python_wire_contract() -> None:
     assert strings["kControlTopic"] == c.CONTROL_TOPIC
     assert strings["kEventTopic"] == c.EVENT_TOPIC
     assert (
-        strings["kAmbientPresenceChangedType"]
-        == events.AMBIENT_PRESENCE_CHANGED_TYPE
+        strings["kAmbientPresenceStateType"]
+        == events.AMBIENT_PRESENCE_STATE_TYPE
     )
     assert (
         strings["kIdentityOwnerPresenceConfirmedType"]
