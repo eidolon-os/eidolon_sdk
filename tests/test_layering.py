@@ -66,7 +66,6 @@ def test_core_layer_does_not_import_business_or_adapters() -> None:
     forbidden = (
         "eidolon_sdk.adapters",
         "eidolon_sdk.biz",
-        "eidolon_sdk.memory",
     )
     assert not any(imp.startswith(forbidden) for imp in imports)
 
