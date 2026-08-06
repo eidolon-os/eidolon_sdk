@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://eidolon.dev/contracts/audit/v1/envelope.schema.json",
+  "title": "Eidolon Audit Envelope V1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contract",
+    "event_id",
+    "producer",
+    "producer_seq",
+    "category",
+    "subject_type",
+    "subject_id",
+    "action",
+    "outcome",
+    "severity",
+    "data_classification",
+    "schema_version",
+    "payload",
+    "occurred_at"
+  ],
+  "properties": {
+    "contract": {"const": "eidolon.audit.v1"},
+    "event_id": {"type": "string", "minLength": 1, "maxLength": 64},
+    "producer": {"type": "string", "minLength": 1, "maxLength": 64},
+    "producer_seq": {"type": "integer", "minimum": 1},
+    "category": {"enum": ["governance", "receipt"]},
+    "owner_id": {"type": ["string", "null"], "maxLength": 64},
+    "subject_type": {"type": "string", "minLength": 1, "maxLength": 64},
+    "subject_id": {"type": "string", "minLength": 1, "maxLength": 128},
+    "action": {"type": "string", "minLength": 1, "maxLength": 128},
+    "outcome": {"enum": ["success", "failure", "denied", "deferred"]},
+    "severity": {"enum": ["info", "warn", "error", "critical"]},
+    "reason": {"type": ["string", "null"], "maxLength": 256},
+    "trace_id": {"type": ["string", "null"], "maxLength": 64},
+    "data_classification": {"enum": ["safe", "sensitive", "restricted"]},
+    "schema_version": {"type": "integer", "minimum": 1},
+    "payload": {"type": "object"},
+    "occurred_at": {"type": "string", "format": "date-time"}
+  }
+}

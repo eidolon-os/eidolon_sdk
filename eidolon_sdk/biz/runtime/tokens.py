@@ -1,4 +1,4 @@
-"""Runtime actor JWT contract shared by Eidolon Python projects."""
+"""Owner-scoped Agent runtime JWT contract shared by Eidolon Python projects."""
 
 from __future__ import annotations
 
@@ -33,8 +33,6 @@ class RuntimeRevocationStore(Protocol):
 
 @dataclass(frozen=True, slots=True)
 class RuntimeIdentity:
-    actor_kind: str
-    actor_id: str
     owner_id: str
     companion_id: str
     device_id: str | None
@@ -70,8 +68,6 @@ def sign_runtime_token(
     *,
     secret: str,
     algorithm: str = "HS256",
-    actor_kind: str,
-    actor_id: str,
     owner_id: str,
     companion_id: str,
     memory_realm_id: str,
@@ -87,8 +83,6 @@ def sign_runtime_token(
     """Return a JWT and its expiration datetime."""
     if not secret:
         raise ValueError("sign_runtime_token: secret is required (empty)")
-    _require_claim("actor_kind", actor_kind)
-    _require_claim("actor_id", actor_id)
     _require_claim("owner_id", owner_id)
     _require_claim("companion_id", companion_id)
     _require_claim("memory_realm_id", memory_realm_id)
@@ -102,9 +96,7 @@ def sign_runtime_token(
         ttl_seconds = int(timedelta(days=30).total_seconds())
     exp = now + timedelta(seconds=ttl_seconds)
     payload = {
-        "runtime_token_version": 3,
-        "actor_kind": actor_kind,
-        "actor_id": actor_id,
+        "runtime_token_version": 4,
         "owner_id": owner_id,
         "companion_id": companion_id,
         "memory_realm_id": memory_realm_id,
@@ -166,11 +158,9 @@ class RuntimeTokenVerifier:
         except jwt.PyJWTError as exc:
             raise RuntimeUnauthenticatedError(f"invalid token: {exc}") from exc
 
+        if payload.get("runtime_token_version") != 4:
+            raise RuntimeUnauthenticatedError("unsupported runtime_token_version")
         device_id = payload.get("device_id")
-        actor_kind = str(payload.get("actor_kind") or "").strip()
-        actor_id = str(payload.get("actor_id") or "").strip()
-        if not actor_kind or not actor_id:
-            raise RuntimeUnauthenticatedError("token missing actor_kind/actor_id")
         owner_id = payload.get("owner_id") or ""
         companion_id = payload.get("companion_id") or ""
         memory_realm_id = payload.get("memory_realm_id") or ""
@@ -214,8 +204,6 @@ class RuntimeTokenVerifier:
                         raise RuntimeTokenRevokedError(f"token revoked: {jti}")
 
         return RuntimeIdentity(
-            actor_kind=actor_kind,
-            actor_id=actor_id,
             device_id=str(device_id) if device_id else None,
             session_id=str(payload.get("session_id") or "") or None,
             owner_id=owner_id,

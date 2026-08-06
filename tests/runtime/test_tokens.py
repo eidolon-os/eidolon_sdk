@@ -33,8 +33,6 @@ def _sign(**kwargs):
     device_id = kwargs.pop("device_id", "device-1")
     return sign_runtime_token(
         secret=SECRET,
-        actor_kind="device",
-        actor_id=device_id,
         device_id=device_id,
         owner_id=kwargs.pop("owner_id", "owner-a"),
         companion_id=kwargs.pop("companion_id", "companion-a"),
@@ -61,9 +59,9 @@ def test_sign_runtime_token_pins_device_payload_schema() -> None:
     payload = jwt.decode(token, SECRET, algorithms=["HS256"])
 
     assert payload["device_id"] == "web-123"
-    assert payload["runtime_token_version"] == 3
-    assert payload["actor_kind"] == "device"
-    assert payload["actor_id"] == "web-123"
+    assert payload["runtime_token_version"] == 4
+    assert "actor_kind" not in payload
+    assert "actor_id" not in payload
     assert payload["owner_id"] == "owner-a"
     assert payload["companion_id"] == "companion-a"
     assert payload["memory_realm_id"] == "realm-a"
@@ -81,8 +79,6 @@ def test_sign_runtime_token_rejects_empty_secret() -> None:
     with pytest.raises(ValueError, match="secret is required"):
         sign_runtime_token(
             secret="",
-            actor_kind="device",
-            actor_id="device-1",
             device_id="device-1",
             owner_id="owner-a",
             companion_id="companion-a",
@@ -111,8 +107,6 @@ async def test_runtime_token_verifier_round_trips_runtime_identity() -> None:
     verified = await RuntimeTokenVerifier(secret=SECRET).verify(token)
 
     assert verified.device_id == "device-1"
-    assert verified.actor_kind == "device"
-    assert verified.actor_id == "device-1"
     assert verified.session_id == "session-1"
     assert verified.owner_id == "owner-a"
     assert verified.companion_id == "companion-a"
@@ -176,11 +170,9 @@ def test_resolve_shared_secret_prefers_argument_then_file(tmp_path) -> None:
 
 
 @pytest.mark.asyncio
-async def test_runtime_token_verifier_accepts_owner_actor_without_device_id() -> None:
+async def test_runtime_token_verifier_accepts_owner_without_device_id() -> None:
     token, exp = sign_runtime_token(
         secret=SECRET,
-        actor_kind="owner",
-        actor_id="owner-a",
         owner_id="owner-a",
         companion_id="companion-a",
         memory_realm_id="realm-a",
@@ -194,8 +186,6 @@ async def test_runtime_token_verifier_accepts_owner_actor_without_device_id() ->
 
     verified = await RuntimeTokenVerifier(secret=SECRET).verify(token)
 
-    assert verified.actor_kind == "owner"
-    assert verified.actor_id == "owner-a"
     assert verified.device_id is None
     assert verified.owner_id == "owner-a"
     assert verified.companion_id == "companion-a"
@@ -207,13 +197,17 @@ async def test_runtime_token_verifier_accepts_owner_actor_without_device_id() ->
 
 
 @pytest.mark.asyncio
-async def test_runtime_token_verifier_requires_actor_claims() -> None:
+async def test_runtime_token_verifier_rejects_obsolete_token_version() -> None:
     exp = datetime.now(timezone.utc) + timedelta(seconds=60)
-    token = jwt.encode({"exp": int(exp.timestamp())}, SECRET, algorithm="HS256")
+    token = jwt.encode(
+        {"runtime_token_version": 3, "exp": int(exp.timestamp())},
+        SECRET,
+        algorithm="HS256",
+    )
 
     verifier = RuntimeTokenVerifier(secret=SECRET)
 
-    with pytest.raises(RuntimeUnauthenticatedError, match="missing actor_kind"):
+    with pytest.raises(RuntimeUnauthenticatedError, match="runtime_token_version"):
         await verifier.verify(token)
 
 
@@ -222,8 +216,7 @@ async def test_runtime_token_verifier_requires_owner_claims() -> None:
     exp = datetime.now(timezone.utc) + timedelta(seconds=60)
     token = jwt.encode(
         {
-            "actor_kind": "device",
-            "actor_id": "device-1",
+            "runtime_token_version": 4,
             "device_id": "device-1",
             "exp": int(exp.timestamp()),
         },

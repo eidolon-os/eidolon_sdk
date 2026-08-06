@@ -22,6 +22,9 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+audit = [
+    "nats-py>=2.9",
+]
 db = [
     "aiosqlite>=0.20",
     "sqlalchemy[asyncio]>=2.0",
@@ -47,6 +50,7 @@ livekit = [
 ]
 dev = [
     "hatchling>=1.25",
+    "jsonschema>=4.21",
     "pytest>=8.0",
     "pytest-asyncio>=0.24",
     "pyyaml>=6.0",

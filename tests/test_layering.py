@@ -73,3 +73,14 @@ def test_core_layer_does_not_import_business_or_adapters() -> None:
 def test_business_layer_does_not_import_adapters() -> None:
     imports = _imports_under("biz")
     assert not any(imp.startswith("eidolon_sdk.adapters") for imp in imports)
+
+
+def test_audit_contract_is_transport_and_persistence_neutral() -> None:
+    imports = _imports_under("biz/audit")
+    forbidden = (
+        "eidolon_data",
+        "eidolon_sdk.integrations",
+        "nats",
+        "sqlalchemy",
+    )
+    assert not any(imp.startswith(forbidden) for imp in imports)
