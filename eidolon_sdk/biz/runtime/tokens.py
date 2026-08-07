@@ -42,7 +42,7 @@ class RuntimeIdentity:
     owner_id: str
     companion_id: str
     device_id: str | None
-    session_id: str | None
+    session_id: str
     scopes: tuple[str, ...]
     exp: datetime
 
@@ -71,8 +71,8 @@ def sign_runtime_token(
     algorithm: str = "HS256",
     owner_id: str,
     companion_id: str,
+    session_id: str,
     device_id: str | None = None,
-    session_id: str | None = None,
     scopes: Sequence[str] = (),
     ttl_seconds: int,
 ) -> tuple[str, datetime]:
@@ -81,6 +81,9 @@ def sign_runtime_token(
         raise ValueError("sign_runtime_token: secret is required (empty)")
     _require_claim("owner_id", owner_id)
     _require_claim("companion_id", companion_id)
+    _require_claim("session_id", session_id)
+    if isinstance(ttl_seconds, bool) or not isinstance(ttl_seconds, int) or ttl_seconds <= 0:
+        raise ValueError("sign_runtime_token: ttl_seconds must be a positive integer")
 
     now = datetime.now(timezone.utc)
     exp = now + timedelta(seconds=ttl_seconds)
@@ -88,6 +91,7 @@ def sign_runtime_token(
         "runtime_token_version": 5,
         "owner_id": owner_id,
         "companion_id": companion_id,
+        "session_id": session_id,
         "scopes": list(scopes),
         "jti": uuid.uuid4().hex,
         "exp": int(exp.timestamp()),
@@ -96,9 +100,6 @@ def sign_runtime_token(
     if device_id is not None:
         _require_claim("device_id", device_id)
         payload["device_id"] = device_id
-    if session_id is not None:
-        _require_claim("session_id", session_id)
-        payload["session_id"] = session_id
     return jwt.encode(payload, secret, algorithm=algorithm), exp
 
 
@@ -147,9 +148,11 @@ class RuntimeTokenVerifier:
         device_id = payload.get("device_id")
         owner_id = payload.get("owner_id") or ""
         companion_id = payload.get("companion_id") or ""
+        session_id = str(payload.get("session_id") or "").strip()
         for claim_name, claim_value in (
             ("owner_id", owner_id),
             ("companion_id", companion_id),
+            ("session_id", session_id),
         ):
             if not claim_value:
                 raise RuntimeUnauthenticatedError(f"token missing {claim_name}")
@@ -162,11 +165,9 @@ class RuntimeTokenVerifier:
             for key in owner_revocation_keys(owner_id):
                 if await self._kv.get(key):
                     raise RuntimeTokenRevokedError(f"all sessions revoked for owner: {owner_id}")
-            session_id = str(payload.get("session_id") or "").strip()
-            if session_id:
-                for key in session_revocation_keys(session_id):
-                    if await self._kv.get(key):
-                        raise RuntimeTokenRevokedError(f"session revoked: {session_id}")
+            for key in session_revocation_keys(session_id):
+                if await self._kv.get(key):
+                    raise RuntimeTokenRevokedError(f"session revoked: {session_id}")
             jti = str(payload.get("jti") or "").strip()
             if jti:
                 for key in jti_revocation_keys(jti):
@@ -175,7 +176,7 @@ class RuntimeTokenVerifier:
 
         return RuntimeIdentity(
             device_id=str(device_id) if device_id else None,
-            session_id=str(payload.get("session_id") or "") or None,
+            session_id=session_id,
             owner_id=owner_id,
             companion_id=companion_id,
             scopes=tuple(payload.get("scopes") or ()),

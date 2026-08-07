@@ -36,6 +36,7 @@ def _sign(**kwargs):
         device_id=device_id,
         owner_id=kwargs.pop("owner_id", "owner-a"),
         companion_id=kwargs.pop("companion_id", "companion-a"),
+        session_id=kwargs.pop("session_id", "session-a"),
         ttl_seconds=kwargs.pop("ttl_seconds", 60),
         **kwargs,
     )
@@ -58,6 +59,7 @@ def test_sign_runtime_token_carries_only_session_principal_and_target() -> None:
     assert "actor_id" not in payload
     assert payload["owner_id"] == "owner-a"
     assert payload["companion_id"] == "companion-a"
+    assert payload["session_id"] == "session-a"
     assert "memory_realm_id" not in payload
     assert "genome_id" not in payload
     assert "schema_version" not in payload
@@ -76,6 +78,7 @@ def test_sign_runtime_token_rejects_empty_secret() -> None:
             device_id="device-1",
             owner_id="owner-a",
             companion_id="companion-a",
+            session_id="session-a",
             ttl_seconds=60,
         )
 
@@ -83,6 +86,12 @@ def test_sign_runtime_token_rejects_empty_secret() -> None:
 def test_sign_runtime_token_requires_identity_claims() -> None:
     with pytest.raises(ValueError, match="owner_id is required"):
         _sign(owner_id="")
+
+
+@pytest.mark.parametrize("ttl_seconds", [0, -1, True, 1.5])
+def test_sign_runtime_token_requires_positive_integer_ttl(ttl_seconds: object) -> None:
+    with pytest.raises(ValueError, match="ttl_seconds must be a positive integer"):
+        _sign(ttl_seconds=ttl_seconds)
 
 
 def test_runtime_token_verifier_rejects_empty_secret() -> None:
@@ -114,7 +123,18 @@ async def test_runtime_token_verifier_rejects_wrong_secret() -> None:
 
 @pytest.mark.asyncio
 async def test_runtime_token_verifier_rejects_expired_token() -> None:
-    token, _exp = _sign(ttl_seconds=-1)
+    now = datetime.now(timezone.utc)
+    token = jwt.encode(
+        {
+            "runtime_token_version": 5,
+            "owner_id": "owner-a",
+            "companion_id": "companion-a",
+            "session_id": "session-a",
+            "exp": int((now - timedelta(seconds=1)).timestamp()),
+        },
+        SECRET,
+        algorithm="HS256",
+    )
 
     with pytest.raises(RuntimeUnauthenticatedError, match="expired"):
         await RuntimeTokenVerifier(secret=SECRET).verify(token)
@@ -158,6 +178,7 @@ async def test_runtime_token_verifier_accepts_owner_without_device_id() -> None:
         secret=SECRET,
         owner_id="owner-a",
         companion_id="companion-a",
+        session_id="web-session-1",
         scopes=("web",),
         ttl_seconds=60,
     )
@@ -200,4 +221,22 @@ async def test_runtime_token_verifier_requires_owner_claims() -> None:
     )
 
     with pytest.raises(RuntimeUnauthenticatedError, match="missing owner_id"):
+        await RuntimeTokenVerifier(secret=SECRET).verify(token)
+
+
+@pytest.mark.asyncio
+async def test_runtime_token_verifier_requires_session_claim() -> None:
+    exp = datetime.now(timezone.utc) + timedelta(seconds=60)
+    token = jwt.encode(
+        {
+            "runtime_token_version": 5,
+            "owner_id": "owner-a",
+            "companion_id": "companion-a",
+            "exp": int(exp.timestamp()),
+        },
+        SECRET,
+        algorithm="HS256",
+    )
+
+    with pytest.raises(RuntimeUnauthenticatedError, match="missing session_id"):
         await RuntimeTokenVerifier(secret=SECRET).verify(token)
