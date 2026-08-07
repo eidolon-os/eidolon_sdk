@@ -33,15 +33,16 @@ class RuntimeRevocationStore(Protocol):
 
 @dataclass(frozen=True, slots=True)
 class RuntimeIdentity:
+    """Authenticated Owner scope and selected Companion for one client session.
+
+    System Data runtime facts are deliberately absent. The Agent resolves and
+    pins those facts from the Companion Runtime Authority after authentication.
+    """
+
     owner_id: str
     companion_id: str
     device_id: str | None
     session_id: str | None
-    memory_realm_id: str
-    genome_id: str
-    schema_version: str
-    genome_hash: str
-    realizer_version: str
     scopes: tuple[str, ...]
     exp: datetime
 
@@ -70,40 +71,23 @@ def sign_runtime_token(
     algorithm: str = "HS256",
     owner_id: str,
     companion_id: str,
-    memory_realm_id: str,
-    genome_id: str,
-    schema_version: str,
-    genome_hash: str,
-    realizer_version: str,
     device_id: str | None = None,
     session_id: str | None = None,
     scopes: Sequence[str] = (),
-    ttl_seconds: int | None = None,
+    ttl_seconds: int,
 ) -> tuple[str, datetime]:
-    """Return a JWT and its expiration datetime."""
+    """Return a JWT and its expiration datetime using an explicit caller TTL."""
     if not secret:
         raise ValueError("sign_runtime_token: secret is required (empty)")
     _require_claim("owner_id", owner_id)
     _require_claim("companion_id", companion_id)
-    _require_claim("memory_realm_id", memory_realm_id)
-    _require_claim("genome_id", genome_id)
-    _require_claim("schema_version", schema_version)
-    _require_claim("genome_hash", genome_hash)
-    _require_claim("realizer_version", realizer_version)
 
     now = datetime.now(timezone.utc)
-    if ttl_seconds is None:
-        ttl_seconds = int(timedelta(days=30).total_seconds())
     exp = now + timedelta(seconds=ttl_seconds)
     payload = {
-        "runtime_token_version": 4,
+        "runtime_token_version": 5,
         "owner_id": owner_id,
         "companion_id": companion_id,
-        "memory_realm_id": memory_realm_id,
-        "genome_id": genome_id,
-        "schema_version": schema_version,
-        "genome_hash": genome_hash,
-        "realizer_version": realizer_version,
         "scopes": list(scopes),
         "jti": uuid.uuid4().hex,
         "exp": int(exp.timestamp()),
@@ -158,24 +142,14 @@ class RuntimeTokenVerifier:
         except jwt.PyJWTError as exc:
             raise RuntimeUnauthenticatedError(f"invalid token: {exc}") from exc
 
-        if payload.get("runtime_token_version") != 4:
+        if payload.get("runtime_token_version") != 5:
             raise RuntimeUnauthenticatedError("unsupported runtime_token_version")
         device_id = payload.get("device_id")
         owner_id = payload.get("owner_id") or ""
         companion_id = payload.get("companion_id") or ""
-        memory_realm_id = payload.get("memory_realm_id") or ""
-        genome_id = payload.get("genome_id") or ""
-        schema_version = payload.get("schema_version") or ""
-        genome_hash = payload.get("genome_hash") or ""
-        realizer_version = payload.get("realizer_version") or ""
         for claim_name, claim_value in (
             ("owner_id", owner_id),
             ("companion_id", companion_id),
-            ("memory_realm_id", memory_realm_id),
-            ("genome_id", genome_id),
-            ("schema_version", schema_version),
-            ("genome_hash", genome_hash),
-            ("realizer_version", realizer_version),
         ):
             if not claim_value:
                 raise RuntimeUnauthenticatedError(f"token missing {claim_name}")
@@ -187,16 +161,12 @@ class RuntimeTokenVerifier:
                         raise RuntimeTokenRevokedError(f"device revoked: {device_id}")
             for key in owner_revocation_keys(owner_id):
                 if await self._kv.get(key):
-                    raise RuntimeTokenRevokedError(
-                        f"all sessions revoked for owner: {owner_id}"
-                    )
+                    raise RuntimeTokenRevokedError(f"all sessions revoked for owner: {owner_id}")
             session_id = str(payload.get("session_id") or "").strip()
             if session_id:
                 for key in session_revocation_keys(session_id):
                     if await self._kv.get(key):
-                        raise RuntimeTokenRevokedError(
-                            f"session revoked: {session_id}"
-                        )
+                        raise RuntimeTokenRevokedError(f"session revoked: {session_id}")
             jti = str(payload.get("jti") or "").strip()
             if jti:
                 for key in jti_revocation_keys(jti):
@@ -208,11 +178,6 @@ class RuntimeTokenVerifier:
             session_id=str(payload.get("session_id") or "") or None,
             owner_id=owner_id,
             companion_id=companion_id,
-            memory_realm_id=memory_realm_id,
-            genome_id=genome_id,
-            schema_version=schema_version,
-            genome_hash=genome_hash,
-            realizer_version=realizer_version,
             scopes=tuple(payload.get("scopes") or ()),
             exp=datetime.fromtimestamp(payload["exp"], tz=timezone.utc),
         )

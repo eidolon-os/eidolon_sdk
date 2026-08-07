@@ -36,22 +36,16 @@ def _sign(**kwargs):
         device_id=device_id,
         owner_id=kwargs.pop("owner_id", "owner-a"),
         companion_id=kwargs.pop("companion_id", "companion-a"),
-        memory_realm_id=kwargs.pop("memory_realm_id", "realm-a"),
-        genome_id=kwargs.pop("genome_id", "genome-a"),
-        schema_version=kwargs.pop("schema_version", "eidolon.persona_genome"),
-        genome_hash=kwargs.pop("genome_hash", "pg_testhash"),
-        realizer_version=kwargs.pop("realizer_version", "eidolon.persona_realizer"),
+        ttl_seconds=kwargs.pop("ttl_seconds", 60),
         **kwargs,
     )
 
 
-def test_sign_runtime_token_pins_device_payload_schema() -> None:
+def test_sign_runtime_token_carries_only_session_principal_and_target() -> None:
     token, exp = _sign(
         device_id="web-123",
         owner_id="owner-a",
         companion_id="companion-a",
-        memory_realm_id="realm-a",
-        genome_id="genome-a",
         scopes=("device", "voice"),
         ttl_seconds=60,
     )
@@ -59,16 +53,16 @@ def test_sign_runtime_token_pins_device_payload_schema() -> None:
     payload = jwt.decode(token, SECRET, algorithms=["HS256"])
 
     assert payload["device_id"] == "web-123"
-    assert payload["runtime_token_version"] == 4
+    assert payload["runtime_token_version"] == 5
     assert "actor_kind" not in payload
     assert "actor_id" not in payload
     assert payload["owner_id"] == "owner-a"
     assert payload["companion_id"] == "companion-a"
-    assert payload["memory_realm_id"] == "realm-a"
-    assert payload["genome_id"] == "genome-a"
-    assert payload["schema_version"] == "eidolon.persona_genome"
-    assert payload["genome_hash"] == "pg_testhash"
-    assert payload["realizer_version"] == "eidolon.persona_realizer"
+    assert "memory_realm_id" not in payload
+    assert "genome_id" not in payload
+    assert "schema_version" not in payload
+    assert "genome_hash" not in payload
+    assert "realizer_version" not in payload
     assert payload["scopes"] == ["device", "voice"]
     assert isinstance(payload["jti"], str)
     assert datetime.fromtimestamp(payload["exp"], tz=timezone.utc) == exp.replace(microsecond=0)
@@ -82,11 +76,7 @@ def test_sign_runtime_token_rejects_empty_secret() -> None:
             device_id="device-1",
             owner_id="owner-a",
             companion_id="companion-a",
-            memory_realm_id="realm-a",
-            genome_id="genome-a",
-            schema_version="eidolon.persona_genome",
-            genome_hash="pg_testhash",
-            realizer_version="eidolon.persona_realizer",
+            ttl_seconds=60,
         )
 
 
@@ -110,11 +100,6 @@ async def test_runtime_token_verifier_round_trips_runtime_identity() -> None:
     assert verified.session_id == "session-1"
     assert verified.owner_id == "owner-a"
     assert verified.companion_id == "companion-a"
-    assert verified.memory_realm_id == "realm-a"
-    assert verified.genome_id == "genome-a"
-    assert verified.schema_version == "eidolon.persona_genome"
-    assert verified.genome_hash == "pg_testhash"
-    assert verified.realizer_version == "eidolon.persona_realizer"
     assert verified.scopes == ("device",)
     assert verified.exp == exp.replace(microsecond=0)
 
@@ -141,9 +126,7 @@ async def test_runtime_token_verifier_checks_device_and_owner_revocations() -> N
     device_store = MemoryRevocationStore({device_revocation_keys("1c:db:a1")[0]})
 
     with pytest.raises(RuntimeTokenRevokedError, match="device revoked"):
-        await RuntimeTokenVerifier(secret=SECRET, revocation_kv=device_store).verify(
-            device_token
-        )
+        await RuntimeTokenVerifier(secret=SECRET, revocation_kv=device_store).verify(device_token)
 
     owner_token, _exp = _sign(owner_id="owner-a")
     owner_store = MemoryRevocationStore({owner_revocation_keys("owner-a")[0]})
@@ -175,11 +158,6 @@ async def test_runtime_token_verifier_accepts_owner_without_device_id() -> None:
         secret=SECRET,
         owner_id="owner-a",
         companion_id="companion-a",
-        memory_realm_id="realm-a",
-        genome_id="genome-a",
-        schema_version="eidolon.persona_genome",
-        genome_hash="pg_testhash",
-        realizer_version="eidolon.persona_realizer",
         scopes=("web",),
         ttl_seconds=60,
     )
@@ -189,9 +167,6 @@ async def test_runtime_token_verifier_accepts_owner_without_device_id() -> None:
     assert verified.device_id is None
     assert verified.owner_id == "owner-a"
     assert verified.companion_id == "companion-a"
-    assert verified.memory_realm_id == "realm-a"
-    assert verified.genome_id == "genome-a"
-    assert verified.genome_hash == "pg_testhash"
     assert verified.scopes == ("web",)
     assert verified.exp == exp.replace(microsecond=0)
 
@@ -216,7 +191,7 @@ async def test_runtime_token_verifier_requires_owner_claims() -> None:
     exp = datetime.now(timezone.utc) + timedelta(seconds=60)
     token = jwt.encode(
         {
-            "runtime_token_version": 4,
+            "runtime_token_version": 5,
             "device_id": "device-1",
             "exp": int(exp.timestamp()),
         },
