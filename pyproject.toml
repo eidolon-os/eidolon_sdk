@@ -49,6 +49,7 @@ livekit = [
     "livekit-api>=0.5",
 ]
 dev = [
+    "grpcio-tools>=1.62",
     "hatchling>=1.25",
     "jsonschema>=4.21",
     "pytest>=8.0",
