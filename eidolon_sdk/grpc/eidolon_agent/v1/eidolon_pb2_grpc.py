@@ -3,9 +3,9 @@
 import grpc
 import warnings
 
-from eidolon_agent.v1 import eidolon_pb2 as eidolon__agent_dot_v1_dot_eidolon__pb2
+from eidolon_sdk.grpc.eidolon_agent.v1 import eidolon_pb2 as eidolon__sdk_dot_grpc_dot_eidolon__agent_dot_v1_dot_eidolon__pb2
 
-GRPC_GENERATED_VERSION = '1.83.0'
+GRPC_GENERATED_VERSION = '1.73.1'
 GRPC_VERSION = grpc.__version__
 _version_not_supported = False
 
@@ -18,14 +18,14 @@ except ImportError:
 if _version_not_supported:
     raise RuntimeError(
         f'The grpc package installed is at version {GRPC_VERSION},'
-        + ' but the generated code in eidolon_agent/v1/eidolon_pb2_grpc.py depends on'
+        + f' but the generated code in eidolon_sdk/grpc/eidolon_agent/v1/eidolon_pb2_grpc.py depends on'
         + f' grpcio>={GRPC_GENERATED_VERSION}.'
         + f' Please upgrade your grpc module to grpcio>={GRPC_GENERATED_VERSION}'
         + f' or downgrade your generated code using grpcio-tools<={GRPC_VERSION}.'
     )
 
 
-class EidolonAgentStub:
+class EidolonAgentStub(object):
     """The EidolonAgent service is the companion runtime that LiveKit voice agents
     and other authenticated clients invoke instead of a raw LLM. Owner
     authentication, device binding, and token issuance live outside this service.
@@ -39,22 +39,22 @@ class EidolonAgentStub:
         """
         self.Chat = channel.stream_stream(
                 '/eidolon.agent.v1.EidolonAgent/Chat',
-                request_serializer=eidolon__agent_dot_v1_dot_eidolon__pb2.ChatRequest.SerializeToString,
-                response_deserializer=eidolon__agent_dot_v1_dot_eidolon__pb2.TurnEvent.FromString,
+                request_serializer=eidolon__sdk_dot_grpc_dot_eidolon__agent_dot_v1_dot_eidolon__pb2.ChatRequest.SerializeToString,
+                response_deserializer=eidolon__sdk_dot_grpc_dot_eidolon__agent_dot_v1_dot_eidolon__pb2.TurnEvent.FromString,
                 _registered_method=True)
         self.PushSignal = channel.unary_unary(
                 '/eidolon.agent.v1.EidolonAgent/PushSignal',
-                request_serializer=eidolon__agent_dot_v1_dot_eidolon__pb2.SignalRequest.SerializeToString,
-                response_deserializer=eidolon__agent_dot_v1_dot_eidolon__pb2.Ack.FromString,
+                request_serializer=eidolon__sdk_dot_grpc_dot_eidolon__agent_dot_v1_dot_eidolon__pb2.SignalRequest.SerializeToString,
+                response_deserializer=eidolon__sdk_dot_grpc_dot_eidolon__agent_dot_v1_dot_eidolon__pb2.Ack.FromString,
                 _registered_method=True)
         self.SubscribeProactive = channel.unary_stream(
                 '/eidolon.agent.v1.EidolonAgent/SubscribeProactive',
-                request_serializer=eidolon__agent_dot_v1_dot_eidolon__pb2.SubscribeRequest.SerializeToString,
-                response_deserializer=eidolon__agent_dot_v1_dot_eidolon__pb2.ProactiveEvent.FromString,
+                request_serializer=eidolon__sdk_dot_grpc_dot_eidolon__agent_dot_v1_dot_eidolon__pb2.SubscribeRequest.SerializeToString,
+                response_deserializer=eidolon__sdk_dot_grpc_dot_eidolon__agent_dot_v1_dot_eidolon__pb2.ProactiveEvent.FromString,
                 _registered_method=True)
 
 
-class EidolonAgentServicer:
+class EidolonAgentServicer(object):
     """The EidolonAgent service is the companion runtime that LiveKit voice agents
     and other authenticated clients invoke instead of a raw LLM. Owner
     authentication, device binding, and token issuance live outside this service.
@@ -96,18 +96,18 @@ def add_EidolonAgentServicer_to_server(servicer, server):
     rpc_method_handlers = {
             'Chat': grpc.stream_stream_rpc_method_handler(
                     servicer.Chat,
-                    request_deserializer=eidolon__agent_dot_v1_dot_eidolon__pb2.ChatRequest.FromString,
-                    response_serializer=eidolon__agent_dot_v1_dot_eidolon__pb2.TurnEvent.SerializeToString,
+                    request_deserializer=eidolon__sdk_dot_grpc_dot_eidolon__agent_dot_v1_dot_eidolon__pb2.ChatRequest.FromString,
+                    response_serializer=eidolon__sdk_dot_grpc_dot_eidolon__agent_dot_v1_dot_eidolon__pb2.TurnEvent.SerializeToString,
             ),
             'PushSignal': grpc.unary_unary_rpc_method_handler(
                     servicer.PushSignal,
-                    request_deserializer=eidolon__agent_dot_v1_dot_eidolon__pb2.SignalRequest.FromString,
-                    response_serializer=eidolon__agent_dot_v1_dot_eidolon__pb2.Ack.SerializeToString,
+                    request_deserializer=eidolon__sdk_dot_grpc_dot_eidolon__agent_dot_v1_dot_eidolon__pb2.SignalRequest.FromString,
+                    response_serializer=eidolon__sdk_dot_grpc_dot_eidolon__agent_dot_v1_dot_eidolon__pb2.Ack.SerializeToString,
             ),
             'SubscribeProactive': grpc.unary_stream_rpc_method_handler(
                     servicer.SubscribeProactive,
-                    request_deserializer=eidolon__agent_dot_v1_dot_eidolon__pb2.SubscribeRequest.FromString,
-                    response_serializer=eidolon__agent_dot_v1_dot_eidolon__pb2.ProactiveEvent.SerializeToString,
+                    request_deserializer=eidolon__sdk_dot_grpc_dot_eidolon__agent_dot_v1_dot_eidolon__pb2.SubscribeRequest.FromString,
+                    response_serializer=eidolon__sdk_dot_grpc_dot_eidolon__agent_dot_v1_dot_eidolon__pb2.ProactiveEvent.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -117,7 +117,7 @@ def add_EidolonAgentServicer_to_server(servicer, server):
 
 
  # This class is part of an EXPERIMENTAL API.
-class EidolonAgent:
+class EidolonAgent(object):
     """The EidolonAgent service is the companion runtime that LiveKit voice agents
     and other authenticated clients invoke instead of a raw LLM. Owner
     authentication, device binding, and token issuance live outside this service.
@@ -138,8 +138,8 @@ class EidolonAgent:
             request_iterator,
             target,
             '/eidolon.agent.v1.EidolonAgent/Chat',
-            eidolon__agent_dot_v1_dot_eidolon__pb2.ChatRequest.SerializeToString,
-            eidolon__agent_dot_v1_dot_eidolon__pb2.TurnEvent.FromString,
+            eidolon__sdk_dot_grpc_dot_eidolon__agent_dot_v1_dot_eidolon__pb2.ChatRequest.SerializeToString,
+            eidolon__sdk_dot_grpc_dot_eidolon__agent_dot_v1_dot_eidolon__pb2.TurnEvent.FromString,
             options,
             channel_credentials,
             insecure,
@@ -165,8 +165,8 @@ class EidolonAgent:
             request,
             target,
             '/eidolon.agent.v1.EidolonAgent/PushSignal',
-            eidolon__agent_dot_v1_dot_eidolon__pb2.SignalRequest.SerializeToString,
-            eidolon__agent_dot_v1_dot_eidolon__pb2.Ack.FromString,
+            eidolon__sdk_dot_grpc_dot_eidolon__agent_dot_v1_dot_eidolon__pb2.SignalRequest.SerializeToString,
+            eidolon__sdk_dot_grpc_dot_eidolon__agent_dot_v1_dot_eidolon__pb2.Ack.FromString,
             options,
             channel_credentials,
             insecure,
@@ -192,8 +192,8 @@ class EidolonAgent:
             request,
             target,
             '/eidolon.agent.v1.EidolonAgent/SubscribeProactive',
-            eidolon__agent_dot_v1_dot_eidolon__pb2.SubscribeRequest.SerializeToString,
-            eidolon__agent_dot_v1_dot_eidolon__pb2.ProactiveEvent.FromString,
+            eidolon__sdk_dot_grpc_dot_eidolon__agent_dot_v1_dot_eidolon__pb2.SubscribeRequest.SerializeToString,
+            eidolon__sdk_dot_grpc_dot_eidolon__agent_dot_v1_dot_eidolon__pb2.ProactiveEvent.FromString,
             options,
             channel_credentials,
             insecure,

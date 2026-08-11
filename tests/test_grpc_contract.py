@@ -36,9 +36,12 @@ def _generated(destination: Path) -> dict[str, bytes]:
             check=True,
             capture_output=True,
         )
+    # protoc writes to the path the bindings are imported from, so compare the
+    # same subtree the repository publishes.
+    published = destination / "eidolon_sdk/grpc"
     return {
-        str(path.relative_to(destination)): path.read_bytes()
-        for path in sorted(destination.rglob("*"))
+        str(path.relative_to(published)): path.read_bytes()
+        for path in sorted(published.rglob("*"))
         if path.is_file()
     }
 

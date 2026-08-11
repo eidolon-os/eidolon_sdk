@@ -1,5 +1,3 @@
-import datetime
-
 from google.protobuf import struct_pb2 as _struct_pb2
 from google.protobuf import timestamp_pb2 as _timestamp_pb2
 from google.protobuf.internal import enum_type_wrapper as _enum_type_wrapper
@@ -38,7 +36,7 @@ class StartTurn(_message.Message):
     trace_id: str
     speculative: bool
     input_modality: str
-    def __init__(self, turn_id: _Optional[str] = ..., conversation_id: _Optional[str] = ..., text: _Optional[str] = ..., realtime: _Optional[_Union[_struct_pb2.Struct, _Mapping]] = ..., metadata: _Optional[_Union[_struct_pb2.Struct, _Mapping]] = ..., trace_id: _Optional[str] = ..., speculative: _Optional[bool] = ..., input_modality: _Optional[str] = ...) -> None: ...
+    def __init__(self, turn_id: _Optional[str] = ..., conversation_id: _Optional[str] = ..., text: _Optional[str] = ..., realtime: _Optional[_Union[_struct_pb2.Struct, _Mapping]] = ..., metadata: _Optional[_Union[_struct_pb2.Struct, _Mapping]] = ..., trace_id: _Optional[str] = ..., speculative: bool = ..., input_modality: _Optional[str] = ...) -> None: ...
 
 class CancelTurn(_message.Message):
     __slots__ = ("turn_id", "played_chars", "played_ms")
@@ -116,7 +114,7 @@ class Ack(_message.Message):
     NOTE_FIELD_NUMBER: _ClassVar[int]
     accepted: bool
     note: str
-    def __init__(self, accepted: _Optional[bool] = ..., note: _Optional[str] = ...) -> None: ...
+    def __init__(self, accepted: bool = ..., note: _Optional[str] = ...) -> None: ...
 
 class SubscribeRequest(_message.Message):
     __slots__ = ()

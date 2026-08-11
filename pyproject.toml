@@ -49,7 +49,11 @@ livekit = [
     "livekit-api>=0.5",
 ]
 dev = [
-    "grpcio-tools>=1.62",
+    # Pinned, not floated: the generator decides the Protobuf gencode version
+    # baked into the published bindings, and a runtime older than that gencode
+    # refuses to load them. Consumers currently run protobuf 6.33, so the
+    # generator must stay on the 6.31 gencode line.
+    "grpcio-tools==1.73.1",
     "hatchling>=1.25",
     "jsonschema>=4.21",
     "pytest>=8.0",
@@ -68,3 +72,6 @@ testpaths = ["tests"]
 [tool.ruff]
 line-length = 100
 target-version = "py311"
+# Generated bindings are protoc's output, not hand-written source; their shape
+# is the generator's decision and the drift test is what guards them.
+extend-exclude = ["eidolon_sdk/grpc"]
