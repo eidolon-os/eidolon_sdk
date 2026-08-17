@@ -1,0 +1,32 @@
+# How SDK is operated, stated by SDK.
+#
+# SDK runs no service on a Host. It is a library the other components import,
+# and it is pinned in a release for that reason alone.
+#
+# This file exists anyway, and that is the point: Ops distinguishes a component
+# that declares nothing operational from one that has not been asked. The
+# second is a gap and refuses a factory reset; the first is an answer.
+#
+# The schema is eidolon_ops's contracts/component-ops/v1.schema.json;
+# tests/test_operations_contract.py checks that this stays true.
+
+schema_version = 1
+component_id = "eidolon_sdk"
+contract_version = "1"
+
+# No [[units]]: nothing here is started on a Host.
+# No [ports]: nothing here listens.
+# No [[inputs]]: nothing here needs a file installed for it.
+# No [schema]: nothing here owns persistent schema on a Host.
+
+[state]
+runtime = []
+
+[reset]
+factory = []
+
+# One caveat, recorded rather than declared: eidolon_sdk.biz.registry defaults
+# to $EIDOLON_STATE_ROOT/registry/registry.sqlite3. No product unit opens it —
+# it is reached only through tooling that runs outside a Host — so it is not
+# listed as authority here. If a unit ever does open it on a Host, it becomes
+# state this component owns and belongs above, with a backup decision.
