@@ -50,6 +50,14 @@ def test_session_intent_normalization_is_defensive() -> None:
     assert c.normalize_session_flow_id("x" * 97) is None
 
 
+def test_session_request_types_are_stable() -> None:
+    """A device asks to be served over the same topic it is told the answer on."""
+    assert c.SESSION_OPEN_TYPE == "session_open"
+    assert c.SESSION_CLOSE_TYPE == "session_close"
+    assert c.VALID_SESSION_REQUEST_TYPES == {"session_open", "session_close"}
+    assert c.SESSION_END_TYPE not in c.VALID_SESSION_REQUEST_TYPES
+
+
 def test_session_end_reasons_are_stable() -> None:
     assert c.SESSION_END_TYPE == "session_end"
     assert c.VALID_SESSION_END_REASONS == {

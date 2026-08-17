@@ -144,6 +144,22 @@ SessionEndReason = Literal[
 ]
 
 # --------------------------------------------------------------------------- #
+# session_open / session_close — device → server, on eidolon.session_control.  #
+# The other direction of the topic above.                                      #
+# --------------------------------------------------------------------------- #
+# A device holds its channel open for as long as it is enrolled, so being
+# connected no longer says anything about wanting to talk. These are how a
+# device says it — and stops saying it — which is what an agent, its models and
+# its metered speech services are started and stopped by.
+#
+# Statements of desired state, not events: repeating one is not an error and
+# does not stack, so a device that retries after a lost reply is safe.
+SESSION_OPEN_TYPE = "session_open"
+SESSION_CLOSE_TYPE = "session_close"
+VALID_SESSION_REQUEST_TYPES = frozenset({SESSION_OPEN_TYPE, SESSION_CLOSE_TYPE})
+SessionRequestType = Literal["session_open", "session_close"]
+
+# --------------------------------------------------------------------------- #
 # client.audio_state — device → server observe-only signal vocabulary.         #
 # --------------------------------------------------------------------------- #
 # Payload "type" label inside the JSON body, decoupled from the routing topic.
