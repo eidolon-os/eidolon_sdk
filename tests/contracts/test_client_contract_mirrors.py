@@ -29,6 +29,11 @@ def test_mobile_contract_mirror_matches_sdk() -> None:
     assert constants["sessionIntentField"] == c.SESSION_INTENT_FIELD
     assert constants["sessionIntentUserInitiated"] == c.SESSION_INTENT_USER_INITIATED
     assert constants["sessionIntentProactive"] == c.SESSION_INTENT_PROACTIVE
+    # What a client says to be heard at all. Drift here is silent: the request
+    # is published successfully and simply never recognised as one.
+    assert constants["sessionControlTopic"] == c.SESSION_CONTROL_TOPIC
+    assert constants["sessionOpenType"] == c.SESSION_OPEN_TYPE
+    assert constants["sessionCloseType"] == c.SESSION_CLOSE_TYPE
 
 
 def test_admin_contract_mirror_matches_sdk() -> None:

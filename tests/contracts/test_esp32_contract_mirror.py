@@ -79,6 +79,11 @@ def test_esp32_topics_header_matches_python_wire_contract() -> None:
     assert strings["kTranscriptionTopic"] == c.LIVEKIT_TRANSCRIPTION_TOPIC
     assert strings["kAgentSessionTopic"] == c.LIVEKIT_AGENT_SESSION_TOPIC
 
+    # What a device says to be heard at all. Drift here is silent: the request
+    # is published successfully and simply never recognised as one.
+    assert strings["kSessionOpenType"] == c.SESSION_OPEN_TYPE
+    assert strings["kSessionCloseType"] == c.SESSION_CLOSE_TYPE
+
     assert strings["kClientAudioStateType"] == c.CLIENT_AUDIO_STATE_TYPE
     assert strings["kInputModeAuto"] == c.INPUT_MODE_AUTO
     assert strings["kInputModePtt"] == c.INPUT_MODE_PTT
