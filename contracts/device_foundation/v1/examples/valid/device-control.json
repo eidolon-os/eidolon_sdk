@@ -1,0 +1,95 @@
+{
+  "cases": [
+    {
+      "case_id": "DF-CONTROL-PATCH-DESIRED-VALID",
+      "schema": "https://contracts.eidolon.live/device-foundation/v1/device-control/schemas.schema.json",
+      "definition": "PatchDesired",
+      "value": {
+        "device_ref": {
+          "device_instance_id": "device_01",
+          "owner_domain_id": "owner_01",
+          "claim_generation": 2,
+          "trust_epoch": 4,
+          "accepted_manifest_digest": "sha256:2222222222222222222222222222222222222222222222222222222222222222"
+        },
+        "expected_twin_generation": 3,
+        "patch": { "privacy_mode": true },
+        "field_mask": ["privacy_mode"]
+      }
+    },
+    {
+      "case_id": "DF-CONTROL-PATCH-DESIRED-RESULT-VALID",
+      "schema": "https://contracts.eidolon.live/device-foundation/v1/device-control/schemas.schema.json",
+      "definition": "PatchDesiredResult",
+      "value": {
+        "twin_generation": 4,
+        "desired_digest": "sha256:3333333333333333333333333333333333333333333333333333333333333333",
+        "delivery_state": "pending"
+      }
+    },
+    {
+      "case_id": "DF-CONTROL-REPORT-STATE-VALID",
+      "schema": "https://contracts.eidolon.live/device-foundation/v1/device-control/schemas.schema.json",
+      "definition": "ReportState",
+      "value": {
+        "device_ref": {
+          "device_instance_id": "device_01",
+          "owner_domain_id": "owner_01",
+          "claim_generation": 2,
+          "trust_epoch": 4,
+          "accepted_manifest_digest": "sha256:2222222222222222222222222222222222222222222222222222222222222222"
+        },
+        "report_id": "report_01",
+        "observed_twin_generation": 4,
+        "reported": { "privacy_mode": true },
+        "device_monotonic_time": 91234,
+        "device_signature": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+      }
+    },
+    {
+      "case_id": "DF-CONTROL-CREATE-OPERATION-VALID",
+      "schema": "https://contracts.eidolon.live/device-foundation/v1/device-control/schemas.schema.json",
+      "definition": "CreateOperation",
+      "value": {
+        "device_ref": {
+          "device_instance_id": "device_01",
+          "owner_domain_id": "owner_01",
+          "claim_generation": 2,
+          "trust_epoch": 4,
+          "accepted_manifest_digest": "sha256:2222222222222222222222222222222222222222222222222222222222222222"
+        },
+        "operation_id": "operation_01",
+        "operation_type": "device.restart",
+        "target_ref": { "device_instance_id": "device_01" },
+        "preconditions": {
+          "claim_generation": 2,
+          "trust_epoch": 4,
+          "target_revision": null
+        },
+        "deadline": "2026-08-18T00:20:00Z",
+        "qos": "result",
+        "payload": {}
+      }
+    },
+    {
+      "case_id": "DF-CONTROL-ACK-OPERATION-VALID",
+      "schema": "https://contracts.eidolon.live/device-foundation/v1/device-control/schemas.schema.json",
+      "definition": "AckOperation",
+      "value": {
+        "device_ref": {
+          "device_instance_id": "device_01",
+          "owner_domain_id": "owner_01",
+          "claim_generation": 2,
+          "trust_epoch": 4,
+          "accepted_manifest_digest": "sha256:2222222222222222222222222222222222222222222222222222222222222222"
+        },
+        "operation_id": "operation_01",
+        "ack_sequence": 2,
+        "state": "succeeded",
+        "result_code": "OK",
+        "result": { "restarted": true },
+        "device_signature": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+      }
+    }
+  ]
+}

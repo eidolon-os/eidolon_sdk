@@ -1,0 +1,154 @@
+{
+  "artifact": "eidolon-device-foundation-v1-canonical-source",
+  "contract_version": "1.0",
+  "files": [
+    {
+      "path": "admission/schemas.schema.json",
+      "sha256": "139379aca49df21351059cfbc2dc8ef41cf80d6ef6712e5cff95ae57af1700d8",
+      "size": 7279
+    },
+    {
+      "path": "baseline/cross-repo-heads.v1.json",
+      "sha256": "2ecb55f139601c76e192195813e21ebeec28f3a050f0bffac43db61a73b490c1",
+      "size": 10924
+    },
+    {
+      "path": "body-mesh/schemas.schema.json",
+      "sha256": "559b3871a1ce7d9ba36d12fa94da1538c9270fbd6cd5dd7068ab147b265d2e2c",
+      "size": 4486
+    },
+    {
+      "path": "common/schemas.schema.json",
+      "sha256": "d8a7f8cd6e94d2fd7d64e46a3e6b72cb602ff269733845725d2e5b0aadba1f3c",
+      "size": 11765
+    },
+    {
+      "path": "conformance/run.py",
+      "sha256": "66ea40eba456c4272829db6a7265f20213cc6bd11a1d5037ba4296a0a6d63c5c",
+      "size": 21705
+    },
+    {
+      "path": "delivery-port/schemas.schema.json",
+      "sha256": "aa2f7ab9c746c1769eb6c96bc1a62ca87500fb283d0a0fe8515b014ba6726569",
+      "size": 1960
+    },
+    {
+      "path": "device-control/schemas.schema.json",
+      "sha256": "5ae2cecb21b391307977bcf86ef34d95c4ff8615404d0415e938e60056a7f492",
+      "size": 4180
+    },
+    {
+      "path": "events/schemas.schema.json",
+      "sha256": "561136373b871d6c615c58548ef63506b233b5bada9b3b7df416a1eeea8ab349",
+      "size": 2104
+    },
+    {
+      "path": "examples/invalid/authority.json",
+      "sha256": "8d5d252a161acf3d2dafc382ff7c9c25cbc5385c98ef57c11e0ff54a188661a0",
+      "size": 7143
+    },
+    {
+      "path": "examples/invalid/common.json",
+      "sha256": "4b303833690bf3cf76ec3d90a86ce1935b658c4d040b66bb474a7b9202d5427f",
+      "size": 4825
+    },
+    {
+      "path": "examples/valid/admission.json",
+      "sha256": "0e7e15cef75f1edfef949ffd5738d89c589f1788c10de92917b73af6d824c71a",
+      "size": 4623
+    },
+    {
+      "path": "examples/valid/body-mesh.json",
+      "sha256": "801f8e62c35a3638ec5f27bd803050a6a5f135a6112d6861d6fe339e83020895",
+      "size": 2940
+    },
+    {
+      "path": "examples/valid/common.json",
+      "sha256": "580a8a90770c3dcc8a587292025bce5da9f207b790228b4b6eea69ec658dbc24",
+      "size": 6624
+    },
+    {
+      "path": "examples/valid/delivery-and-events.json",
+      "sha256": "ef484bf021b5a1e07f50162dc6c5af65d872c164414aee9b553d1560e9b09224",
+      "size": 3058
+    },
+    {
+      "path": "examples/valid/device-control.json",
+      "sha256": "49e696e4c058820086253db3a0d131b0c84a253c14d6ed79d5a807a9d51ed2d6",
+      "size": 3585
+    },
+    {
+      "path": "generation/config.json",
+      "sha256": "47375ccd3315b66fcaf096cc314ccfd6d66cbea5d30072fca1cdaf7454e4d431",
+      "size": 955
+    },
+    {
+      "path": "generation/generate.py",
+      "sha256": "37393a1a65dd0553d23fe5df614775f10d3f4f945e60615fd784a20c15c40386",
+      "size": 2329
+    },
+    {
+      "path": "golden/canonical-vectors.json",
+      "sha256": "4fbcb214e977ef41c6aceb2a30307621a1cb0efeefb5291548b15b101f7d5b3e",
+      "size": 1635
+    },
+    {
+      "path": "golden/claim-grant-aad.json",
+      "sha256": "60a590f6ee17e19e62bf9ba7be9c68a7cfcdab414877754b54fec04f7778faad",
+      "size": 1184
+    },
+    {
+      "path": "golden/es256-vectors.json",
+      "sha256": "052a32c1196868ed88fe1bfa9e926454f5a04aba6de6f6445c415ff850fb8278",
+      "size": 1233
+    },
+    {
+      "path": "golden/protocomm-security2-framing.json",
+      "sha256": "d7fc6c98aa7569c13faac9b2db44499799986e23f797b64b3845b018b519053a",
+      "size": 698
+    },
+    {
+      "path": "golden/rfc9180-p256-base.json",
+      "sha256": "2da81d1c67a05e5a91acdc2efe0bdfa063eb79bf67a9101172b820e5fbce3d1c",
+      "size": 1785
+    },
+    {
+      "path": "profile/eidolon-trust-p256-hpke-v1.json",
+      "sha256": "dc1e3f0a000487c7df20d8860bfc501e642f9adc2a3b23ff839e918dde71c542",
+      "size": 2591
+    },
+    {
+      "path": "requirements/characterization.json",
+      "sha256": "42f0b4004187d94af6cf8cedcbc59d392e288300a532d638fd2c1beb8f45be23",
+      "size": 3710
+    },
+    {
+      "path": "requirements/consumer-matrix.json",
+      "sha256": "0b15c724ee5e154b8497260743cbb269fda810927f790462479fe90cc5206505",
+      "size": 2617
+    },
+    {
+      "path": "requirements/requirements.json",
+      "sha256": "be354d140e3a957f784a4b676cee9e35f6e081191eaface0f439ff08c1292a4b",
+      "size": 13006
+    },
+    {
+      "path": "state-vectors/host-relocation.json",
+      "sha256": "5f4284dff2a26b3c9d45e1a16d0fa7a42d95829f946c9d8a16de6158f0f2884e",
+      "size": 1073
+    },
+    {
+      "path": "state-vectors/idempotency.json",
+      "sha256": "c73f96c459c88cb735adf3ec387cff300e9ada26b49bc827d8a4d890e6206047",
+      "size": 1057
+    },
+    {
+      "path": "state-vectors/operation-terminal.json",
+      "sha256": "ae35d2ec65042018d6f72ee53548a38d7406ab56c9567cfbb719791ae79a6dfc",
+      "size": 576
+    }
+  ],
+  "generator": "device-foundation-v1-catalog",
+  "generator_version": "1.0",
+  "source_digest": "sha256:fe8f9df7501a4db81968a6da51e746f108614d401fa2a7d7137437843ecf1789"
+}

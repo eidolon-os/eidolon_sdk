@@ -1,0 +1,74 @@
+{
+  "contract_version": "1.0",
+  "rule": "Only eidolon_sdk publishes canonical schemas; authorities own semantics and producer responsibility.",
+  "participants": [
+    {
+      "repo": "eidolon_sdk",
+      "roles": ["canonical-source", "artifact-publisher", "conformance-runner"],
+      "contracts": ["all"],
+      "p0_change": true
+    },
+    {
+      "repo": "eidolon_hub",
+      "roles": ["admission-producer", "device-control-producer-future"],
+      "contracts": ["common", "admission", "events", "device-control", "delivery-port"],
+      "p0_change": false
+    },
+    {
+      "repo": "eidolon_kernel",
+      "roles": ["body-mesh-producer", "admission-consumer"],
+      "contracts": ["common", "body-mesh", "events"],
+      "p0_change": false
+    },
+    {
+      "repo": "eidolon_admin",
+      "roles": ["workflow-consumer", "projection-consumer"],
+      "contracts": ["common", "admission", "body-mesh", "device-control", "events"],
+      "p0_change": false
+    },
+    {
+      "repo": "eidolon_client_mobile",
+      "roles": ["controller-consumer", "workflow-consumer"],
+      "contracts": ["common", "admission", "body-mesh"],
+      "p0_change": false
+    },
+    {
+      "repo": "eidolon-client-esp32",
+      "roles": ["device-consumer", "device-report-producer", "operation-ack-producer"],
+      "contracts": ["common", "admission", "device-control", "delivery-port"],
+      "p0_change": false
+    },
+    {
+      "repo": "eidolon_channel",
+      "roles": ["delivery-adapter-consumer"],
+      "contracts": ["common", "delivery-port"],
+      "p0_change": false
+    },
+    {
+      "repo": "eidolon_data",
+      "roles": ["owner-companion-reference-provider"],
+      "contracts": ["opaque-owner-companion-refs"],
+      "p0_change": false
+    },
+    {
+      "repo": "eidolon_agent",
+      "roles": ["body-target-consumer-future"],
+      "contracts": ["common", "body-mesh"],
+      "p0_change": false
+    },
+    {
+      "repo": "eidolon_vision",
+      "roles": ["capability-consumer-future"],
+      "contracts": ["common", "body-mesh"],
+      "p0_change": false
+    }
+  ],
+  "non_participants": [
+    { "repo": "docs", "reason": "normative source, not a wire producer or consumer" },
+    { "repo": "eidolon_client_web", "reason": "no Body Device management dependency found" },
+    { "repo": "eidolon_memory", "reason": "Companion memory lifecycle is device-independent" },
+    { "repo": "eidolon_ops", "reason": "deployment tooling; P0 does not deploy" },
+    { "repo": "eidolon-official-site", "reason": "website only" },
+    { "repo": "vendor/client-sdk-esp32", "reason": "external vendored transport SDK" }
+  ]
+}

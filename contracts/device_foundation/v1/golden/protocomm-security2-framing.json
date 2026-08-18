@@ -1,0 +1,23 @@
+{
+  "vector_id": "DF-PROTOCOMM-SECURITY2-FRAMING-001",
+  "profile_id": "eidolon-trust-p256-hpke-v1",
+  "protocol": "ESP-IDF-Protocomm-Security2",
+  "security": "SRP6a-AES-256-GCM",
+  "semantic_empty_request": {
+    "json": {},
+    "canonical_utf8_hex": "7b7d",
+    "zero_length_ciphertext_payload_allowed": false
+  },
+  "invalid_cases": [
+    { "case": "zero-length-semantic-request", "stable_error": "INVALID_ARGUMENT" },
+    { "case": "unknown-profile", "stable_error": "CONTRACT_UNSUPPORTED" }
+  ],
+  "session_owned_resources": [
+    "salt",
+    "verifier",
+    "security-context",
+    "endpoint-user-data",
+    "callback-target"
+  ],
+  "minimum_lifetime": "StartingTransport-through-Stopped"
+}

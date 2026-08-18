@@ -1,0 +1,135 @@
+{
+  "cases": [
+    {
+      "case_id": "DF-HOST-DEVICE-REF-REJECTS-HOST-ID",
+      "schema": "https://contracts.eidolon.live/device-foundation/v1/common/schemas.schema.json",
+      "definition": "DeviceRef",
+      "error_contains": "Additional properties",
+      "value": {
+        "device_instance_id": "device_01",
+        "owner_domain_id": "owner_01",
+        "claim_generation": 2,
+        "trust_epoch": 3,
+        "accepted_manifest_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "host_id": "host_01"
+      }
+    },
+    {
+      "case_id": "DF-HOST-BODY-TARGET-REJECTS-ENDPOINT-ROUTE",
+      "schema": "https://contracts.eidolon.live/device-foundation/v1/common/schemas.schema.json",
+      "definition": "BodyTargetRef",
+      "error_contains": "Additional properties",
+      "value": {
+        "mount_id": "mount_01",
+        "body_endpoint_id": "voice-body",
+        "assignment_generation": 4,
+        "server_ip": "192.0.2.1"
+      }
+    },
+    {
+      "case_id": "DF-COMMON-COMMAND-REJECTS-UNKNOWN-VERSION",
+      "schema": "https://contracts.eidolon.live/device-foundation/v1/common/schemas.schema.json",
+      "definition": "CommandEnvelope",
+      "error_contains": "was expected",
+      "value": {
+        "contract": "eidolon.device-foundation.command",
+        "contract_version": "2.0",
+        "command_type": "admission.create-enrollment",
+        "command_id": "command_01",
+        "correlation_id": "intent_01",
+        "causation_id": null,
+        "issued_at": "2026-08-18T00:00:00Z",
+        "deadline": null,
+        "payload": {},
+        "extensions": {}
+      }
+    },
+    {
+      "case_id": "DF-COMMON-PROBLEM-PERMANENT-CANNOT-RETRY",
+      "schema": "https://contracts.eidolon.live/device-foundation/v1/common/schemas.schema.json",
+      "definition": "DeviceProblem",
+      "error_contains": "not of type 'null'",
+      "value": {
+        "code": "FORBIDDEN",
+        "category": "forbidden",
+        "retryable": false,
+        "authority": "admission",
+        "command_id": "command_01",
+        "resource_ref": null,
+        "current_revision": null,
+        "current_generation": null,
+        "retry_after_ms": 1000,
+        "detail": "Denied.",
+        "incident_id": "incident_01"
+      }
+    },
+    {
+      "case_id": "DF-COMMON-RATE-LIMIT-REQUIRES-RETRY-AFTER",
+      "schema": "https://contracts.eidolon.live/device-foundation/v1/common/schemas.schema.json",
+      "definition": "DeviceProblem",
+      "error_contains": "not of type",
+      "value": {
+        "code": "RATE_LIMITED",
+        "category": "unavailable",
+        "retryable": true,
+        "authority": "admission",
+        "command_id": "command_01",
+        "resource_ref": null,
+        "current_revision": null,
+        "current_generation": null,
+        "retry_after_ms": null,
+        "detail": "Try later.",
+        "incident_id": "incident_01"
+      }
+    },
+    {
+      "case_id": "DF-HOST-DESCRIPTOR-REJECTS-HOST-FIELD",
+      "schema": "https://contracts.eidolon.live/device-foundation/v1/common/schemas.schema.json",
+      "definition": "OwnerDomainDescriptor",
+      "error_contains": "Additional properties",
+      "value": {
+        "owner_domain_id": "owner_01",
+        "directory_revision": 7,
+        "trust_root_refs": [
+          "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+        ],
+        "endpoints": [
+          {
+            "authority": "admission",
+            "logical_audience": "eidolon-admission",
+            "uri": "https://admission.owner.example/v1",
+            "transport_profile": "https-json",
+            "priority": 10
+          }
+        ],
+        "issued_at": "2026-08-18T00:00:00Z",
+        "expires_at": "2026-08-19T00:00:00Z",
+        "signing_key_id": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        "signature": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+        "host_id": "host_01"
+      }
+    },
+    {
+      "case_id": "DF-PROFILE-REJECTS-DOWNGRADE",
+      "schema": "https://contracts.eidolon.live/device-foundation/v1/common/schemas.schema.json",
+      "definition": "CommissioningProfile",
+      "error_contains": "was expected",
+      "value": {
+        "profile_id": "security0",
+        "schema_version": "1.0",
+        "eid_pair_versions": ["1.0"],
+        "methods": ["softap"],
+        "network_bearers": ["wifi"],
+        "physical_presence": ["button"],
+        "attestation_schemes": ["manufacturer-p256"],
+        "secure_storage_level": "secure-element",
+        "monotonic_counter": true,
+        "candidate_network": true,
+        "rollback_guarantee": "crash-safe",
+        "max_message_size": 16384,
+        "trusted_clock": false,
+        "reset_modes": ["factory"]
+      }
+    }
+  ]
+}

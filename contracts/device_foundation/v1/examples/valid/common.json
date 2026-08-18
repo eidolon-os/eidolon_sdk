@@ -1,0 +1,174 @@
+{
+  "cases": [
+    {
+      "case_id": "DF-COMMON-IDENTIFIER-VALID",
+      "schema": "https://contracts.eidolon.live/device-foundation/v1/common/schemas.schema.json",
+      "definition": "Identifier",
+      "value": "device_01"
+    },
+    {
+      "case_id": "DF-COMMON-SHA256-DIGEST-VALID",
+      "schema": "https://contracts.eidolon.live/device-foundation/v1/common/schemas.schema.json",
+      "definition": "Sha256Digest",
+      "value": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    },
+    {
+      "case_id": "DF-COMMON-P256-SIGNATURE-VALID",
+      "schema": "https://contracts.eidolon.live/device-foundation/v1/common/schemas.schema.json",
+      "definition": "P256RawSignature",
+      "value": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+    },
+    {
+      "case_id": "DF-COMMON-DEVICE-REF-VALID",
+      "schema": "https://contracts.eidolon.live/device-foundation/v1/common/schemas.schema.json",
+      "definition": "DeviceRef",
+      "value": {
+        "device_instance_id": "device_01",
+        "owner_domain_id": "owner_01",
+        "claim_generation": 2,
+        "trust_epoch": 3,
+        "accepted_manifest_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      }
+    },
+    {
+      "case_id": "DF-COMMON-BODY-TARGET-VALID",
+      "schema": "https://contracts.eidolon.live/device-foundation/v1/common/schemas.schema.json",
+      "definition": "BodyTargetRef",
+      "value": {
+        "mount_id": "mount_01",
+        "body_endpoint_id": "voice-body",
+        "assignment_generation": 4
+      }
+    },
+    {
+      "case_id": "DF-COMMON-ACTOR-VALID",
+      "schema": "https://contracts.eidolon.live/device-foundation/v1/common/schemas.schema.json",
+      "definition": "ActorRef",
+      "value": {
+        "principal_id": "controller_01",
+        "principal_type": "controller",
+        "owner_domain_id": "owner_01",
+        "granted_scopes": ["device.claim.approve"],
+        "authentication_strength": "hardware-backed"
+      }
+    },
+    {
+      "case_id": "DF-COMMON-COMMAND-VALID",
+      "schema": "https://contracts.eidolon.live/device-foundation/v1/common/schemas.schema.json",
+      "definition": "CommandEnvelope",
+      "value": {
+        "contract": "eidolon.device-foundation.command",
+        "contract_version": "1.0",
+        "command_type": "admission.create-enrollment",
+        "command_id": "command_01",
+        "correlation_id": "intent_01",
+        "causation_id": null,
+        "issued_at": "2026-08-18T00:00:00Z",
+        "deadline": "2026-08-18T00:15:00Z",
+        "payload": { "enrollment_id": "enrollment_01" },
+        "extensions": {}
+      }
+    },
+    {
+      "case_id": "DF-COMMON-COMMAND-RESULT-VALID",
+      "schema": "https://contracts.eidolon.live/device-foundation/v1/common/schemas.schema.json",
+      "definition": "CommandResult",
+      "value": {
+        "command_id": "command_01",
+        "outcome": "committed",
+        "resource_ref": { "enrollment_id": "enrollment_01" },
+        "resource_revision": 1,
+        "occurred_at": "2026-08-18T00:00:01Z",
+        "extensions": {}
+      }
+    },
+    {
+      "case_id": "DF-COMMON-PROBLEM-VALID",
+      "schema": "https://contracts.eidolon.live/device-foundation/v1/common/schemas.schema.json",
+      "definition": "DeviceProblem",
+      "value": {
+        "code": "REVISION_CONFLICT",
+        "category": "conflict",
+        "retryable": false,
+        "authority": "body-mesh",
+        "command_id": "command_01",
+        "resource_ref": { "mount_id": "mount_01" },
+        "current_revision": 8,
+        "current_generation": null,
+        "retry_after_ms": null,
+        "detail": "The expected revision is stale.",
+        "incident_id": "incident_01"
+      }
+    },
+    {
+      "case_id": "DF-HOST-DESCRIPTOR-VALID",
+      "schema": "https://contracts.eidolon.live/device-foundation/v1/common/schemas.schema.json",
+      "definition": "OwnerDomainDescriptor",
+      "value": {
+        "owner_domain_id": "owner_01",
+        "directory_revision": 7,
+        "trust_root_refs": [
+          "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+        ],
+        "endpoints": [
+          {
+            "authority": "admission",
+            "logical_audience": "eidolon-admission",
+            "uri": "https://admission.owner.example/v1",
+            "transport_profile": "https-json",
+            "priority": 10
+          },
+          {
+            "authority": "device-control",
+            "logical_audience": "eidolon-device-control",
+            "uri": "https://control.owner.example/v1",
+            "transport_profile": "https-json",
+            "priority": 10
+          }
+        ],
+        "issued_at": "2026-08-18T00:00:00Z",
+        "expires_at": "2026-08-19T00:00:00Z",
+        "signing_key_id": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        "signature": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+      }
+    },
+    {
+      "case_id": "DF-CRYPTO-CLAIM-GRANT-AAD-VALID",
+      "schema": "https://contracts.eidolon.live/device-foundation/v1/common/schemas.schema.json",
+      "definition": "ClaimGrantAAD",
+      "value": {
+        "contract": "eidolon.device-foundation.claim-grant-aad",
+        "profile_id": "eidolon-trust-p256-hpke-v1",
+        "enrollment_id": "enrollment_01",
+        "proposal_revision": 3,
+        "hardware_evidence_digest": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+        "manifest_digest": "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+        "owner_domain_id": "owner_01",
+        "claim_generation": 2,
+        "trust_epoch": 4,
+        "grant_id": "grant_01"
+      }
+    },
+    {
+      "case_id": "DF-PROFILE-COMMISSIONING-VALID",
+      "schema": "https://contracts.eidolon.live/device-foundation/v1/common/schemas.schema.json",
+      "definition": "CommissioningProfile",
+      "value": {
+        "profile_id": "eidolon-trust-p256-hpke-v1",
+        "schema_version": "1.0",
+        "eid_pair_versions": ["1.0"],
+        "methods": ["softap", "ble"],
+        "network_bearers": ["wifi"],
+        "physical_presence": ["button", "qr_secret"],
+        "attestation_schemes": ["manufacturer-p256"],
+        "secure_storage_level": "secure-element",
+        "monotonic_counter": true,
+        "candidate_network": true,
+        "rollback_guarantee": "crash-safe",
+        "max_message_size": 16384,
+        "trusted_clock": false,
+        "reset_modes": ["network", "owner", "factory"]
+      }
+    }
+  ]
+}

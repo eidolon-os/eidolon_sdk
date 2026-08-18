@@ -1,0 +1,121 @@
+{
+  "cases": [
+    {
+      "case_id": "DF-ADMISSION-CREATE-VALID",
+      "schema": "https://contracts.eidolon.live/device-foundation/v1/admission/schemas.schema.json",
+      "definition": "CreateEnrollment",
+      "value": {
+        "profile_id": "eidolon-trust-p256-hpke-v1",
+        "device_instance_candidate_id": "device_candidate_01",
+        "requested_owner_domain_id": "owner_01",
+        "hardware_identity_evidence": {
+          "scheme": "manufacturer-p256",
+          "evidence": "bWFudWZhY3R1cmVyLWNoYWlu",
+          "evidence_digest": "sha256:1111111111111111111111111111111111111111111111111111111111111111"
+        },
+        "commissioning_proof": {
+          "scheme": "protocomm-security2-srp6a-aes256gcm",
+          "proof": "c3JwNmEtcHJvb2YtYnl0ZXM",
+          "nonce": "bm9uY2Utbm9uY2Utbm9uY2U"
+        },
+        "manifest": {
+          "revision": 2,
+          "digest": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+          "document": { "endpoints": [] }
+        },
+        "handoff_key": {
+          "scheme": "DHKEM-P256-HKDF-SHA256",
+          "public_key": "p256-spki:MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE"
+        }
+      }
+    },
+    {
+      "case_id": "DF-ADMISSION-CREATE-RESULT-VALID",
+      "schema": "https://contracts.eidolon.live/device-foundation/v1/admission/schemas.schema.json",
+      "definition": "CreateEnrollmentResult",
+      "value": {
+        "enrollment_id": "enrollment_01",
+        "proposal_revision": 1,
+        "state": "pending",
+        "expires_at": "2026-08-18T00:15:00Z",
+        "reviewed_manifest_digest": "sha256:2222222222222222222222222222222222222222222222222222222222222222"
+      }
+    },
+    {
+      "case_id": "DF-ADMISSION-DECIDE-VALID",
+      "schema": "https://contracts.eidolon.live/device-foundation/v1/admission/schemas.schema.json",
+      "definition": "DecideEnrollment",
+      "value": {
+        "enrollment_id": "enrollment_01",
+        "expected_proposal_revision": 1,
+        "decision": "approve",
+        "target_owner_domain_id": "owner_01",
+        "target_space_id": "space_01",
+        "reviewed_manifest_digest": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+        "initial_assignment_intent": { "companion_id": "companion_01" },
+        "initial_capability_policy_refs": ["policy_minimum"]
+      }
+    },
+    {
+      "case_id": "DF-ADMISSION-DECIDE-RESULT-VALID",
+      "schema": "https://contracts.eidolon.live/device-foundation/v1/admission/schemas.schema.json",
+      "definition": "DecideEnrollmentResult",
+      "value": {
+        "decision_id": "decision_01",
+        "decision": "approve",
+        "decided_by": "controller_01",
+        "decided_at": "2026-08-18T00:02:00Z",
+        "proposal_revision": 1
+      }
+    },
+    {
+      "case_id": "DF-ADMISSION-COLLECT-VALID",
+      "schema": "https://contracts.eidolon.live/device-foundation/v1/admission/schemas.schema.json",
+      "definition": "CollectClaimGrant",
+      "value": {
+        "enrollment_id": "enrollment_01",
+        "proposal_revision": 1,
+        "challenge_id": "challenge_01",
+        "handoff_key_proof": "aGFuZG9mZi1rZXktcHJvb2Y"
+      }
+    },
+    {
+      "case_id": "DF-ADMISSION-COLLECT-RESULT-VALID",
+      "schema": "https://contracts.eidolon.live/device-foundation/v1/admission/schemas.schema.json",
+      "definition": "CollectClaimGrantResult",
+      "value": {
+        "grant_id": "grant_01",
+        "sealed_grant": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+        "expires_at": "2026-08-18T00:10:00Z",
+        "approval_decision_id": "decision_01"
+      }
+    },
+    {
+      "case_id": "DF-ADMISSION-ACK-VALID",
+      "schema": "https://contracts.eidolon.live/device-foundation/v1/admission/schemas.schema.json",
+      "definition": "AckClaimGrant",
+      "value": {
+        "enrollment_id": "enrollment_01",
+        "grant_id": "grant_01",
+        "operational_key_proof": "b3BlcmF0aW9uYWwta2V5LXByb29m",
+        "stored_claim_generation": 2,
+        "stored_trust_epoch": 4
+      }
+    },
+    {
+      "case_id": "DF-ADMISSION-ACK-RESULT-VALID",
+      "schema": "https://contracts.eidolon.live/device-foundation/v1/admission/schemas.schema.json",
+      "definition": "AckClaimGrantResult",
+      "value": {
+        "device_ref": {
+          "device_instance_id": "device_01",
+          "owner_domain_id": "owner_01",
+          "claim_generation": 2,
+          "trust_epoch": 4,
+          "accepted_manifest_digest": "sha256:2222222222222222222222222222222222222222222222222222222222222222"
+        },
+        "claim_state": "active"
+      }
+    }
+  ]
+}

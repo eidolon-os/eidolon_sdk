@@ -1,0 +1,189 @@
+{
+  "cases": [
+    {
+      "case_id": "DF-ADMISSION-CREATE-REJECTS-UNDECLARED-PROFILE",
+      "schema": "https://contracts.eidolon.live/device-foundation/v1/admission/schemas.schema.json",
+      "definition": "CreateEnrollment",
+      "error_contains": "was expected",
+      "value": {
+        "profile_id": "implementation-selected",
+        "device_instance_candidate_id": "device_candidate_01",
+        "requested_owner_domain_id": "owner_01",
+        "hardware_identity_evidence": {
+          "scheme": "manufacturer-p256",
+          "evidence": "bWFudWZhY3R1cmVyLWNoYWlu",
+          "evidence_digest": "sha256:1111111111111111111111111111111111111111111111111111111111111111"
+        },
+        "commissioning_proof": {
+          "scheme": "protocomm-security2-srp6a-aes256gcm",
+          "proof": "c3JwNmEtcHJvb2YtYnl0ZXM",
+          "nonce": "bm9uY2Utbm9uY2Utbm9uY2U"
+        },
+        "manifest": {
+          "revision": 2,
+          "digest": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+          "document": {}
+        },
+        "handoff_key": {
+          "scheme": "DHKEM-P256-HKDF-SHA256",
+          "public_key": "p256-spki:MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE"
+        }
+      }
+    },
+    {
+      "case_id": "DF-ADMISSION-DECIDE-REJECTS-BODY-ACTOR",
+      "schema": "https://contracts.eidolon.live/device-foundation/v1/admission/schemas.schema.json",
+      "definition": "DecideEnrollment",
+      "error_contains": "Additional properties",
+      "value": {
+        "enrollment_id": "enrollment_01",
+        "expected_proposal_revision": 1,
+        "decision": "approve",
+        "target_owner_domain_id": "owner_01",
+        "target_space_id": null,
+        "reviewed_manifest_digest": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+        "initial_assignment_intent": null,
+        "initial_capability_policy_refs": [],
+        "decided_by": "body-supplied-actor"
+      }
+    },
+    {
+      "case_id": "DF-ADMISSION-ACK-REJECTS-ZERO-EPOCH",
+      "schema": "https://contracts.eidolon.live/device-foundation/v1/admission/schemas.schema.json",
+      "definition": "AckClaimGrant",
+      "error_contains": "less than the minimum",
+      "value": {
+        "enrollment_id": "enrollment_01",
+        "grant_id": "grant_01",
+        "operational_key_proof": "b3BlcmF0aW9uYWwta2V5LXByb29m",
+        "stored_claim_generation": 2,
+        "stored_trust_epoch": 0
+      }
+    },
+    {
+      "case_id": "DF-BODY-MOUNT-REJECTS-OWNER-OVERRIDE",
+      "schema": "https://contracts.eidolon.live/device-foundation/v1/body-mesh/schemas.schema.json",
+      "definition": "EnsureMount",
+      "error_contains": "Additional properties",
+      "value": {
+        "device_ref": {
+          "device_instance_id": "device_01",
+          "owner_domain_id": "owner_01",
+          "claim_generation": 2,
+          "trust_epoch": 4,
+          "accepted_manifest_digest": "sha256:2222222222222222222222222222222222222222222222222222222222222222"
+        },
+        "expected_revision": 0,
+        "spec": {
+          "display_name": "Desk Body",
+          "space_id": null,
+          "enabled": true,
+          "policy_refs": []
+        },
+        "owner_domain_id": "attacker_owner"
+      }
+    },
+    {
+      "case_id": "DF-BODY-ASSIGNMENT-REJECTS-DELETE-CREATE-MODE",
+      "schema": "https://contracts.eidolon.live/device-foundation/v1/body-mesh/schemas.schema.json",
+      "definition": "ReplaceAssignment",
+      "error_contains": "was expected",
+      "value": {
+        "body_endpoint_id": "voice-body",
+        "expected_assignment_revision": 0,
+        "companion_ref": "companion_01",
+        "mode": "temporary",
+        "policy_refs": []
+      }
+    },
+    {
+      "case_id": "DF-CONTROL-REPORT-REJECTS-HOST-BOUND-REF",
+      "schema": "https://contracts.eidolon.live/device-foundation/v1/device-control/schemas.schema.json",
+      "definition": "ReportState",
+      "error_contains": "Additional properties",
+      "value": {
+        "device_ref": {
+          "device_instance_id": "device_01",
+          "owner_domain_id": "owner_01",
+          "claim_generation": 2,
+          "trust_epoch": 4,
+          "accepted_manifest_digest": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+          "host_id": "host_01"
+        },
+        "report_id": "report_01",
+        "observed_twin_generation": 4,
+        "reported": {},
+        "device_monotonic_time": 1,
+        "device_signature": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+      }
+    },
+    {
+      "case_id": "DF-CONTROL-OPERATION-REQUIRES-DEADLINE",
+      "schema": "https://contracts.eidolon.live/device-foundation/v1/device-control/schemas.schema.json",
+      "definition": "CreateOperation",
+      "error_contains": "required property",
+      "value": {
+        "device_ref": {
+          "device_instance_id": "device_01",
+          "owner_domain_id": "owner_01",
+          "claim_generation": 2,
+          "trust_epoch": 4,
+          "accepted_manifest_digest": "sha256:2222222222222222222222222222222222222222222222222222222222222222"
+        },
+        "operation_id": "operation_01",
+        "operation_type": "device.restart",
+        "target_ref": {},
+        "preconditions": {
+          "claim_generation": 2,
+          "trust_epoch": 4,
+          "target_revision": null
+        },
+        "qos": "result",
+        "payload": {}
+      }
+    },
+    {
+      "case_id": "DF-DELIVERY-ACCEPTED-IS-NOT-EXECUTED",
+      "schema": "https://contracts.eidolon.live/device-foundation/v1/delivery-port/schemas.schema.json",
+      "definition": "DeliveryAcceptance",
+      "error_contains": "Additional properties",
+      "value": {
+        "delivery_attempt_id": "attempt_01",
+        "state": "accepted",
+        "adapter_code": null,
+        "operation_state": "succeeded"
+      }
+    },
+    {
+      "case_id": "DF-EVENT-REJECTS-HOST-SOURCE",
+      "schema": "https://contracts.eidolon.live/device-foundation/v1/events/schemas.schema.json",
+      "definition": "ClaimActivatedEvent",
+      "error_contains": "was expected",
+      "value": {
+        "specversion": "1.0",
+        "id": "event_01",
+        "source": "urn:eidolon:host:pi5-01",
+        "type": "live.eidolon.device.claim-activated.v1",
+        "subject": "device-instances/device_01",
+        "time": "2026-08-18T00:05:00Z",
+        "datacontenttype": "application/json",
+        "dataschema": "https://contracts.eidolon.live/device-foundation/v1/events/claim-activated-data.schema.json",
+        "ownerdomainid": "owner_01",
+        "aggregaterev": 7,
+        "correlationid": "intent_01",
+        "causationid": "command_01",
+        "data": {
+          "device_ref": {
+            "device_instance_id": "device_01",
+            "owner_domain_id": "owner_01",
+            "claim_generation": 2,
+            "trust_epoch": 4,
+            "accepted_manifest_digest": "sha256:2222222222222222222222222222222222222222222222222222222222222222"
+          },
+          "approval_decision_id": "decision_01",
+          "activated_at": "2026-08-18T00:05:00Z"
+        }
+      }
+    }
+  ]
+}

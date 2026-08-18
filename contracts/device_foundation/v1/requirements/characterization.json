@@ -1,0 +1,100 @@
+{
+  "baseline": "cross-repo-heads.v1.json",
+  "principle": "Protect user-visible behavior, business semantics, and security invariants; do not preserve legacy routes, DTO names, database fields, or wire shapes.",
+  "cross_repo_guards": [
+    "eidolon_sdk/tests/contracts/test_esp32_contract_mirror.py"
+  ],
+  "suites": [
+    {
+      "suite_id": "DF-CHAR-HUB-ADMISSION",
+      "repo": "eidolon_hub",
+      "tests": [
+        "tests/unit/application/test_enroll_device.py",
+        "tests/unit/application/test_device_lifecycle.py",
+        "tests/unit/application/test_handoff_device.py",
+        "tests/functional/test_https_device_onboarding_flow.py"
+      ],
+      "protected_semantics": [
+        "enrollment replay is content-bound",
+        "pending does not auto-claim",
+        "approval is Owner-scoped",
+        "invalid or stolen retrieval capability fails closed",
+        "revocation survives downstream provider outage"
+      ]
+    },
+    {
+      "suite_id": "DF-CHAR-KERNEL-MOUNT",
+      "repo": "eidolon_kernel",
+      "tests": [
+        "tests/unit/test_application.py",
+        "tests/unit/test_device_attachments.py",
+        "tests/functional/test_device_mount_http.py"
+      ],
+      "protected_semantics": [
+        "Owner namespace cannot be transferred by remount",
+        "revision CAS and idempotency have one winner",
+        "Companion failure does not hide or delete a mounted Device",
+        "revoked Hub Device is reconciled without guessing"
+      ]
+    },
+    {
+      "suite_id": "DF-CHAR-ADMIN-WORKFLOW",
+      "repo": "eidolon_admin",
+      "tests": [
+        "server/tests/test_controller_device_admission.py",
+        "server/tests/test_control_plane_unit.py",
+        "server/tests/test_local_device_admissions.py"
+      ],
+      "protected_semantics": [
+        "approve then mount then optional attach is forward-only",
+        "partial success is visible and retryable",
+        "revoke commits before unmount",
+        "two Controllers can resume the same Owner intent without duplicating child mutations"
+      ]
+    },
+    {
+      "suite_id": "DF-CHAR-MOBILE",
+      "repo": "eidolon_client_mobile",
+      "tests": [
+        "test/device_admission_page_test.dart",
+        "test/device_setup_coordinator_test.dart",
+        "test/platform_device_provisioning_test.dart",
+        "test/hub_onboarding_client_test.dart",
+        "test/mounted_device_removal_test.dart"
+      ],
+      "protected_semantics": [
+        "pending enrollment waits for explicit confirmation",
+        "provisioning and admission checkpoints are separate",
+        "admission retry does not configure Wi-Fi twice",
+        "refusal and timeout remain distinct user errors",
+        "revoked-but-still-mounted is not displayed as fully removed"
+      ]
+    },
+    {
+      "suite_id": "DF-CHAR-ESP32",
+      "repo": "eidolon-client-esp32",
+      "tests": [
+        "tests/run_device_provisioning_protocol_tests.sh",
+        "tests/run_hub_onboarding_protocol_tests.sh"
+      ],
+      "protected_semantics": [
+        "accepting a Host is distinct from network join and admission",
+        "pending approval is represented without runtime credentials",
+        "Hub descriptor origin cannot be silently switched"
+      ]
+    },
+    {
+      "suite_id": "DF-CHAR-DELIVERY-PROVIDER",
+      "repo": "eidolon_channel",
+      "tests": [
+        "eidolon/channel_provider/tests/test_contracts.py",
+        "eidolon/channel_provider/tests/test_service.py"
+      ],
+      "protected_semantics": [
+        "credential provision and revoke are idempotent across restart",
+        "revoked Device stays revoked",
+        "provider contract rejects duplicate JSON keys and shape drift"
+      ]
+    }
+  ]
+}

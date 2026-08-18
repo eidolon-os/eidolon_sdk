@@ -1,0 +1,80 @@
+{
+  "cases": [
+    {
+      "case_id": "DF-EVENT-CLAIM-ACTIVATED-DATA-VALID",
+      "schema": "https://contracts.eidolon.live/device-foundation/v1/events/schemas.schema.json",
+      "definition": "ClaimActivatedData",
+      "value": {
+        "device_ref": {
+          "device_instance_id": "device_01",
+          "owner_domain_id": "owner_01",
+          "claim_generation": 2,
+          "trust_epoch": 4,
+          "accepted_manifest_digest": "sha256:2222222222222222222222222222222222222222222222222222222222222222"
+        },
+        "approval_decision_id": "decision_01",
+        "activated_at": "2026-08-18T00:05:00Z"
+      }
+    },
+    {
+      "case_id": "DF-DELIVERY-ENVELOPE-VALID",
+      "schema": "https://contracts.eidolon.live/device-foundation/v1/delivery-port/schemas.schema.json",
+      "definition": "DeliverEnvelope",
+      "value": {
+        "delivery_attempt_id": "attempt_01",
+        "message_id": "message_01",
+        "kind": "operation",
+        "device_ref": {
+          "device_instance_id": "device_01",
+          "owner_domain_id": "owner_01",
+          "claim_generation": 2,
+          "trust_epoch": 4,
+          "accepted_manifest_digest": "sha256:2222222222222222222222222222222222222222222222222222222222222222"
+        },
+        "deadline": "2026-08-18T00:20:00Z",
+        "payload_schema": "https://contracts.eidolon.live/device-foundation/v1/device-control/create-operation.schema.json",
+        "payload": { "operation_id": "operation_01" }
+      }
+    },
+    {
+      "case_id": "DF-DELIVERY-ACCEPTANCE-VALID",
+      "schema": "https://contracts.eidolon.live/device-foundation/v1/delivery-port/schemas.schema.json",
+      "definition": "DeliveryAcceptance",
+      "value": {
+        "delivery_attempt_id": "attempt_01",
+        "state": "accepted",
+        "adapter_code": null
+      }
+    },
+    {
+      "case_id": "DF-EVENT-CLAIM-ACTIVATED-VALID",
+      "schema": "https://contracts.eidolon.live/device-foundation/v1/events/schemas.schema.json",
+      "definition": "ClaimActivatedEvent",
+      "value": {
+        "specversion": "1.0",
+        "id": "event_01",
+        "source": "urn:eidolon:authority:admission",
+        "type": "live.eidolon.device.claim-activated.v1",
+        "subject": "device-instances/device_01",
+        "time": "2026-08-18T00:05:00Z",
+        "datacontenttype": "application/json",
+        "dataschema": "https://contracts.eidolon.live/device-foundation/v1/events/claim-activated-data.schema.json",
+        "ownerdomainid": "owner_01",
+        "aggregaterev": 7,
+        "correlationid": "intent_01",
+        "causationid": "command_01",
+        "data": {
+          "device_ref": {
+            "device_instance_id": "device_01",
+            "owner_domain_id": "owner_01",
+            "claim_generation": 2,
+            "trust_epoch": 4,
+            "accepted_manifest_digest": "sha256:2222222222222222222222222222222222222222222222222222222222222222"
+          },
+          "approval_decision_id": "decision_01",
+          "activated_at": "2026-08-18T00:05:00Z"
+        }
+      }
+    }
+  ]
+}

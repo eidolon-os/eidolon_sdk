@@ -1,0 +1,36 @@
+{
+  "vector_id": "DF-HOST-001",
+  "given": {
+    "owner_domain_id": "owner_01",
+    "owner_root": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "device_ref": {
+      "device_instance_id": "device_01",
+      "owner_domain_id": "owner_01",
+      "claim_generation": 2,
+      "trust_epoch": 4,
+      "accepted_manifest_digest": "sha256:2222222222222222222222222222222222222222222222222222222222222222"
+    },
+    "mount_revision": 8,
+    "assignment_generation": 3,
+    "operation_id": "operation_01",
+    "directory_revision": 7
+  },
+  "when": {
+    "directory_revision": 8,
+    "old_endpoint": "https://authority-a.owner.example/v1",
+    "new_endpoint": "https://authority-b.owner.example/v1",
+    "owner_root_changed": false
+  },
+  "then": {
+    "unchanged": [
+      "device_ref.device_instance_id",
+      "device_ref.claim_generation",
+      "device_ref.trust_epoch",
+      "mount_revision",
+      "assignment_generation",
+      "operation_id"
+    ],
+    "commissioning_state": "closed",
+    "reconcile_operation_id": "operation_01"
+  }
+}

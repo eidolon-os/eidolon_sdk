@@ -1,0 +1,85 @@
+{
+  "cases": [
+    {
+      "case_id": "DF-BODY-ENSURE-MOUNT-VALID",
+      "schema": "https://contracts.eidolon.live/device-foundation/v1/body-mesh/schemas.schema.json",
+      "definition": "EnsureMount",
+      "value": {
+        "device_ref": {
+          "device_instance_id": "device_01",
+          "owner_domain_id": "owner_01",
+          "claim_generation": 2,
+          "trust_epoch": 4,
+          "accepted_manifest_digest": "sha256:2222222222222222222222222222222222222222222222222222222222222222"
+        },
+        "expected_revision": 0,
+        "spec": {
+          "display_name": "Desk Body",
+          "space_id": "space_01",
+          "enabled": true,
+          "policy_refs": ["policy_minimum"]
+        }
+      }
+    },
+    {
+      "case_id": "DF-BODY-ENSURE-MOUNT-RESULT-VALID",
+      "schema": "https://contracts.eidolon.live/device-foundation/v1/body-mesh/schemas.schema.json",
+      "definition": "EnsureMountResult",
+      "value": {
+        "mount_id": "mount_01",
+        "revision": 1,
+        "active": true,
+        "observed_device_ref": {
+          "device_instance_id": "device_01",
+          "owner_domain_id": "owner_01",
+          "claim_generation": 2,
+          "trust_epoch": 4,
+          "accepted_manifest_digest": "sha256:2222222222222222222222222222222222222222222222222222222222222222"
+        }
+      }
+    },
+    {
+      "case_id": "DF-BODY-RECONCILE-ENDPOINTS-VALID",
+      "schema": "https://contracts.eidolon.live/device-foundation/v1/body-mesh/schemas.schema.json",
+      "definition": "ReconcileEndpoints",
+      "value": {
+        "mount_id": "mount_01",
+        "expected_mount_revision": 1,
+        "accepted_manifest_digest": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+        "endpoints": [
+          {
+            "endpoint_id": "voice-body",
+            "roles": ["body"],
+            "assignment_policy": "required",
+            "risk_class": "sensitive",
+            "concurrency": "leased"
+          }
+        ]
+      }
+    },
+    {
+      "case_id": "DF-BODY-REPLACE-ASSIGNMENT-VALID",
+      "schema": "https://contracts.eidolon.live/device-foundation/v1/body-mesh/schemas.schema.json",
+      "definition": "ReplaceAssignment",
+      "value": {
+        "body_endpoint_id": "voice-body",
+        "expected_assignment_revision": 0,
+        "companion_ref": "companion_01",
+        "mode": "default",
+        "policy_refs": ["policy_minimum"]
+      }
+    },
+    {
+      "case_id": "DF-BODY-REPLACE-ASSIGNMENT-RESULT-VALID",
+      "schema": "https://contracts.eidolon.live/device-foundation/v1/body-mesh/schemas.schema.json",
+      "definition": "ReplaceAssignmentResult",
+      "value": {
+        "assignment_id": "assignment_01",
+        "revision": 1,
+        "generation": 1,
+        "spec": { "companion_ref": "companion_01", "mode": "default" },
+        "status": { "observed_generation": 0, "conditions": ["PendingRealization"] }
+      }
+    }
+  ]
+}

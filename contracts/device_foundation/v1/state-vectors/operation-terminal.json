@@ -1,0 +1,18 @@
+{
+  "vector_id": "DF-OPERATION-TERMINAL-001",
+  "allowed_transitions": [
+    ["accepted", "queued"],
+    ["accepted", "delivered"],
+    ["queued", "delivered"],
+    ["delivered", "running"],
+    ["delivered", "succeeded"],
+    ["delivered", "failed"],
+    ["delivered", "rejected"],
+    ["running", "succeeded"],
+    ["running", "failed"],
+    ["running", "rejected"]
+  ],
+  "terminal_states": ["succeeded", "failed", "rejected", "expired", "canceled"],
+  "late_result_after_terminal": "record-late-evidence-without-outcome-rewrite",
+  "delivery_acceptance_terminal": false
+}

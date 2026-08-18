@@ -2,6 +2,10 @@
 
 Shared Python contracts and infrastructure for the Eidolon project family.
 
+The canonical Device Foundation V1 contract is under
+[`contracts/device_foundation/v1`](contracts/device_foundation/v1/README.md). No other repository
+may maintain a handwritten synonymous V1 DTO or schema.
+
 The package is organized by responsibility:
 
 - `eidolon_sdk.core`: transport, storage, wire-format, and async infrastructure.

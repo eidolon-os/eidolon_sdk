@@ -1,0 +1,114 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contracts.eidolon.live/device-foundation/v1/device-control/schemas.schema.json",
+  "title": "Eidolon Device Foundation V1 Device Control schemas",
+  "$defs": {
+    "PatchDesired": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["device_ref", "expected_twin_generation", "patch", "field_mask"],
+      "properties": {
+        "device_ref": { "$ref": "../common/schemas.schema.json#/$defs/DeviceRef" },
+        "expected_twin_generation": { "type": "integer", "minimum": 0 },
+        "patch": { "type": "object" },
+        "field_mask": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "type": "string", "pattern": "^[A-Za-z][A-Za-z0-9_.-]*$" }
+        }
+      }
+    },
+    "PatchDesiredResult": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["twin_generation", "desired_digest", "delivery_state"],
+      "properties": {
+        "twin_generation": { "type": "integer", "minimum": 1 },
+        "desired_digest": { "$ref": "../common/schemas.schema.json#/$defs/Sha256Digest" },
+        "delivery_state": { "const": "pending" }
+      }
+    },
+    "ReportState": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "device_ref",
+        "report_id",
+        "observed_twin_generation",
+        "reported",
+        "device_monotonic_time",
+        "device_signature"
+      ],
+      "properties": {
+        "device_ref": { "$ref": "../common/schemas.schema.json#/$defs/DeviceRef" },
+        "report_id": { "$ref": "../common/schemas.schema.json#/$defs/Identifier" },
+        "observed_twin_generation": { "type": "integer", "minimum": 0 },
+        "reported": { "type": "object" },
+        "device_monotonic_time": { "type": "integer", "minimum": 0 },
+        "device_signature": {
+          "$ref": "../common/schemas.schema.json#/$defs/P256RawSignature"
+        }
+      }
+    },
+    "CreateOperation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "device_ref",
+        "operation_id",
+        "operation_type",
+        "target_ref",
+        "preconditions",
+        "deadline",
+        "qos",
+        "payload"
+      ],
+      "properties": {
+        "device_ref": { "$ref": "../common/schemas.schema.json#/$defs/DeviceRef" },
+        "operation_id": { "$ref": "../common/schemas.schema.json#/$defs/Identifier" },
+        "operation_type": { "$ref": "../common/schemas.schema.json#/$defs/Identifier" },
+        "target_ref": { "type": "object" },
+        "preconditions": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["claim_generation", "trust_epoch", "target_revision"],
+          "properties": {
+            "claim_generation": { "type": "integer", "minimum": 1 },
+            "trust_epoch": { "type": "integer", "minimum": 1 },
+            "target_revision": {
+              "oneOf": [{ "type": "integer", "minimum": 0 }, { "type": "null" }]
+            }
+          }
+        },
+        "deadline": { "type": "string", "format": "date-time" },
+        "qos": { "enum": ["ack", "result"] },
+        "payload": { "type": "object" }
+      }
+    },
+    "AckOperation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "device_ref",
+        "operation_id",
+        "ack_sequence",
+        "state",
+        "result_code",
+        "result",
+        "device_signature"
+      ],
+      "properties": {
+        "device_ref": { "$ref": "../common/schemas.schema.json#/$defs/DeviceRef" },
+        "operation_id": { "$ref": "../common/schemas.schema.json#/$defs/Identifier" },
+        "ack_sequence": { "type": "integer", "minimum": 0 },
+        "state": { "enum": ["delivered", "running", "succeeded", "failed", "rejected"] },
+        "result_code": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "result": { "oneOf": [{ "type": "object" }, { "type": "null" }] },
+        "device_signature": {
+          "$ref": "../common/schemas.schema.json#/$defs/P256RawSignature"
+        }
+      }
+    }
+  }
+}

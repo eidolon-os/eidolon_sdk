@@ -1,0 +1,29 @@
+{
+  "generator": "device-foundation-v1-catalog",
+  "generator_version": "1.0",
+  "canonical_root": "contracts/device_foundation/v1",
+  "source_globs": [
+    "**/*.schema.json",
+    "examples/**/*.json",
+    "golden/*.json",
+    "profile/*.json",
+    "state-vectors/*.json",
+    "requirements/*.json",
+    "baseline/*.json",
+    "conformance/*.py",
+    "generation/config.json",
+    "generation/generate.py"
+  ],
+  "outputs": ["generated/catalog.json"],
+  "binding_targets": [
+    { "language": "python", "status": "planned", "owner": "eidolon_sdk" },
+    { "language": "dart", "status": "planned", "owner": "eidolon_client_mobile" },
+    { "language": "kotlin", "status": "planned", "owner": "eidolon_client_mobile" },
+    { "language": "cpp", "status": "planned", "owner": "eidolon-client-esp32" }
+  ],
+  "policy": {
+    "generated_files_are_read_only": true,
+    "generation_drift_fails_ci": true,
+    "handwritten_synonymous_dtos_allowed": false
+  }
+}

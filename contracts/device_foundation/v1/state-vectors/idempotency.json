@@ -1,0 +1,25 @@
+{
+  "vectors": [
+    {
+      "vector_id": "DF-IDEM-001",
+      "scope": ["owner_01", "admission.decide-enrollment", "command_01"],
+      "first_actor": "controller_01",
+      "retry_actor": "controller_02",
+      "canonical_payload_sha256": "38bacfffa2b9be197c7b9cb599e84bce8f06eca64d6d48b0c3e9269b64d58da3",
+      "expected": "same-semantic-result-separate-actor-audit"
+    },
+    {
+      "vector_id": "DF-IDEM-SAME-ID-DIFFERENT-PAYLOAD",
+      "scope": ["owner_01", "admission.decide-enrollment", "command_01"],
+      "first_payload_sha256": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "second_payload_sha256": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "expected_problem": "IDEMPOTENCY_CONFLICT"
+    },
+    {
+      "vector_id": "DF-IDEM-003",
+      "first_scope": ["owner_01", "admission.decide-enrollment", "command_01"],
+      "second_scope": ["owner_02", "admission.decide-enrollment", "command_01"],
+      "expected": "independent-without-cross-owner-disclosure"
+    }
+  ]
+}
