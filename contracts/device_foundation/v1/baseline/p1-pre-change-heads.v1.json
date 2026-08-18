@@ -1,0 +1,264 @@
+{
+  "manifest_version": "1.0",
+  "capture_kind": "p1-pre-change-freeze",
+  "captured_at": "2026-08-18T13:51:16.300196Z",
+  "workspace_root": "/Users/manson/ai/eidolon",
+  "design_baseline": {
+    "repo": "docs",
+    "commit": "f2ee75670a747af65a591ba88056fd9d49ca36e2",
+    "subject": "docs: freeze device foundation architecture and execution plan"
+  },
+  "artifact_digest_algorithm": "sha256(git-ls-tree-r-z-full-tree-output)",
+  "tool_versions": {
+    "git": "2.50.1 (Apple Git-155)",
+    "python": "3.13.13",
+    "uv": "0.11.14",
+    "node": "24.15.0",
+    "npm": "11.12.1",
+    "flutter": "unavailable-in-capture-shell",
+    "idf_py": "unavailable-in-capture-shell"
+  },
+  "repositories": [
+    {
+      "repo": "docs",
+      "path": "docs",
+      "remote": "git@git.aimanthor.com:eidolon/docs.git",
+      "branch": "main",
+      "head_sha": "f2ee75670a747af65a591ba88056fd9d49ca36e2",
+      "dirty": false,
+      "participation": "indirect",
+      "reason": "Normative frozen design and DF-HOST-001 through DF-HOST-008 baseline.",
+      "required_tests": [
+        "verify-design-baseline-commit"
+      ],
+      "artifact_digest": "sha256:e82870f3707dbc6a0ca935137dac7d718ba107c60c1c92ce20a01caa3c68ed43"
+    },
+    {
+      "repo": "eidolon-client-esp32",
+      "path": "eidolon-client-esp32",
+      "remote": "git@gitlab.aimanthor.com:eidolon/eidolon_client_esp32.git",
+      "branch": "main",
+      "head_sha": "c0ec551ba2aab225999fc4bc52f37f2a67d1f0b2",
+      "dirty": false,
+      "participation": "direct",
+      "reason": "Device-side commissioned trust, directory verification and AuthorityLocator consumer.",
+      "required_tests": [
+        "tests/run_device_provisioning_protocol_tests.sh",
+        "tests/run_hub_onboarding_protocol_tests.sh"
+      ],
+      "artifact_digest": "sha256:329f7a0976957d2fdd073513763cf2fb0a547c2341409fcd5c30de50c0257010"
+    },
+    {
+      "repo": "eidolon-official-site",
+      "path": "eidolon-official-site",
+      "remote": "git@git.aimanthor.com:eidolon/eidolon-official-site.git",
+      "branch": "main",
+      "head_sha": "830f7cca9d6b0c543d9c0b092b01eda37ee46a12",
+      "dirty": false,
+      "participation": "out-of-scope",
+      "reason": "No device governance producer or consumer dependency found.",
+      "required_tests": [
+        "device-foundation-dependency-scan"
+      ],
+      "artifact_digest": "sha256:9668625379f3c57ed105c61210266d9996bc9908b0f549f9ad3fd4770364135d"
+    },
+    {
+      "repo": "eidolon_admin",
+      "path": "eidolon_admin",
+      "remote": "git@gitlab.aimanthor.com:eidolon/eidolon_admin.git",
+      "branch": "main",
+      "head_sha": "833897eb9ee794d6fb9b027d7bf7b8ee340b6ee9",
+      "dirty": false,
+      "participation": "direct",
+      "reason": "Local Controller handoff producer must deliver Owner trust rather than Host identity.",
+      "required_tests": [
+        "server/tests/test_controller_device_admission.py",
+        "server/tests/test_control_plane_unit.py",
+        "server/tests/test_local_device_admissions.py"
+      ],
+      "artifact_digest": "sha256:be3d9bb06510a4dae6e5b1a62dbe6616e4c63f41cf68a839dac172e256bad1d0"
+    },
+    {
+      "repo": "eidolon_agent",
+      "path": "eidolon_agent",
+      "remote": "git@gitlab.aimanthor.com:eidolon/eidolon_agent.git",
+      "branch": "main",
+      "head_sha": "6e60bed38745554b66cf32301611f23a1aa4ac0d",
+      "dirty": false,
+      "participation": "out-of-scope",
+      "reason": "No persisted device Authority endpoint or Host identity dependency found.",
+      "required_tests": [
+        "device-foundation-dependency-scan"
+      ],
+      "artifact_digest": "sha256:94cd3c0d59344c9b9a6cd98a199ecec62b1ca695c9c44cb26461b58a9d4e73dc"
+    },
+    {
+      "repo": "eidolon_channel",
+      "path": "eidolon_channel",
+      "remote": "git@gitlab.aimanthor.com:eidolon/eidolon_channel.git",
+      "branch": "main",
+      "head_sha": "081208878cf4d4ad0e46c7857346d0581834f679",
+      "dirty": false,
+      "participation": "direct",
+      "reason": "Provider operation identity currently includes hub_id and must become Owner Domain scoped.",
+      "required_tests": [
+        "eidolon/channel_provider/tests/test_contracts.py",
+        "eidolon/channel_provider/tests/test_service.py"
+      ],
+      "artifact_digest": "sha256:9c3e4d3044dc058c21524c068b4b198bc1f2cdcd904e6beda34752040b763232"
+    },
+    {
+      "repo": "eidolon_client_mobile",
+      "path": "eidolon_client_mobile",
+      "remote": "git@git.aimanthor.com:eidolon/eidolon_client_mobile.git",
+      "branch": "main",
+      "head_sha": "2519912dbb9417569021ed70c30bf0c5911ee826",
+      "dirty": false,
+      "participation": "direct",
+      "reason": "Controller trust handoff and checkpoint must carry Owner Domain trust material, not Host identity.",
+      "required_tests": [
+        "test/device_admission_page_test.dart",
+        "test/device_setup_coordinator_test.dart",
+        "test/platform_device_provisioning_test.dart",
+        "test/hub_onboarding_client_test.dart",
+        "test/mounted_device_removal_test.dart"
+      ],
+      "artifact_digest": "sha256:1c651c2262f3282fae7705480a1f55ac0d1178067a84d268595131628afa16f1"
+    },
+    {
+      "repo": "eidolon_client_web",
+      "path": "eidolon_client_web",
+      "remote": "git@gitlab.aimanthor.com:eidolon/eidolon_client_web.git",
+      "branch": "main",
+      "head_sha": "ecc5c69ec043557c1afd4c9c5f580ec28bfa6958",
+      "dirty": false,
+      "participation": "out-of-scope",
+      "reason": "No external Body Device admission or management consumer found.",
+      "required_tests": [
+        "device-foundation-dependency-scan"
+      ],
+      "artifact_digest": "sha256:f2afc2d6917b450f320387052c11c7d3abfab27d62254324352b6a57f7f677a4"
+    },
+    {
+      "repo": "eidolon_data",
+      "path": "eidolon_data",
+      "remote": "git@git.aimanthor.com:eidolon/eidolon_data.git",
+      "branch": "main",
+      "head_sha": "1479580f2f652a147f692b003f5a800a24446d3a",
+      "dirty": false,
+      "participation": "out-of-scope",
+      "reason": "No Host-bound Device Foundation authority route found; dependency scan remains required.",
+      "required_tests": [
+        "device-foundation-dependency-scan"
+      ],
+      "artifact_digest": "sha256:79008f371acdc52193a86219764b8d616f17118453fa0da0ee8efe49ba1b56f1"
+    },
+    {
+      "repo": "eidolon_hub",
+      "path": "eidolon_hub",
+      "remote": "git@gitlab.aimanthor.com:eidolon/eidolon_hub.git",
+      "branch": "main",
+      "head_sha": "4b8d6c6e1b77bacbcff02fea4468905097866ef5",
+      "dirty": false,
+      "participation": "direct",
+      "reason": "Produces the signed OwnerDomainDescriptor and logical Admission endpoint directory.",
+      "required_tests": [
+        "tests/unit/application/test_enroll_device.py",
+        "tests/unit/application/test_device_lifecycle.py",
+        "tests/unit/application/test_handoff_device.py",
+        "tests/functional/test_https_device_onboarding_flow.py"
+      ],
+      "artifact_digest": "sha256:1e0f542569de1cf215e6c9828877c0707560bd770f8a6037bcfba27871702482"
+    },
+    {
+      "repo": "eidolon_kernel",
+      "path": "eidolon_kernel",
+      "remote": "git@git.aimanthor.com:eidolon/eidolon_kernel.git",
+      "branch": "main",
+      "head_sha": "5a47361e8886d4771cc7623fc1e17d6ca37c4c34",
+      "dirty": false,
+      "participation": "direct",
+      "reason": "Release and Pi5 deployment tooling must provision portable Owner Domain signing input.",
+      "required_tests": [
+        "tests/unit/test_application.py",
+        "tests/unit/test_device_attachments.py",
+        "tests/functional/test_device_mount_http.py"
+      ],
+      "artifact_digest": "sha256:4fd0accca166fc4776ba3c3c5365776ef98db21bc14688832c659f0be318d735"
+    },
+    {
+      "repo": "eidolon_memory",
+      "path": "eidolon_memory",
+      "remote": "git@gitlab.aimanthor.com:eidolon/eidolon_memory.git",
+      "branch": "main",
+      "head_sha": "37556ac24806c7bf850e5d70e4fc7e409a2da5b1",
+      "dirty": false,
+      "participation": "out-of-scope",
+      "reason": "Companion memory remains independent of Device Foundation lifecycle.",
+      "required_tests": [
+        "device-foundation-dependency-scan"
+      ],
+      "artifact_digest": "sha256:759348f9d3de583e7523c286d266cbb952e02d3c544e15f3935a6430c7679f11"
+    },
+    {
+      "repo": "eidolon_ops",
+      "path": "eidolon_ops",
+      "remote": null,
+      "branch": "main",
+      "head_sha": "025b96967c915e548df201e9dd6833767f392b9b",
+      "dirty": false,
+      "participation": "direct",
+      "reason": "P1 exit requires Pi5 Host relocation deployment and portable Owner Domain key handling.",
+      "required_tests": [
+        "device-foundation-dependency-scan",
+        "preserve-preexisting-dirty-worktree"
+      ],
+      "artifact_digest": "sha256:7e30b0e998ee163d8cff5416be0f23f5cad2a4b32d62c8f28ed5d54ceeca4abe"
+    },
+    {
+      "repo": "eidolon_sdk",
+      "path": "eidolon_sdk",
+      "remote": "git@gitlab.aimanthor.com:eidolon/eidolon_sdk.git",
+      "branch": "main",
+      "head_sha": "b8efefce6af1c77647bd88b20b0df98387495b4d",
+      "dirty": false,
+      "participation": "direct",
+      "reason": "Canonical bindings, AuthorityLocatorPort, DF-HOST requirements and conformance owner.",
+      "required_tests": [
+        "python contracts/device_foundation/v1/conformance/run.py",
+        "python contracts/device_foundation/v1/generation/generate.py --check",
+        "pytest tests/contracts/test_device_foundation_v1.py"
+      ],
+      "artifact_digest": "sha256:60a4e44a4341a34ddc21dfa588202e1cb3a66daa0ab736e2f8002d340476a5b5"
+    },
+    {
+      "repo": "eidolon_vision",
+      "path": "eidolon_vision",
+      "remote": "git@git.aimanthor.com:eidolon/eidolon_vision.git",
+      "branch": "main",
+      "head_sha": "3e7afc7c71a6d72683c80a932341e256ab1d6148",
+      "dirty": false,
+      "participation": "out-of-scope",
+      "reason": "Runtime Hub ingress URL is an adapter setting; no persisted Device Foundation identity dependency found.",
+      "required_tests": [
+        "device-foundation-dependency-scan"
+      ],
+      "artifact_digest": "sha256:30bed584a5b74899b0990272ef4418c6694b46bc0c86de2c62c4bbf4654c9e30"
+    },
+    {
+      "repo": "vendor/client-sdk-esp32",
+      "path": "vendor/client-sdk-esp32",
+      "remote": "git@github.com:eidolon-os/client-sdk-esp32.git",
+      "branch": "eidolon_dev",
+      "head_sha": "502ce391bf01c47dea74e1dd651c5b8945ca8906",
+      "dirty": false,
+      "participation": "out-of-scope",
+      "reason": "External vendored Git project discovered beyond the design list; explicitly tracked but not modified. Its integration branch is not an Eidolon product development branch.",
+      "required_tests": [
+        "device-foundation-dependency-scan",
+        "explicit-external-branch-exception"
+      ],
+      "artifact_digest": "sha256:84d98d40c4ebbe85a940314ec1253c242f525f94178dbd224aad62bb3f44d6fe"
+    }
+  ]
+}

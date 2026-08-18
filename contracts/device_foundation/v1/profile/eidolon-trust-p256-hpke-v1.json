@@ -20,12 +20,18 @@
   },
   "owner_domain_root": {
     "algorithm": "P-256",
+    "certificate_profile": "self-signed-ca",
     "host_runtime_key": false,
+    "installed_atomically_with_initial_directory": true,
     "recovery_requirement": "second-controller-or-encrypted-recovery-package"
   },
   "authority_delegation": {
     "algorithm": "P-256",
     "issuer": "owner-domain-root",
+    "certificate_basic_constraints_ca": false,
+    "certificate_extended_key_usage": "code-signing",
+    "private_key_in_host_runtime": false,
+    "directory_signature_input": "RFC8785(descriptor-without-signature)",
     "endpoint_change_advances_trust_epoch": false,
     "delegated_key_rotation_advances_device_ref": false,
     "owner_root_rotation_advances_trust_epoch": true

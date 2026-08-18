@@ -174,6 +174,39 @@ def check_es256_vectors() -> int:
     return len(vectors)
 
 
+def check_owner_directory_vector() -> int:
+    vector = load_json(ROOT / "golden" / "owner-domain-descriptor.json")
+    descriptor = vector["descriptor"]
+    signing_document = {key: value for key, value in descriptor.items() if key != "signature"}
+    message = canonical_bytes(signing_document)
+    if message != vector["canonical_signing_utf8"].encode("utf-8"):
+        raise ConformanceError("Owner directory canonical signing bytes drifted")
+    key = serialization.load_pem_public_key(
+        vector["authority_signing_spki_pem"].encode("ascii")
+    )
+    if not isinstance(key, ec.EllipticCurvePublicKey) or not isinstance(
+        key.curve, ec.SECP256R1
+    ):
+        raise ConformanceError("Owner directory signer is not P-256")
+    spki = key.public_bytes(
+        serialization.Encoding.DER,
+        serialization.PublicFormat.SubjectPublicKeyInfo,
+    )
+    if descriptor["signing_key_id"] != "sha256:" + hashlib.sha256(spki).hexdigest():
+        raise ConformanceError("Owner directory signing key id drifted")
+    raw = _b64url_decode(descriptor["signature"])
+    if len(raw) != 64:
+        raise ConformanceError("Owner directory signature is not 64-byte P1363")
+    der = encode_dss_signature(
+        int.from_bytes(raw[:32], "big"), int.from_bytes(raw[32:], "big")
+    )
+    try:
+        key.verify(der, message, ec.ECDSA(hashes.SHA256()))
+    except InvalidSignature as exc:
+        raise ConformanceError("Owner directory signature is invalid") from exc
+    return 1
+
+
 def _hkdf_extract(salt: bytes, ikm: bytes) -> bytes:
     return hmac.new(salt or bytes(32), ikm, hashlib.sha256).digest()
 
@@ -316,6 +349,24 @@ def check_profile() -> int:
         raise ConformanceError("profile permits algorithm negotiation")
     if profile["signature"]["signature_bytes"] != 64:
         raise ConformanceError("profile does not freeze P1363 ES256 signatures")
+    if profile["owner_domain_root"] != {
+        "algorithm": "P-256",
+        "certificate_profile": "self-signed-ca",
+        "host_runtime_key": False,
+        "installed_atomically_with_initial_directory": True,
+        "recovery_requirement": "second-controller-or-encrypted-recovery-package",
+    }:
+        raise ConformanceError("Owner root profile drifted or became Host-bound")
+    delegation = profile["authority_delegation"]
+    if (
+        delegation["issuer"] != "owner-domain-root"
+        or delegation["certificate_basic_constraints_ca"] is not False
+        or delegation["certificate_extended_key_usage"] != "code-signing"
+        or delegation["private_key_in_host_runtime"] is not False
+        or delegation["directory_signature_input"]
+        != "RFC8785(descriptor-without-signature)"
+    ):
+        raise ConformanceError("Owner directory delegation profile drifted")
     if profile["claim_grant_handoff"] != {
         "standard": "RFC 9180",
         "mode": "base",
@@ -476,6 +527,7 @@ def run() -> dict[str, int]:
         "fixtures": check_fixtures(schemas, registry),
         "canonical_vectors": check_canonical_vectors(),
         "es256_vectors": check_es256_vectors(),
+        "owner_directory_vectors": check_owner_directory_vector(),
         "hpke_vectors": check_hpke_vector(),
         "claim_grant_aad_checks": check_claim_grant_aad(),
         "protocomm_vectors": check_protocomm_framing(),

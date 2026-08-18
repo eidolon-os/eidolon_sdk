@@ -113,8 +113,10 @@ def test_esp32_onboarding_and_roll_call_handler_match_e2e_contract() -> None:
     controller = _esp32_source("main/eidolon/eidolon_voice_controller.cc")
     feedback = _esp32_source("main/eidolon/eidolon_local_feedback.cc")
 
-    assert 'kTxtDescriptorUri = "descriptor_uri"' in hub_types
-    assert 'kTxtEnrollmentUri = "enrollment_uri"' in hub_types
+    assert 'kTxtOwnerDomainId = "owner_domain_id"' in hub_types
+    assert '"owner_domain_descriptor_uri"' in hub_types
+    assert "kTxtDescriptorUri" not in hub_types
+    assert "kTxtEnrollmentUri" not in hub_types
     assert "kTxtRegisterUrl" not in hub_types
     assert "ParseHandoffResponse" in onboarding
     assert 'JsonString(item, "binding_format") != kLiveKitBindingFormat' in onboarding

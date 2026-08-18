@@ -79,15 +79,23 @@ def test_baseline_rejects_repository_set_drift(tmp_path: Path) -> None:
 
 def test_canonical_source_is_unique() -> None:
     workspace = SDK_ROOT.parent
-    roots = [
-        path
-        for path in workspace.rglob("device_foundation/v1")
-        if path.is_dir()
-        and ".git" not in path.parts
-        and ".worktrees" not in path.parts
-        and ".migration-backups" not in path.parts
-    ]
-    assert roots == [CONTRACT_ROOT]
+    # Runtime bindings intentionally share the package namespace, but only the
+    # contracts tree may contain normative schemas, requirements, or profiles.
+    markers = (
+        Path("common/schemas.schema.json"),
+        Path("requirements/requirements.json"),
+        Path("profile/eidolon-trust-p256-hpke-v1.json"),
+    )
+    for marker in markers:
+        matches = [
+            path
+            for path in workspace.rglob(marker.name)
+            if path.as_posix().endswith(f"device_foundation/v1/{marker.as_posix()}")
+            and ".git" not in path.parts
+            and ".worktrees" not in path.parts
+            and ".migration-backups" not in path.parts
+        ]
+        assert matches == [CONTRACT_ROOT / marker]
 
 
 def test_duplicate_json_keys_are_rejected(tmp_path: Path) -> None:

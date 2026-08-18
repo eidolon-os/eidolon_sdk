@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate the reproducible Device Foundation V1 source catalog."""
+"""Generate and verify Device Foundation V1 canonical artifacts and bindings."""
 
 from __future__ import annotations
 
@@ -11,6 +11,7 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
+EIDOLON_ROOT = ROOT.parents[3]
 
 
 def _canonical_json(value: object) -> bytes:
@@ -24,8 +25,11 @@ def _source_files(config: dict[str, object]) -> list[Path]:
     return sorted(files, key=lambda path: path.relative_to(ROOT).as_posix())
 
 
-def build_catalog() -> dict[str, object]:
-    config = json.loads((ROOT / "generation" / "config.json").read_text(encoding="utf-8"))
+def _load_config() -> dict[str, object]:
+    return json.loads((ROOT / "generation" / "config.json").read_text(encoding="utf-8"))
+
+
+def build_catalog(config: dict[str, object]) -> dict[str, object]:
     entries: list[dict[str, object]] = []
     digest_input = bytearray()
     for path in _source_files(config):
@@ -46,21 +50,36 @@ def build_catalog() -> dict[str, object]:
     }
 
 
+def build_outputs(config: dict[str, object]) -> dict[Path, bytes]:
+    outputs = {
+        ROOT / "generated" / "catalog.json": _canonical_json(build_catalog(config)),
+    }
+    for binding in config["binding_outputs"]:
+        template = ROOT / binding["template"]
+        output = EIDOLON_ROOT / binding["repo"] / binding["path"]
+        outputs[output] = template.read_bytes()
+    return outputs
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--check", action="store_true")
     args = parser.parse_args()
-    output = ROOT / "generated" / "catalog.json"
-    expected = _canonical_json(build_catalog())
+    config = _load_config()
+    outputs = build_outputs(config)
     if args.check:
-        if not output.exists() or output.read_bytes() != expected:
-            print(f"generated artifact drift: {output}", file=sys.stderr)
+        drift = [path for path, expected in outputs.items() if not path.exists() or path.read_bytes() != expected]
+        if drift:
+            for path in drift:
+                print(f"generated artifact drift: {path}", file=sys.stderr)
             return 1
-        print(f"generated artifact clean: {output}")
+        for path in outputs:
+            print(f"generated artifact clean: {path}")
         return 0
-    output.parent.mkdir(parents=True, exist_ok=True)
-    output.write_bytes(expected)
-    print(f"generated {output}")
+    for output, expected in outputs.items():
+        output.parent.mkdir(parents=True, exist_ok=True)
+        output.write_bytes(expected)
+        print(f"generated {output}")
     return 0
 
 

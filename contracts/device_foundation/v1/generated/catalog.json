@@ -13,6 +13,11 @@
       "size": 10924
     },
     {
+      "path": "baseline/p1-pre-change-heads.v1.json",
+      "sha256": "56c73f09f3476835a75d4b333fb85f45d9e110ebe7eb81b1517b853d977ecbf0",
+      "size": 10908
+    },
+    {
       "path": "body-mesh/schemas.schema.json",
       "sha256": "559b3871a1ce7d9ba36d12fa94da1538c9270fbd6cd5dd7068ab147b265d2e2c",
       "size": 4486
@@ -24,8 +29,8 @@
     },
     {
       "path": "conformance/run.py",
-      "sha256": "66ea40eba456c4272829db6a7265f20213cc6bd11a1d5037ba4296a0a6d63c5c",
-      "size": 21705
+      "sha256": "979f462f25bd8d940c7c17a7b61d2d9908eca146f5b46d1c4399e882199e0590",
+      "size": 24159
     },
     {
       "path": "delivery-port/schemas.schema.json",
@@ -79,13 +84,23 @@
     },
     {
       "path": "generation/config.json",
-      "sha256": "47375ccd3315b66fcaf096cc314ccfd6d66cbea5d30072fca1cdaf7454e4d431",
-      "size": 955
+      "sha256": "f6e81a014d489a7f980cc391d3780079ae195cb398f0bb3f3b0477909b119ecb",
+      "size": 1441
     },
     {
       "path": "generation/generate.py",
-      "sha256": "37393a1a65dd0553d23fe5df614775f10d3f4f945e60615fd784a20c15c40386",
-      "size": 2329
+      "sha256": "e0a1b68f4701bd04114dc4bfa28cdd2777f8a3aa7aeb7832b4f3fb386f74ee6b",
+      "size": 2993
+    },
+    {
+      "path": "generation/templates/device_foundation_v1.dart",
+      "sha256": "e59ed67aa83df78828dadf9b9ffd5bd9af549c66cd89e776007a1624ff946739",
+      "size": 5703
+    },
+    {
+      "path": "generation/templates/device_foundation_v1_generated.h",
+      "sha256": "1b5836fd780d87cde54af02e14867892413fa5e6a467ad378da12275edfdf502",
+      "size": 1033
     },
     {
       "path": "golden/canonical-vectors.json",
@@ -103,6 +118,11 @@
       "size": 1233
     },
     {
+      "path": "golden/owner-domain-descriptor.json",
+      "sha256": "f6ad477182def0697515e02b0e00d51932bd9c5513d2a0d74a79884ee324b76a",
+      "size": 2065
+    },
+    {
       "path": "golden/protocomm-security2-framing.json",
       "sha256": "d7fc6c98aa7569c13faac9b2db44499799986e23f797b64b3845b018b519053a",
       "size": 698
@@ -114,8 +134,8 @@
     },
     {
       "path": "profile/eidolon-trust-p256-hpke-v1.json",
-      "sha256": "dc1e3f0a000487c7df20d8860bfc501e642f9adc2a3b23ff839e918dde71c542",
-      "size": 2591
+      "sha256": "4be18cfbc2658d624d499d8a9b0172154a60385b34aca2764e80614cc05c9be9",
+      "size": 2910
     },
     {
       "path": "requirements/characterization.json",
@@ -129,8 +149,8 @@
     },
     {
       "path": "requirements/requirements.json",
-      "sha256": "be354d140e3a957f784a4b676cee9e35f6e081191eaface0f439ff08c1292a4b",
-      "size": 13006
+      "sha256": "f3d491ca50d6ba07a9e60e459e57c15f9a8e986d52b0c98622491a7cfd4c6627",
+      "size": 16759
     },
     {
       "path": "state-vectors/host-relocation.json",
@@ -150,5 +170,5 @@
   ],
   "generator": "device-foundation-v1-catalog",
   "generator_version": "1.0",
-  "source_digest": "sha256:fe8f9df7501a4db81968a6da51e746f108614d401fa2a7d7137437843ecf1789"
+  "source_digest": "sha256:9c870606b4002abee5059f0ec9b63c68d15a1001d6102cad366f0da3f4d3c57f"
 }

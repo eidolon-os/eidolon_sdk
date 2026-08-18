@@ -394,6 +394,7 @@ dependencies = [
     { name = "protobuf" },
     { name = "pydantic" },
     { name = "pyjwt" },
+    { name = "rfc8785" },
     { name = "sqlalchemy", extra = ["asyncio"] },
 ]
 
@@ -415,7 +416,6 @@ dev = [
     { name = "pytest" },
     { name = "pytest-asyncio" },
     { name = "pyyaml" },
-    { name = "rfc8785" },
     { name = "ruff" },
 ]
 devices = [
@@ -460,7 +460,7 @@ requires-dist = [
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.0" },
     { name = "pytest-asyncio", marker = "extra == 'dev'", specifier = ">=0.24" },
     { name = "pyyaml", marker = "extra == 'dev'", specifier = ">=6.0" },
-    { name = "rfc8785", marker = "extra == 'dev'", specifier = ">=0.1.4" },
+    { name = "rfc8785", specifier = ">=0.1.4" },
     { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.3" },
     { name = "sqlalchemy", extras = ["asyncio"], specifier = ">=2.0" },
     { name = "sqlalchemy", extras = ["asyncio"], marker = "extra == 'db'", specifier = ">=2.0" },
