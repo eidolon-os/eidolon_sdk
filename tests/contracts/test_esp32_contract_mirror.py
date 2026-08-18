@@ -65,10 +65,7 @@ def test_esp32_topics_header_matches_python_wire_contract() -> None:
     assert ints["kDeviceEventSchemaVersion"] == events.EVENT_SCHEMA_VERSION
     assert strings["kControlTopic"] == c.CONTROL_TOPIC
     assert strings["kEventTopic"] == c.EVENT_TOPIC
-    assert (
-        strings["kAmbientPresenceStateType"]
-        == events.AMBIENT_PRESENCE_STATE_TYPE
-    )
+    assert strings["kAmbientPresenceStateType"] == events.AMBIENT_PRESENCE_STATE_TYPE
     assert (
         strings["kIdentityOwnerPresenceConfirmedType"]
         == events.IDENTITY_OWNER_PRESENCE_CONFIRMED_TYPE
@@ -110,21 +107,19 @@ def test_esp32_topics_header_matches_python_wire_contract() -> None:
     assert strings["kSessionIntentProactive"] == c.SESSION_INTENT_PROACTIVE
 
 
-def test_esp32_registration_and_roll_call_handler_match_e2e_contract() -> None:
+def test_esp32_onboarding_and_roll_call_handler_match_e2e_contract() -> None:
     hub_types = _esp32_source("main/eidolon/hub_types.h")
-    registration = _esp32_source("main/eidolon/hub_config_client.cc")
+    onboarding = _esp32_source("main/eidolon/hub_onboarding_protocol.cc")
     controller = _esp32_source("main/eidolon/eidolon_voice_controller.cc")
     feedback = _esp32_source("main/eidolon/eidolon_local_feedback.cc")
 
-    assert 'kTxtRegisterUrl = "register_url"' in hub_types
-    assert "kTxtConfigUrl" not in hub_types
-    assert r"\"name\":\"device.roll_call\"" in registration
-    assert (
-        r'\"device\":{\"name\":\"" BOARD_NAME "\",'
-        r'\"kind\":\"" BOARD_TYPE "\"}' in registration
-    )
-    assert r"\"version\":1" in registration
-    assert 'SignRequest(\n        "POST"' in registration
+    assert 'kTxtDescriptorUri = "descriptor_uri"' in hub_types
+    assert 'kTxtEnrollmentUri = "enrollment_uri"' in hub_types
+    assert "kTxtRegisterUrl" not in hub_types
+    assert "ParseHandoffResponse" in onboarding
+    assert 'JsonString(item, "binding_format") != kLiveKitBindingFormat' in onboarding
+    assert 'assignment.opaque_binding = JsonString(item, "opaque_binding")' in onboarding
+    assert "status = assignment.opaque_binding.empty()" in onboarding
     assert (
         "{kControlOpDeviceRollCall, 1, "
         "&EidolonVoiceController::HandleDeviceRollCallCommand}" in controller
