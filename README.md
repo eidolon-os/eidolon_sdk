@@ -13,3 +13,15 @@ The memory service's wire contracts used to live here as `eidolon_sdk.memory`.
 They now ship as `eidolon-memory-contracts`, alongside the service that owns
 them, so that service can be built and released without the OS SDK. Clients of
 memory depend on that package directly.
+
+## License
+
+Copyright © 2026 Li Jinsong.
+
+This project is available under the
+[PolyForm Noncommercial License 1.0.0](LICENSE) for permitted noncommercial
+use. Commercial use requires a separate written license; contact
+[lijinsong@aimanthor.com](mailto:lijinsong@aimanthor.com).
+
+See [LICENSING.md](LICENSING.md) and [NOTICE](NOTICE) for scope, exceptions,
+and required notices.

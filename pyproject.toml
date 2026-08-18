@@ -8,7 +8,7 @@ version = "0.1.0"
 description = "Shared Python SDK contracts and infrastructure for Eidolon projects"
 readme = "README.md"
 requires-python = ">=3.10"
-license = { text = "MIT" }
+license = { text = "PolyForm-Noncommercial-1.0.0" }
 dependencies = [
     "aiosqlite>=0.20",
     "cryptography>=43",

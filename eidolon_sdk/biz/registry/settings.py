@@ -14,7 +14,8 @@ REGISTRY_DB_ENV = "EIDOLON_REGISTRY_DB_PATH"
 
 def default_registry_db_path() -> Path:
     """Return the canonical registry DB path."""
-    return Path.home() / "eidolon" / "db" / "registry.sqlite3"
+    state_root = Path(os.environ.get("EIDOLON_STATE_ROOT", "~/eidolon/data")).expanduser()
+    return state_root / "registry/registry.sqlite3"
 
 
 def resolve_registry_db_path(
@@ -25,7 +26,8 @@ def resolve_registry_db_path(
     Precedence:
       1. canonical ``EIDOLON_REGISTRY_DB_PATH``;
       2. explicit config value, such as YAML;
-      3. ``~/eidolon/db/registry.sqlite3``.
+      3. ``$EIDOLON_STATE_ROOT/registry/registry.sqlite3`` (the Mac profile
+         defaults the state root to ``~/eidolon/data``).
     """
     raw = os.environ.get(REGISTRY_DB_ENV, "").strip()
     if raw:

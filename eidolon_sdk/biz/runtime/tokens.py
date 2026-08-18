@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import base64
+import os
 from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
@@ -12,7 +13,13 @@ import uuid
 
 import jwt
 
-_SHARED_SECRET_FILE = Path("~/eidolon/run/jwt-secret").expanduser()
+
+
+def _shared_secret_file() -> Path:
+    runtime_root = Path(
+        os.environ.get("EIDOLON_RUNTIME_ROOT", "~/eidolon/run")
+    ).expanduser()
+    return runtime_root / "agent/jwt-secret"
 
 
 class RuntimeUnauthenticatedError(ValueError):
@@ -56,7 +63,7 @@ def resolve_shared_secret(
     val = env_value.strip()
     if val:
         return val
-    path = secret_file or _SHARED_SECRET_FILE
+    path = secret_file or _shared_secret_file()
     if path.is_file():
         try:
             return path.read_text(encoding="utf-8").strip()
