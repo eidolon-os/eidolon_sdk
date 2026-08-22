@@ -517,7 +517,53 @@ def check_state_vectors() -> int:
         raise ConformanceError("terminal operation state has an outgoing transition")
     if operation["delivery_acceptance_terminal"]:
         raise ConformanceError("delivery acceptance is incorrectly terminal")
-    return 3
+
+    commissioning = load_json(ROOT / "state-vectors" / "commissioning-runtime.json")
+    commissioning_invariants = commissioning["invariants"]
+    for invariant in (
+        "single_writer",
+        "callbacks_enqueue_only",
+        "softap_uri_capacity_is_explicit",
+        "transport_cleanup_claimed_exactly_once",
+    ):
+        if commissioning_invariants.get(invariant) is not True:
+            raise ConformanceError(
+                f"commissioning runtime invariant {invariant} is not frozen"
+            )
+
+    commissioning = load_json(ROOT / "state-vectors" / "commissioning-runtime.json")
+    invariants = commissioning["invariants"]
+    required_true = {
+        "single_writer",
+        "callbacks_enqueue_only",
+        "advertising_requires_transport_ready_evidence",
+        "rollback_precedes_transport_stop",
+        "radio_restore_follows_transport_stop",
+        "stale_generation_is_ignored",
+    }
+    if any(invariants.get(name) is not True for name in required_true):
+        raise ConformanceError("commissioning single-writer/readiness/cleanup invariant drifted")
+    required_false = {
+        "network_commit_before_owner_route_validation",
+        "trust_activation_before_owner_route_validation",
+        "transport_stop_before_controller_observes_terminal",
+    }
+    if any(invariants.get(name) is not False for name in required_false):
+        raise ConformanceError("commissioning transaction ordering invariant drifted")
+    success = commissioning["success_sequence"]
+    ordered = [
+        "trust-staged",
+        "network-candidate-staged",
+        "wifi-connected",
+        "owner-route-validated",
+        "trust-and-network-committed",
+        "controller-observed-terminal",
+        "transport-stopped",
+        "previous-radio-mode-restored",
+    ]
+    if [success.index(item) for item in ordered] != sorted(success.index(item) for item in ordered):
+        raise ConformanceError("commissioning success sequence is not transactionally ordered")
+    return 4
 
 
 def run() -> dict[str, int]:

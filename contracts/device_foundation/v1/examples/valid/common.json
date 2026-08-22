@@ -169,6 +169,39 @@
         "trusted_clock": false,
         "reset_modes": ["network", "owner", "factory"]
       }
+    },
+    {
+      "case_id": "DF-COMM-TERMINAL-COMMITTED-VALID",
+      "schema": "https://contracts.eidolon.live/device-foundation/v1/common/schemas.schema.json",
+      "definition": "CommissioningStatusEvidence",
+      "value": {
+        "contract": "eidolon.device-foundation.commissioning-status",
+        "contract_version": "1.0",
+        "profile_id": "eidolon-trust-p256-hpke-v1",
+        "session_id": "setup_session_01",
+        "setup_generation": 7,
+        "state_revision": 5,
+        "state": "committed",
+        "conditions": {
+          "wifi_connected": true,
+          "owner_route_validated": true,
+          "trust_committed": true,
+          "network_committed": true
+        },
+        "failure_code": null
+      }
+    },
+    {
+      "case_id": "DF-COMM-TERMINAL-ACK-VALID",
+      "schema": "https://contracts.eidolon.live/device-foundation/v1/common/schemas.schema.json",
+      "definition": "CommissioningTerminalAck",
+      "value": {
+        "contract": "eidolon.device-foundation.commissioning-terminal-ack",
+        "contract_version": "1.0",
+        "session_id": "setup_session_01",
+        "setup_generation": 7,
+        "observed_state_revision": 5
+      }
     }
   ]
 }

@@ -1,0 +1,66 @@
+{
+  "vector_id": "DF-COMMISSIONING-RUNTIME-001",
+  "profile_id": "eidolon-trust-p256-hpke-v1",
+  "states": [
+    "idle",
+    "preparing-identity",
+    "acquiring-radio",
+    "starting-transport",
+    "advertising",
+    "session-active",
+    "applying-configuration",
+    "returning-to-previous-mode",
+    "restoring-previous-mode"
+  ],
+  "success_sequence": [
+    "identity-durable",
+    "radio-lease-acquired",
+    "transport-ready-evidence",
+    "authenticated-session",
+    "trust-staged",
+    "network-candidate-staged",
+    "wifi-connected",
+    "owner-route-validated",
+    "trust-and-network-committed",
+    "controller-observed-terminal",
+    "transport-stopped",
+    "previous-radio-mode-restored"
+  ],
+  "terminal_success_conditions": {
+    "wifi_connected": true,
+    "owner_route_validated": true,
+    "trust_committed": true,
+    "network_committed": true
+  },
+  "invariants": {
+    "single_writer": true,
+    "callbacks_enqueue_only": true,
+    "advertising_requires_transport_ready_evidence": true,
+    "network_commit_before_owner_route_validation": false,
+    "trust_activation_before_owner_route_validation": false,
+    "transport_stop_before_controller_observes_terminal": false,
+    "rollback_precedes_transport_stop": true,
+    "radio_restore_follows_transport_stop": true,
+    "stale_generation_is_ignored": true,
+    "softap_uri_capacity_is_explicit": true,
+    "transport_cleanup_claimed_exactly_once": true
+  },
+  "failure_sequences": [
+    {
+      "failure_at": "owner-route-validation",
+      "required_order": [
+        "network-candidate-rollback",
+        "trust-staging-rollback",
+        "transport-stopped",
+        "previous-radio-mode-restored"
+      ]
+    },
+    {
+      "failure_at": "transport-start",
+      "required_order": [
+        "transport-cleanup",
+        "previous-radio-mode-restored"
+      ]
+    }
+  ]
+}

@@ -24,13 +24,13 @@
     },
     {
       "path": "common/schemas.schema.json",
-      "sha256": "d8a7f8cd6e94d2fd7d64e46a3e6b72cb602ff269733845725d2e5b0aadba1f3c",
-      "size": 11765
+      "sha256": "e1a7f005a25351d02fea392de91b29e74315b3167288b163c65e7418ea5fb7f9",
+      "size": 15468
     },
     {
       "path": "conformance/run.py",
-      "sha256": "979f462f25bd8d940c7c17a7b61d2d9908eca146f5b46d1c4399e882199e0590",
-      "size": 24159
+      "sha256": "4bb7688c0d07c4ecdcc2bea903f15fe239da47faea7210a04ad5243bc3a4ac6a",
+      "size": 26153
     },
     {
       "path": "delivery-port/schemas.schema.json",
@@ -69,8 +69,8 @@
     },
     {
       "path": "examples/valid/common.json",
-      "sha256": "580a8a90770c3dcc8a587292025bce5da9f207b790228b4b6eea69ec658dbc24",
-      "size": 6624
+      "sha256": "c1541e235919bff1c5d110aea361c4f85cce1fa2bc496fbc2f02be8d63d1fb9b",
+      "size": 7815
     },
     {
       "path": "examples/valid/delivery-and-events.json",
@@ -94,13 +94,13 @@
     },
     {
       "path": "generation/templates/device_foundation_v1.dart",
-      "sha256": "e59ed67aa83df78828dadf9b9ffd5bd9af549c66cd89e776007a1624ff946739",
-      "size": 5703
+      "sha256": "5c76dfde60a0df847e509d3bb46d8085e6787c06623608da5171d67cff0e964f",
+      "size": 11037
     },
     {
       "path": "generation/templates/device_foundation_v1_generated.h",
-      "sha256": "1b5836fd780d87cde54af02e14867892413fa5e6a467ad378da12275edfdf502",
-      "size": 1033
+      "sha256": "fd53914c2078b38bc267f7d87b71fb6ce26e069bba9d1fe2d42437d1ae1a570f",
+      "size": 2014
     },
     {
       "path": "golden/canonical-vectors.json",
@@ -149,8 +149,13 @@
     },
     {
       "path": "requirements/requirements.json",
-      "sha256": "f3d491ca50d6ba07a9e60e459e57c15f9a8e986d52b0c98622491a7cfd4c6627",
-      "size": 16759
+      "sha256": "09fc188b4294bce17cdbd4b247f837a0082af5384371b760ead985bddd14575d",
+      "size": 25707
+    },
+    {
+      "path": "state-vectors/commissioning-runtime.json",
+      "sha256": "25952ab96986cff98b78122bf4d9ca4399e0c81b8828d2907ea4cec520bc744a",
+      "size": 1854
     },
     {
       "path": "state-vectors/host-relocation.json",
@@ -170,5 +175,5 @@
   ],
   "generator": "device-foundation-v1-catalog",
   "generator_version": "1.0",
-  "source_digest": "sha256:9c870606b4002abee5059f0ec9b63c68d15a1001d6102cad366f0da3f4d3c57f"
+  "source_digest": "sha256:41b4056a70a575f53b25e8fcfe10c6d2b2826fba3201dfa7f140e51a4651a3a9"
 }

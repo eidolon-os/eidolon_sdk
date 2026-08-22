@@ -357,6 +357,128 @@
           "uniqueItems": true
         }
       }
+    },
+    "CommissioningStatusEvidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "contract",
+        "contract_version",
+        "profile_id",
+        "session_id",
+        "setup_generation",
+        "state_revision",
+        "state",
+        "conditions",
+        "failure_code"
+      ],
+      "properties": {
+        "contract": { "const": "eidolon.device-foundation.commissioning-status" },
+        "contract_version": { "const": "1.0" },
+        "profile_id": { "const": "eidolon-trust-p256-hpke-v1" },
+        "session_id": {
+          "type": "string",
+          "minLength": 16,
+          "maxLength": 128,
+          "pattern": "^[A-Za-z0-9_-]+$"
+        },
+        "setup_generation": { "type": "integer", "minimum": 1 },
+        "state_revision": { "type": "integer", "minimum": 1 },
+        "state": {
+          "enum": ["applying-configuration", "committed", "rolled-back", "failed"]
+        },
+        "conditions": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "wifi_connected",
+            "owner_route_validated",
+            "trust_committed",
+            "network_committed"
+          ],
+          "properties": {
+            "wifi_connected": { "type": "boolean" },
+            "owner_route_validated": { "type": "boolean" },
+            "trust_committed": { "type": "boolean" },
+            "network_committed": { "type": "boolean" }
+          }
+        },
+        "failure_code": {
+          "oneOf": [
+            {
+              "enum": [
+                "NETWORK_REJECTED",
+                "OWNER_ROUTE_UNAVAILABLE",
+                "OWNER_IDENTITY_MISMATCH",
+                "STORAGE_UNAVAILABLE",
+                "WINDOW_EXPIRED",
+                "CANCELLED",
+                "INTERNAL"
+              ]
+            },
+            { "type": "null" }
+          ]
+        }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "state": { "const": "committed" } } },
+          "then": {
+            "properties": {
+              "conditions": {
+                "properties": {
+                  "wifi_connected": { "const": true },
+                  "owner_route_validated": { "const": true },
+                  "trust_committed": { "const": true },
+                  "network_committed": { "const": true }
+                }
+              },
+              "failure_code": { "type": "null" }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "state": { "enum": ["rolled-back", "failed"] }
+            }
+          },
+          "then": {
+            "properties": {
+              "failure_code": { "type": "string" },
+              "conditions": {
+                "properties": {
+                  "trust_committed": { "const": false },
+                  "network_committed": { "const": false }
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "CommissioningTerminalAck": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "contract",
+        "contract_version",
+        "session_id",
+        "setup_generation",
+        "observed_state_revision"
+      ],
+      "properties": {
+        "contract": { "const": "eidolon.device-foundation.commissioning-terminal-ack" },
+        "contract_version": { "const": "1.0" },
+        "session_id": {
+          "type": "string",
+          "minLength": 16,
+          "maxLength": 128,
+          "pattern": "^[A-Za-z0-9_-]+$"
+        },
+        "setup_generation": { "type": "integer", "minimum": 1 },
+        "observed_state_revision": { "type": "integer", "minimum": 1 }
+      }
     }
   }
 }
