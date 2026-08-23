@@ -48,6 +48,42 @@
         "causationid": { "$ref": "../common/schemas.schema.json#/$defs/Identifier" },
         "data": { "$ref": "#/$defs/ClaimActivatedData" }
       }
+    },
+    "ClaimRevokedData": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["device_ref", "reason", "revoked_at"],
+      "properties": {
+        "device_ref": { "$ref": "../common/schemas.schema.json#/$defs/DeviceRef" },
+        "reason": { "type": "string", "minLength": 1, "maxLength": 256 },
+        "revoked_at": { "type": "string", "format": "date-time" }
+      }
+    },
+    "ClaimRevokedEvent": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "specversion", "id", "source", "type", "subject", "time",
+        "datacontenttype", "dataschema", "ownerdomainid", "aggregaterev",
+        "correlationid", "causationid", "data"
+      ],
+      "properties": {
+        "specversion": { "const": "1.0" },
+        "id": { "$ref": "../common/schemas.schema.json#/$defs/Identifier" },
+        "source": { "const": "urn:eidolon:authority:admission" },
+        "type": { "const": "live.eidolon.device.claim-revoked.v1" },
+        "subject": { "type": "string", "pattern": "^device-instances/[A-Za-z][A-Za-z0-9._:-]*$" },
+        "time": { "type": "string", "format": "date-time" },
+        "datacontenttype": { "const": "application/json" },
+        "dataschema": {
+          "const": "https://contracts.eidolon.live/device-foundation/v1/events/claim-revoked-data.schema.json"
+        },
+        "ownerdomainid": { "$ref": "../common/schemas.schema.json#/$defs/Identifier" },
+        "aggregaterev": { "type": "integer", "minimum": 1 },
+        "correlationid": { "$ref": "../common/schemas.schema.json#/$defs/Identifier" },
+        "causationid": { "$ref": "../common/schemas.schema.json#/$defs/Identifier" },
+        "data": { "$ref": "#/$defs/ClaimRevokedData" }
+      }
     }
   }
 }

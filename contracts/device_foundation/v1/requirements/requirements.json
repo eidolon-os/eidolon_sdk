@@ -26,7 +26,8 @@
         "body-mesh/schemas.schema.json",
         "device-control/schemas.schema.json",
         "delivery-port/schemas.schema.json",
-        "events/schemas.schema.json"
+        "events/schemas.schema.json",
+        "lifecycle/schemas.schema.json"
       ],
       "producer_tests": [],
       "consumer_tests": [],
@@ -554,6 +555,35 @@
       "integration_tests": ["ADMIN::test_pending_directory_uses_authority_clock"],
       "hil_tests": ["P1::mobile-does-not-approve-expired-enrollment"],
       "status": "planned",
+      "waiver_reason": null,
+      "waiver_expires_at": null
+    },
+    {
+      "requirement_id": "DF-LIFECYCLE-001",
+      "normative_text_ref": "19.3 removal MUST freeze an exact DeviceRef, atomically commit Claim+event, and converge Mount/Delivery through durable consumers",
+      "owner": "eidolon_sdk+eidolon_hub+eidolon_kernel+eidolon_admin+eidolon_client_mobile",
+      "schema_ids": [
+        "lifecycle/OwnerAuthorizationContext",
+        "lifecycle/RemovalIntent",
+        "lifecycle/RevokeClaim",
+        "lifecycle/RevokeClaimResult",
+        "lifecycle/ClaimEventRecord",
+        "events/ClaimRevokedEvent"
+      ],
+      "producer_tests": [
+        "HUB::test_revocation_atomically_commits_claim_and_event_without_provider_dependency",
+        "ADMIN::test_restart_replays_the_frozen_intent_and_hub_result"
+      ],
+      "consumer_tests": [
+        "KERNEL::test_matching_claim_event_unmounts_once_and_advances_durable_inbox",
+        "MOBILE::an unfinished retry keeps one removal intent id"
+      ],
+      "simulator_vectors": [],
+      "integration_tests": [
+        "HUB::test_kernel_consumes_approval_and_reconciles_real_hub_revocation"
+      ],
+      "hil_tests": ["PI5::owner-device-removal-convergence"],
+      "status": "covered",
       "waiver_reason": null,
       "waiver_expires_at": null
     },

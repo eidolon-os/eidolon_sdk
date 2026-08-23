@@ -4,10 +4,11 @@ This directory is the only physical source for the public Device Foundation V1 c
 Authorities still own domain semantics and producer behavior; the SDK owns schemas, fixtures,
 golden vectors, generation inputs, and the shared conformance runner.
 
-P0 established this source without switching a production writer or reader. P1 consumes the
-Owner directory through `AuthorityLocatorPort` and generated Dart/C++ bindings. P1 does not add
-the Device Control bounded context to Hub, preserve a legacy route/DTO/database shape, or claim
-P2-P4 authority semantics.
+P0 established this source and P1 made Owner Authority discovery Host-independent. The lifecycle
+slice now also defines RemovalIntent, exact-generation RevokeClaim, ClaimRevoked and the logical
+Owner authorization context. Admission commits Claim state and its event atomically; Kernel and
+Device Control consume that fact through durable, independently retryable inbox/outbox boundaries.
+Admin is the durable intent coordinator, not a second Admission or Mount authority.
 
 The frozen trust profile is `eidolon-trust-p256-hpke-v1`. It fixes RFC 8785 JCS, ES256 P-256
 signatures encoded as 64-byte `R || S`, RFC 9180 Base mode with P-256/HKDF-SHA256/AES-128-GCM

@@ -12,6 +12,16 @@ from .authority_locator import (
     sign_descriptor,
     verify_descriptor,
 )
+from .lifecycle import (
+    ActorRef,
+    ClaimEventPage,
+    ClaimEventRecord,
+    DeviceRef,
+    OwnerAuthorizationContext,
+    RemovalIntent,
+    RevokeClaim,
+    RevokeClaimResult,
+)
 
 __all__ = [
     "AuthorityEndpoint",
@@ -24,4 +34,12 @@ __all__ = [
     "descriptor_key_id",
     "sign_descriptor",
     "verify_descriptor",
+    "ActorRef",
+    "ClaimEventPage",
+    "ClaimEventRecord",
+    "DeviceRef",
+    "OwnerAuthorizationContext",
+    "RemovalIntent",
+    "RevokeClaim",
+    "RevokeClaimResult",
 ]

@@ -1,0 +1,51 @@
+{
+  "cases": [
+    {
+      "case_id": "DF-LIFECYCLE-OWNER-AUTHORIZATION-HOST-AUDIENCE-INVALID",
+      "schema": "https://contracts.eidolon.live/device-foundation/v1/lifecycle/schemas.schema.json",
+      "definition": "OwnerAuthorizationContext",
+      "value": {
+        "workload_principal_id": "admin_lifecycle_workflow",
+        "actor": {
+          "principal_id": "controller_01",
+          "principal_type": "controller",
+          "owner_domain_id": "owner_01",
+          "granted_scopes": ["device.claim.revoke"],
+          "authentication_strength": "hardware-backed"
+        },
+        "authorized_owner_domain_id": "owner_01",
+        "audience": "eidolon-host-pi5",
+        "scopes": ["device.claim.revoke"],
+        "intent_id": "removal_intent_01",
+        "target_device_ref": {
+          "device_instance_id": "device_01",
+          "owner_domain_id": "owner_01",
+          "claim_generation": 2,
+          "trust_epoch": 4,
+          "accepted_manifest_digest": "sha256:2222222222222222222222222222222222222222222222222222222222222222"
+        },
+        "issued_at": "2026-08-23T10:00:00Z",
+        "expires_at": "2026-08-23T10:01:00Z"
+      },
+      "error_contains": "eidolon-admission"
+    },
+    {
+      "case_id": "DF-LIFECYCLE-REVOKE-CLAIM-WITHOUT-GENERATION-INVALID",
+      "schema": "https://contracts.eidolon.live/device-foundation/v1/lifecycle/schemas.schema.json",
+      "definition": "RevokeClaim",
+      "value": {
+        "operation": "device.claim-revocation",
+        "command_id": "revoke_claim_01",
+        "correlation_id": "removal_intent_01",
+        "device_ref": {
+          "device_instance_id": "device_01",
+          "owner_domain_id": "owner_01",
+          "trust_epoch": 4,
+          "accepted_manifest_digest": "sha256:2222222222222222222222222222222222222222222222222222222222222222"
+        },
+        "reason": "owner-removed"
+      },
+      "error_contains": "claim_generation"
+    }
+  ]
+}
