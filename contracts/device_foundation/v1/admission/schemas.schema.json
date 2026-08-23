@@ -74,7 +74,8 @@
         "proposal_revision",
         "state",
         "expires_at",
-        "reviewed_manifest_digest"
+        "reviewed_manifest_digest",
+        "collection_challenge"
       ],
       "properties": {
         "enrollment_id": { "$ref": "../common/schemas.schema.json#/$defs/Identifier" },
@@ -83,6 +84,10 @@
         "expires_at": { "type": "string", "format": "date-time" },
         "reviewed_manifest_digest": {
           "$ref": "../common/schemas.schema.json#/$defs/Sha256Digest"
+        },
+        "collection_challenge": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_-]{22,128}$"
         }
       }
     },
@@ -140,11 +145,14 @@
     "CollectClaimGrant": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["enrollment_id", "proposal_revision", "challenge_id", "handoff_key_proof"],
+      "required": ["enrollment_id", "proposal_revision", "collection_challenge", "handoff_key_proof"],
       "properties": {
         "enrollment_id": { "$ref": "../common/schemas.schema.json#/$defs/Identifier" },
         "proposal_revision": { "type": "integer", "minimum": 1 },
-        "challenge_id": { "$ref": "../common/schemas.schema.json#/$defs/Identifier" },
+        "collection_challenge": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_-]{22,128}$"
+        },
         "handoff_key_proof": { "type": "string", "minLength": 16, "maxLength": 4096 }
       }
     },

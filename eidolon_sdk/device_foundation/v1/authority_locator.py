@@ -47,6 +47,7 @@ class OwnerDomainDescriptor(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True, strict=True)
 
     owner_domain_id: str = Field(min_length=1, max_length=128)
+    owner_domain_generation: int = Field(ge=1)
     directory_revision: int = Field(ge=1)
     trust_root_refs: tuple[str, ...] = Field(min_length=1)
     endpoints: tuple[AuthorityEndpoint, ...] = Field(min_length=1)
@@ -319,13 +320,18 @@ class AuthorityLocator(AuthorityLocatorPort):
             raise AuthorityLocatorError("descriptor is expired")
         current = self._accepted
         if current is not None:
-            if candidate.directory_revision < current.directory_revision:
-                raise AuthorityLocatorError("descriptor directory revision rollback")
-            if (
-                candidate.directory_revision == current.directory_revision
-                and candidate != current
-            ):
-                raise AuthorityLocatorError("descriptor revision was reused with different content")
+            if candidate.owner_domain_generation < current.owner_domain_generation:
+                raise AuthorityLocatorError("Owner Domain generation rollback")
+            if candidate.owner_domain_generation == current.owner_domain_generation:
+                if candidate.directory_revision < current.directory_revision:
+                    raise AuthorityLocatorError("descriptor directory revision rollback")
+                if (
+                    candidate.directory_revision == current.directory_revision
+                    and candidate != current
+                ):
+                    raise AuthorityLocatorError(
+                        "descriptor revision was reused with different content"
+                    )
         self._accepted = candidate
 
     def resolve(

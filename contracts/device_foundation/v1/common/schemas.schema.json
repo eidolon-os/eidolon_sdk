@@ -23,6 +23,7 @@
       "required": [
         "device_instance_id",
         "owner_domain_id",
+        "owner_domain_generation",
         "claim_generation",
         "trust_epoch",
         "accepted_manifest_digest"
@@ -30,6 +31,7 @@
       "properties": {
         "device_instance_id": { "$ref": "#/$defs/Identifier" },
         "owner_domain_id": { "$ref": "#/$defs/Identifier" },
+        "owner_domain_generation": { "type": "integer", "minimum": 1 },
         "claim_generation": { "type": "integer", "minimum": 1 },
         "trust_epoch": { "type": "integer", "minimum": 1 },
         "accepted_manifest_digest": { "$ref": "#/$defs/Sha256Digest" }
@@ -218,6 +220,7 @@
       "additionalProperties": false,
       "required": [
         "owner_domain_id",
+        "owner_domain_generation",
         "directory_revision",
         "trust_root_refs",
         "endpoints",
@@ -228,6 +231,7 @@
       ],
       "properties": {
         "owner_domain_id": { "$ref": "#/$defs/Identifier" },
+        "owner_domain_generation": { "type": "integer", "minimum": 1 },
         "directory_revision": { "type": "integer", "minimum": 1 },
         "trust_root_refs": {
           "type": "array",
@@ -276,6 +280,7 @@
         "hardware_evidence_digest",
         "manifest_digest",
         "owner_domain_id",
+        "owner_domain_generation",
         "claim_generation",
         "trust_epoch",
         "grant_id"
@@ -288,6 +293,7 @@
         "hardware_evidence_digest": { "$ref": "#/$defs/Sha256Digest" },
         "manifest_digest": { "$ref": "#/$defs/Sha256Digest" },
         "owner_domain_id": { "$ref": "#/$defs/Identifier" },
+        "owner_domain_generation": { "type": "integer", "minimum": 1 },
         "claim_generation": { "type": "integer", "minimum": 1 },
         "trust_epoch": { "type": "integer", "minimum": 1 },
         "grant_id": { "$ref": "#/$defs/Identifier" }

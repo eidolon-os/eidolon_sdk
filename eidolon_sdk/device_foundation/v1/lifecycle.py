@@ -39,6 +39,7 @@ class DeviceRef(_Model):
     owner_domain_id: str = Field(
         min_length=3, max_length=128, pattern=_IDENTIFIER
     )
+    owner_domain_generation: int = Field(ge=1)
     claim_generation: int = Field(ge=1)
     trust_epoch: int = Field(ge=1)
     accepted_manifest_digest: str = Field(pattern=r"^sha256:[0-9a-f]{64}$")

@@ -89,6 +89,7 @@ def _anchor(key: ec.EllipticCurvePrivateKey | None = None) -> OwnerDomainTrustAn
 
 def _descriptor(
     *,
+    owner_domain_generation: int = 3,
     revision: int = 7,
     host: str = "host-a.owner.test",
     key: ec.EllipticCurvePrivateKey | None = None,
@@ -100,6 +101,7 @@ def _descriptor(
     owner_root_key_id = descriptor_key_id(_public_pem(_key()))
     unsigned = OwnerDomainDescriptor(
         owner_domain_id=owner_domain_id,
+        owner_domain_generation=owner_domain_generation,
         directory_revision=revision,
         trust_root_refs=(owner_root_key_id,),
         endpoints=(
@@ -251,6 +253,31 @@ def test_expired_descriptor_requires_discovery_without_clearing_claim() -> None:
     with pytest.raises(AuthorityLocatorError, match="AuthorityDiscoveryRequired"):
         locator.resolve(OWNER_ID, LogicalAuthority.ADMISSION, now=NOW + timedelta(days=2))
     assert locator.accepted is not None
+
+
+def test_r19_owner_domain_generation_fences_old_directory_lineage() -> None:
+    locator = AuthorityLocator(_anchor())
+    locator.accept(_descriptor(owner_domain_generation=3, revision=91), now=NOW)
+
+    reset = _descriptor(owner_domain_generation=4, revision=1, host="reset.owner.test")
+    locator.accept(reset, now=NOW)
+    assert locator.accepted == reset
+
+    with pytest.raises(AuthorityLocatorError, match="generation rollback"):
+        locator.accept(
+            _descriptor(owner_domain_generation=3, revision=999),
+            now=NOW,
+        )
+
+
+def test_r18_restore_within_generation_still_rejects_directory_rollback() -> None:
+    locator = AuthorityLocator(_anchor())
+    locator.accept(_descriptor(owner_domain_generation=3, revision=8), now=NOW)
+    with pytest.raises(AuthorityLocatorError, match="revision rollback"):
+        locator.accept(
+            _descriptor(owner_domain_generation=3, revision=7),
+            now=NOW,
+        )
 
 
 def test_endpoint_priority_not_array_order_selects_first_route() -> None:

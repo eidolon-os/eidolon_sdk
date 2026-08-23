@@ -8,16 +8,17 @@
     "hardware_evidence_digest": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
     "manifest_digest": "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
     "owner_domain_id": "owner_01",
+    "owner_domain_generation": 3,
     "claim_generation": 2,
     "trust_epoch": 4,
     "grant_id": "grant_01"
   },
-  "canonical_aad_sha256": "bc9d4a787335a7094cf2aaa2a2c2748b620524f92553617b15d05118a70ca785",
+  "canonical_aad_sha256": "7400afb6b4da9d66a05d1663f0cebc9f4f52e0cd79b1786a40c5be000273784a",
   "test_aead": "AES-128-GCM",
   "test_key": "000102030405060708090a0b0c0d0e0f",
   "test_nonce": "101112131415161718191a1b",
   "plaintext": "636c61696d2d6772616e742d666978747572652d7631",
-  "ciphertext": "a74262c66262d19d76b329d8a14e934a4fce11aa40c5e7d9757a5c053f36ad626f1fc9973b8c",
+  "ciphertext": "a74262c66262d19d76b329d8a14e934a4fce11aa40c50bd518741ec94f181e3285616e940be2",
   "mutate_each_field_must_fail": [
     "contract",
     "profile_id",
@@ -26,6 +27,7 @@
     "hardware_evidence_digest",
     "manifest_digest",
     "owner_domain_id",
+    "owner_domain_generation",
     "claim_generation",
     "trust_epoch",
     "grant_id"

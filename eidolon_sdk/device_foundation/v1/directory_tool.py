@@ -48,6 +48,7 @@ def issue_descriptor(
         )
     descriptor = OwnerDomainDescriptor(
         owner_domain_id=trust.owner_domain_id,
+        owner_domain_generation=int(source["owner_domain_generation"]),
         directory_revision=int(source["directory_revision"]),
         trust_root_refs=(trust.key_id,),
         endpoints=tuple(

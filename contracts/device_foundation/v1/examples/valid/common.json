@@ -25,6 +25,7 @@
       "value": {
         "device_instance_id": "10:51:db:7e:24:44",
         "owner_domain_id": "owner_01",
+        "owner_domain_generation": 3,
         "claim_generation": 2,
         "trust_epoch": 3,
         "accepted_manifest_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
@@ -106,6 +107,7 @@
       "definition": "OwnerDomainDescriptor",
       "value": {
         "owner_domain_id": "owner_01",
+        "owner_domain_generation": 3,
         "directory_revision": 7,
         "trust_root_refs": [
           "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
@@ -144,6 +146,7 @@
         "hardware_evidence_digest": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
         "manifest_digest": "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
         "owner_domain_id": "owner_01",
+        "owner_domain_generation": 3,
         "claim_generation": 2,
         "trust_epoch": 4,
         "grant_id": "grant_01"

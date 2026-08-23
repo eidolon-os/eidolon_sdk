@@ -69,6 +69,7 @@
         "device_ref": {
           "device_instance_id": "device_01",
           "owner_domain_id": "owner_01",
+          "owner_domain_generation": 3,
           "claim_generation": 2,
           "trust_epoch": 4,
           "accepted_manifest_digest": "sha256:2222222222222222222222222222222222222222222222222222222222222222"
@@ -105,6 +106,7 @@
         "device_ref": {
           "device_instance_id": "device_01",
           "owner_domain_id": "owner_01",
+          "owner_domain_generation": 3,
           "claim_generation": 2,
           "trust_epoch": 4,
           "accepted_manifest_digest": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
@@ -126,6 +128,7 @@
         "device_ref": {
           "device_instance_id": "device_01",
           "owner_domain_id": "owner_01",
+          "owner_domain_generation": 3,
           "claim_generation": 2,
           "trust_epoch": 4,
           "accepted_manifest_digest": "sha256:2222222222222222222222222222222222222222222222222222222222222222"
@@ -176,6 +179,7 @@
           "device_ref": {
             "device_instance_id": "device_01",
             "owner_domain_id": "owner_01",
+            "owner_domain_generation": 3,
             "claim_generation": 2,
             "trust_epoch": 4,
             "accepted_manifest_digest": "sha256:2222222222222222222222222222222222222222222222222222222222222222"

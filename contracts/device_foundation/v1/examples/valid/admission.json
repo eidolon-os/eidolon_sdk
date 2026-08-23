@@ -38,7 +38,8 @@
         "proposal_revision": 1,
         "state": "pending",
         "expires_at": "2026-08-18T00:15:00Z",
-        "reviewed_manifest_digest": "sha256:2222222222222222222222222222222222222222222222222222222222222222"
+        "reviewed_manifest_digest": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+        "collection_challenge": "Y29sbGVjdGlvbi1jaGFsbGVuZ2U"
       }
     },
     {
@@ -75,7 +76,7 @@
       "value": {
         "enrollment_id": "enrollment_01",
         "proposal_revision": 1,
-        "challenge_id": "challenge_01",
+        "collection_challenge": "Y29sbGVjdGlvbi1jaGFsbGVuZ2U",
         "handoff_key_proof": "aGFuZG9mZi1rZXktcHJvb2Y"
       }
     },
@@ -110,6 +111,7 @@
         "device_ref": {
           "device_instance_id": "device_01",
           "owner_domain_id": "owner_01",
+          "owner_domain_generation": 3,
           "claim_generation": 2,
           "trust_epoch": 4,
           "accepted_manifest_digest": "sha256:2222222222222222222222222222222222222222222222222222222222222222"

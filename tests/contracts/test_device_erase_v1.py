@@ -37,6 +37,7 @@ def _ref(*, generation: int = 7) -> DeviceRef:
     return DeviceRef(
         device_instance_id="device_erase_01",
         owner_domain_id="owner_01",
+        owner_domain_generation=3,
         claim_generation=generation,
         trust_epoch=4,
         accepted_manifest_digest="sha256:" + "a" * 64,

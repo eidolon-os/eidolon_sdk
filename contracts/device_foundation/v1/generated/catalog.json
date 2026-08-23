@@ -4,8 +4,8 @@
   "files": [
     {
       "path": "admission/schemas.schema.json",
-      "sha256": "139379aca49df21351059cfbc2dc8ef41cf80d6ef6712e5cff95ae57af1700d8",
-      "size": 7279
+      "sha256": "4dc8e995f0417424b9398ddd9d3526d207f06f18601460dbff7842b0ecb015cd",
+      "size": 7472
     },
     {
       "path": "baseline/cross-repo-heads.v1.json",
@@ -29,8 +29,8 @@
     },
     {
       "path": "common/schemas.schema.json",
-      "sha256": "dfd6b8037ed0486615e39a3e97a993ec097e0a020f29fb6d47cb170258cbdcc2",
-      "size": 15498
+      "sha256": "30793c6d84aa940c39d8097dd151a43e90ad4a8bc0d962e1e63577a01db6c06a",
+      "size": 15819
     },
     {
       "path": "conformance/run.py",
@@ -59,58 +59,58 @@
     },
     {
       "path": "examples/invalid/authority.json",
-      "sha256": "8d5d252a161acf3d2dafc382ff7c9c25cbc5385c98ef57c11e0ff54a188661a0",
-      "size": 7143
+      "sha256": "de2f07c88ee5d7e13de7b5822f3248c829a76e260fc98e35dd5c2338a8c1e0b9",
+      "size": 7305
     },
     {
       "path": "examples/invalid/common.json",
-      "sha256": "4b303833690bf3cf76ec3d90a86ce1935b658c4d040b66bb474a7b9202d5427f",
-      "size": 4825
+      "sha256": "b55c7addaeee70a50218fc4b14b1241596c2d51d8278d0a2912b38d6069e02e2",
+      "size": 4901
     },
     {
       "path": "examples/invalid/device-erase.json",
-      "sha256": "498eb45c6b0a213c82defab17e3e2ce754fdc8aacc9a448630e42dae453b0c3c",
-      "size": 3876
+      "sha256": "1c8b0196da68a216f71bad88851a22ad6d396d67be821166b41af49405c6930d",
+      "size": 3996
     },
     {
       "path": "examples/invalid/lifecycle.json",
-      "sha256": "73330a6e81a10ec93fca3c8d5852b43ccdef23e3c3eefd78005186d518d453a5",
-      "size": 5057
+      "sha256": "bf6da5bec5424edaf5aef524b2c30abc6d7f61eb3c84b6e1bd1a3f2470ce1973",
+      "size": 5217
     },
     {
       "path": "examples/valid/admission.json",
-      "sha256": "0e7e15cef75f1edfef949ffd5738d89c589f1788c10de92917b73af6d824c71a",
-      "size": 4623
+      "sha256": "51436473673109d308367162d0de472b5937e385a7c6ded7347633bab623e443",
+      "size": 4749
     },
     {
       "path": "examples/valid/body-mesh.json",
-      "sha256": "801f8e62c35a3638ec5f27bd803050a6a5f135a6112d6861d6fe339e83020895",
-      "size": 2940
+      "sha256": "4eefac11bc4113f9296556fdb98a0e79dff1ea352335922565f026f75dbf3197",
+      "size": 3020
     },
     {
       "path": "examples/valid/common.json",
-      "sha256": "b42b32a000a41d1328c14a104f0485526f36628f0492b5c121fac3616870a7cc",
-      "size": 7823
+      "sha256": "9629be338d72c416e70c827ad2f747db6d8d3b3fe8f0d70600b625022c06abba",
+      "size": 7937
     },
     {
       "path": "examples/valid/delivery-and-events.json",
-      "sha256": "a95c7c1170755f3e58955103bb5d8153240a5a061b4410a8d21a88e17cb4f4ef",
-      "size": 4882
+      "sha256": "53e68ea0a316aae81be0d9e371d11c7797eaa72fa937e92abe61317282072f03",
+      "size": 5086
     },
     {
       "path": "examples/valid/device-control.json",
-      "sha256": "49e696e4c058820086253db3a0d131b0c84a253c14d6ed79d5a807a9d51ed2d6",
-      "size": 3585
+      "sha256": "ae482e000462caeb250c8544aa7c4126416af0fd3f03519443418771cf8d70f1",
+      "size": 3745
     },
     {
       "path": "examples/valid/device-erase.json",
-      "sha256": "f6c3fb92fe83d8e5913faec5cc527ffd8c3ce3a529b0c051224bb9c92f30a4db",
-      "size": 3825
+      "sha256": "3d489078c44da48b479280cec400b159b687e47b0ddcbc58bcf37cd3a511ce79",
+      "size": 3945
     },
     {
       "path": "examples/valid/lifecycle.json",
-      "sha256": "6f80e3d1ee7872eae21a1834d3bdefae0424927801c81f69213e2f4e523afb17",
-      "size": 4986
+      "sha256": "759ab623bce09f9ffe9509c7c2cbc8f9a488736dc29351c012424e053d872a2f",
+      "size": 5186
     },
     {
       "path": "generation/config.json",
@@ -124,13 +124,13 @@
     },
     {
       "path": "generation/templates/device_foundation_v1.dart",
-      "sha256": "d69651e40bd51c6351ea072634d1e2d93dcfb8fbb1474a3aba52c20dfee75f4c",
-      "size": 14160
+      "sha256": "9bb34f7d6be9648b481c17d7031161a54aca78b2b3330ddf0bcaf50090a3863a",
+      "size": 14521
     },
     {
       "path": "generation/templates/device_foundation_v1_generated.h",
-      "sha256": "8c386a30c4f14d300509b9846a96657abf96576402595b8d53ae7fe5cf043534",
-      "size": 2750
+      "sha256": "93cbb797f7bc8e02f87e21f4863dba428eae3f634c95b63b21784b615b8465e4",
+      "size": 2834
     },
     {
       "path": "golden/canonical-vectors.json",
@@ -139,18 +139,18 @@
     },
     {
       "path": "golden/claim-grant-aad.json",
-      "sha256": "60a590f6ee17e19e62bf9ba7be9c68a7cfcdab414877754b54fec04f7778faad",
-      "size": 1184
+      "sha256": "5896903ab5665452ca47c095781708eb5ea78ea6d86bd4045816c13253d58c56",
+      "size": 1249
     },
     {
       "path": "golden/claim-revoke.json",
-      "sha256": "f9f0060cc5d7feb505756b8c51ae8566c5bbe7edd1d7ff0d5db97084eb5c1ba5",
-      "size": 1469
+      "sha256": "39e62425ec6b832b602cfbebbdbbdfeef59a6280a7d0e9a7048ad15e768d1831",
+      "size": 1573
     },
     {
       "path": "golden/device-local-erase.json",
-      "sha256": "aa197698f43b275e354f486613f931053b52f1831474eb19e36ec93b21c66355",
-      "size": 3223
+      "sha256": "c51a27b71499fcbf22f14734b80eab3eff4d857a02ce575c0f72cf7ad83179f2",
+      "size": 3355
     },
     {
       "path": "golden/es256-vectors.json",
@@ -159,8 +159,8 @@
     },
     {
       "path": "golden/owner-domain-descriptor.json",
-      "sha256": "f6ad477182def0697515e02b0e00d51932bd9c5513d2a0d74a79884ee324b76a",
-      "size": 2065
+      "sha256": "daef1121114d2971264e2ad0964d60284d1877bbf35d6c785366bf4bc48c4e00",
+      "size": 2129
     },
     {
       "path": "golden/protocomm-security2-framing.json",
@@ -209,8 +209,8 @@
     },
     {
       "path": "state-vectors/host-relocation.json",
-      "sha256": "5f4284dff2a26b3c9d45e1a16d0fa7a42d95829f946c9d8a16de6158f0f2884e",
-      "size": 1073
+      "sha256": "30b9db23c6e4b52de5a45d2891aeaa7c40f331f4f87b59d6276cf5bd433020ee",
+      "size": 1109
     },
     {
       "path": "state-vectors/idempotency.json",
@@ -225,5 +225,5 @@
   ],
   "generator": "device-foundation-v1-catalog",
   "generator_version": "1.0",
-  "source_digest": "sha256:c74b1ec27dfb8f2caed645d112712f25782697aca9360c6e95fcb1f98daa1aa0"
+  "source_digest": "sha256:b85de8f285fd1bf7ce5fab812ae8ade891c5fc74fc748ef7a7a29001efb4f1a5"
 }
