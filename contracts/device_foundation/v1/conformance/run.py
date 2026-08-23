@@ -547,6 +547,7 @@ def check_state_vectors() -> int:
         "network_commit_before_owner_route_validation",
         "trust_activation_before_owner_route_validation",
         "transport_stop_before_controller_observes_terminal",
+        "controller_route_release_before_terminal_ack",
     }
     if any(invariants.get(name) is not False for name in required_false):
         raise ConformanceError("commissioning transaction ordering invariant drifted")

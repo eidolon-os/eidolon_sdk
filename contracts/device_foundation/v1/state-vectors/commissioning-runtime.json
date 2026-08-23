@@ -39,6 +39,7 @@
     "network_commit_before_owner_route_validation": false,
     "trust_activation_before_owner_route_validation": false,
     "transport_stop_before_controller_observes_terminal": false,
+    "controller_route_release_before_terminal_ack": false,
     "rollback_precedes_transport_stop": true,
     "radio_restore_follows_transport_stop": true,
     "stale_generation_is_ignored": true,

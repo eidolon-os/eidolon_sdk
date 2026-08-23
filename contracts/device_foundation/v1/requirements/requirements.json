@@ -463,14 +463,17 @@
     {
       "requirement_id": "DF-COMM-011",
       "normative_text_ref": "16.1 DF-COMM-011 session-owned resources MUST remain valid through Stopped and stale callbacks MUST NOT double-free",
-      "owner": "eidolon-client-esp32",
+      "owner": "eidolon-client-esp32+eidolon_client_mobile",
       "schema_ids": ["common/CommissioningProfile"],
       "producer_tests": [
         "ESP32::EndpointBudgetRejectsTheVendorDefaultAndAcceptsTheOwnedServer",
         "ESP32::PartialStartFailureTransfersEveryOwnedResourceExactlyOnce",
         "ESP32::TestUnexpectedTransportEndUsesTheSingleStopPath"
       ],
-      "consumer_tests": [],
+      "consumer_tests": [
+        "MOBILE::CommissioningClientLeaseKeepsSoftApUntilTerminalAck",
+        "MOBILE::CommissioningClientLeaseFailureReleasesExactlyOnce"
+      ],
       "simulator_vectors": ["DF-PROTOCOMM-SECURITY2-FRAMING-001"],
       "integration_tests": [],
       "hil_tests": ["P5::protocomm-security2-real-sdk"],
