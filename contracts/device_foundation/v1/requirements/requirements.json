@@ -514,7 +514,10 @@
       "normative_text_ref": "10.6.1.4/10.6.1.7 committed commissioning MUST retain the single RadioLease until a fresh Station route is confirmed; legacy timers submit intent only and enrollment waits for the confirmed handoff",
       "owner": "eidolon-client-esp32+eidolon_client_mobile",
       "schema_ids": ["common/CommissioningStatusEvidence", "common/CommissioningTerminalAck"],
-      "producer_tests": ["ESP32::TestTransportClosesOnlyAfterCommittedTerminalWasObserved"],
+      "producer_tests": [
+        "ESP32::TestTransportClosesOnlyAfterCommittedTerminalWasObserved",
+        "ESP32::CommissioningTransportReturnsStoppedWifiDriverBeforeStationRestore"
+      ],
       "consumer_tests": ["MOBILE::controller-route-lease-ordering"],
       "simulator_vectors": ["DF-COMMISSIONING-RUNTIME-001"],
       "integration_tests": ["ADMIN::test_pending_directory_uses_authority_clock"],
