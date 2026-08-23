@@ -12,6 +12,17 @@ from .authority_locator import (
     sign_descriptor,
     verify_descriptor,
 )
+from .lifecycle import (
+    ActorRef,
+    ClaimEventPage,
+    ClaimEventRecord,
+    DeviceRef,
+    OwnerAuthorizationContext,
+    RemovalIntent,
+    RevokeClaim,
+    RevokeClaimResult,
+    revoke_claim_fingerprint,
+)
 from .device_erase import (
     DeviceEraseContractError,
     DeviceLocalEraseAck,
@@ -38,6 +49,15 @@ __all__ = [
     "descriptor_key_id",
     "sign_descriptor",
     "verify_descriptor",
+    "ActorRef",
+    "ClaimEventPage",
+    "ClaimEventRecord",
+    "DeviceRef",
+    "OwnerAuthorizationContext",
+    "RemovalIntent",
+    "RevokeClaim",
+    "RevokeClaimResult",
+    "revoke_claim_fingerprint",
     "DeviceEraseContractError",
     "DeviceLocalEraseAck",
     "DeviceLocalEraseCommand",

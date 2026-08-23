@@ -207,6 +207,26 @@ def check_device_local_erase_vector() -> int:
     return 1
 
 
+def check_claim_revoke_vector() -> int:
+    vector = load_json(ROOT / "golden" / "claim-revoke.json")
+    canonical = canonical_bytes(vector["fingerprint_document"])
+    if canonical != vector["canonical_fingerprint_utf8"].encode("utf-8"):
+        raise ConformanceError("Claim revoke canonical fingerprint bytes drifted")
+    fingerprint = "sha256:" + hashlib.sha256(canonical).hexdigest()
+    if fingerprint != vector["fingerprint"]:
+        raise ConformanceError("Claim revoke fingerprint drifted")
+    if set(vector["excluded_from_fingerprint"]) != {"command_id", "correlation_id"}:
+        raise ConformanceError("Claim revoke retry/audit metadata entered semantic equality")
+    if any(field not in vector["command"] for field in vector["excluded_from_fingerprint"]):
+        raise ConformanceError("Claim revoke golden command omits excluded retry/audit fields")
+    if any(
+        field in vector["fingerprint_document"]
+        for field in vector["excluded_from_fingerprint"]
+    ):
+        raise ConformanceError("Claim revoke fingerprint document contains excluded fields")
+    return 1
+
+
 def check_owner_directory_vector() -> int:
     vector = load_json(ROOT / "golden" / "owner-domain-descriptor.json")
     descriptor = vector["descriptor"]
@@ -746,6 +766,7 @@ def run() -> dict[str, int]:
         "canonical_vectors": check_canonical_vectors(),
         "es256_vectors": check_es256_vectors(),
         "device_local_erase_vectors": check_device_local_erase_vector(),
+        "claim_revoke_vectors": check_claim_revoke_vector(),
         "owner_directory_vectors": check_owner_directory_vector(),
         "hpke_vectors": check_hpke_vector(),
         "claim_grant_aad_checks": check_claim_grant_aad(),

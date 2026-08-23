@@ -75,6 +75,52 @@
           "activated_at": "2026-08-18T00:05:00Z"
         }
       }
+    },
+    {
+      "case_id": "DF-EVENT-CLAIM-REVOKED-DATA-VALID",
+      "schema": "https://contracts.eidolon.live/device-foundation/v1/events/schemas.schema.json",
+      "definition": "ClaimRevokedData",
+      "value": {
+        "device_ref": {
+          "device_instance_id": "device_01",
+          "owner_domain_id": "owner_01",
+          "claim_generation": 2,
+          "trust_epoch": 4,
+          "accepted_manifest_digest": "sha256:2222222222222222222222222222222222222222222222222222222222222222"
+        },
+        "reason": "owner-removed",
+        "revoked_at": "2026-08-23T10:00:01Z"
+      }
+    },
+    {
+      "case_id": "DF-EVENT-CLAIM-REVOKED-VALID",
+      "schema": "https://contracts.eidolon.live/device-foundation/v1/events/schemas.schema.json",
+      "definition": "ClaimRevokedEvent",
+      "value": {
+        "specversion": "1.0",
+        "id": "claim_event_01",
+        "source": "urn:eidolon:authority:admission",
+        "type": "live.eidolon.device.claim-revoked.v1",
+        "subject": "device-instances/device_01",
+        "time": "2026-08-23T10:00:01Z",
+        "datacontenttype": "application/json",
+        "dataschema": "https://contracts.eidolon.live/device-foundation/v1/events/claim-revoked-data.schema.json",
+        "ownerdomainid": "owner_01",
+        "aggregaterev": 8,
+        "correlationid": "removal_intent_01",
+        "causationid": "revoke_claim_01",
+        "data": {
+          "device_ref": {
+            "device_instance_id": "device_01",
+            "owner_domain_id": "owner_01",
+            "claim_generation": 2,
+            "trust_epoch": 4,
+            "accepted_manifest_digest": "sha256:2222222222222222222222222222222222222222222222222222222222222222"
+          },
+          "reason": "owner-removed",
+          "revoked_at": "2026-08-23T10:00:01Z"
+        }
+      }
     }
   ]
 }

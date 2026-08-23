@@ -1,0 +1,148 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contracts.eidolon.live/device-foundation/v1/lifecycle/schemas.schema.json",
+  "title": "Eidolon Device Foundation V1 lifecycle schemas",
+  "$defs": {
+    "OwnerAuthorizationContext": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "workload_principal_id",
+        "actor",
+        "authorized_owner_domain_id",
+        "audience",
+        "scopes",
+        "intent_id",
+        "target_device_ref",
+        "issued_at",
+        "expires_at"
+      ],
+      "properties": {
+        "workload_principal_id": { "$ref": "../common/schemas.schema.json#/$defs/Identifier" },
+        "actor": { "$ref": "../common/schemas.schema.json#/$defs/ActorRef" },
+        "authorized_owner_domain_id": { "$ref": "../common/schemas.schema.json#/$defs/Identifier" },
+        "audience": { "const": "eidolon-admission" },
+        "scopes": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "contains": { "const": "device.claim.revoke" },
+          "items": { "enum": ["device.read", "device.claim.revoke"] }
+        },
+        "intent_id": { "$ref": "../common/schemas.schema.json#/$defs/Identifier" },
+        "target_device_ref": { "$ref": "../common/schemas.schema.json#/$defs/DeviceRef" },
+        "issued_at": { "type": "string", "format": "date-time" },
+        "expires_at": { "type": "string", "format": "date-time" }
+      }
+    },
+    "RemovalIntent": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "intent_id",
+        "ingress_request_id",
+        "device_ref",
+        "actor",
+        "reason",
+        "claim_command_id",
+        "state",
+        "created_at",
+        "updated_at"
+      ],
+      "properties": {
+        "intent_id": { "$ref": "../common/schemas.schema.json#/$defs/Identifier" },
+        "ingress_request_id": { "$ref": "../common/schemas.schema.json#/$defs/Identifier" },
+        "device_ref": { "$ref": "../common/schemas.schema.json#/$defs/DeviceRef" },
+        "actor": { "$ref": "../common/schemas.schema.json#/$defs/ActorRef" },
+        "reason": { "type": "string", "minLength": 1, "maxLength": 256 },
+        "claim_command_id": { "$ref": "../common/schemas.schema.json#/$defs/Identifier" },
+        "state": { "enum": ["accepted", "claim-revoked", "converged", "blocked"] },
+        "created_at": { "type": "string", "format": "date-time" },
+        "updated_at": { "type": "string", "format": "date-time" }
+      }
+    },
+    "RevokeClaim": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["operation", "command_id", "correlation_id", "device_ref", "reason"],
+      "properties": {
+        "operation": { "const": "device.claim-revocation" },
+        "command_id": { "$ref": "../common/schemas.schema.json#/$defs/Identifier" },
+        "correlation_id": { "$ref": "../common/schemas.schema.json#/$defs/Identifier" },
+        "device_ref": { "$ref": "../common/schemas.schema.json#/$defs/DeviceRef" },
+        "reason": { "type": "string", "minLength": 1, "maxLength": 256 }
+      }
+    },
+    "RevokeClaimResult": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "operation",
+        "command_id",
+        "outcome",
+        "device_ref",
+        "aggregate_revision",
+        "occurred_at",
+        "event_id",
+        "lifecycle_state"
+      ],
+      "properties": {
+        "operation": { "const": "device.claim-revocation-result" },
+        "command_id": { "$ref": "../common/schemas.schema.json#/$defs/Identifier" },
+        "outcome": { "enum": ["committed", "replayed"] },
+        "device_ref": { "$ref": "../common/schemas.schema.json#/$defs/DeviceRef" },
+        "aggregate_revision": { "type": "integer", "minimum": 1 },
+        "occurred_at": { "type": "string", "format": "date-time" },
+        "event_id": {
+          "oneOf": [
+            { "$ref": "../common/schemas.schema.json#/$defs/Identifier" },
+            { "type": "null" }
+          ]
+        },
+        "lifecycle_state": { "const": "revoked" }
+      }
+    },
+    "ClaimEventRecord": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "operation",
+        "stream_position",
+        "event_id",
+        "event_type",
+        "device_ref",
+        "aggregate_revision",
+        "correlation_id",
+        "causation_id",
+        "occurred_at",
+        "reason"
+      ],
+      "properties": {
+        "operation": { "const": "device.claim-event" },
+        "stream_position": { "type": "integer", "minimum": 1 },
+        "event_id": { "$ref": "../common/schemas.schema.json#/$defs/Identifier" },
+        "event_type": { "const": "live.eidolon.device.claim-revoked.v1" },
+        "device_ref": { "$ref": "../common/schemas.schema.json#/$defs/DeviceRef" },
+        "aggregate_revision": { "type": "integer", "minimum": 1 },
+        "correlation_id": { "$ref": "../common/schemas.schema.json#/$defs/Identifier" },
+        "causation_id": { "$ref": "../common/schemas.schema.json#/$defs/Identifier" },
+        "occurred_at": { "type": "string", "format": "date-time" },
+        "reason": { "type": "string", "minLength": 1, "maxLength": 256 }
+      }
+    },
+    "ClaimEventPage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["operation", "next_stream_position", "events"],
+      "properties": {
+        "operation": { "const": "device.claim-event-page" },
+        "next_stream_position": { "type": "integer", "minimum": 0 },
+        "events": {
+          "type": "array",
+          "maxItems": 500,
+          "items": { "$ref": "#/$defs/ClaimEventRecord" }
+        }
+      }
+    }
+  }
+}

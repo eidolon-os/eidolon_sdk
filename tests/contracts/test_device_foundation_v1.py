@@ -25,10 +25,11 @@ def _load_runner():
 
 def test_conformance_runner_passes() -> None:
     result = _load_runner().run()
-    assert result["schemas"] == 6
-    assert result["fixtures"] >= 40
-    assert result["requirements"] >= 15
+    assert result["schemas"] == 7
+    assert result["fixtures"] >= 60
+    assert result["requirements"] >= 40
     assert result["state_vectors"] == 5
+    assert result["claim_revoke_vectors"] == 1
     assert result["p1_exit_evidence"] == 1
 
 
