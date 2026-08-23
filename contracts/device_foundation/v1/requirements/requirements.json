@@ -527,6 +527,23 @@
       "waiver_expires_at": null
     },
     {
+      "requirement_id": "DF-COMM-015",
+      "normative_text_ref": "10.6.1.1/10.6.1.4/10.6.1.7 commissioning MUST confirm operational voice/media runtime is quiesced before acquiring RadioLease or projecting Advertising",
+      "owner": "eidolon-client-esp32",
+      "schema_ids": ["common/CommissioningStatusEvidence"],
+      "producer_tests": [
+        "ESP32::TestOperationalRuntimeMustQuiesceBeforeRadioLease",
+        "ESP32::TestOperationalRuntimeQuiesceFailureNeverTouchesRadio"
+      ],
+      "consumer_tests": [],
+      "simulator_vectors": ["DF-COMMISSIONING-RUNTIME-001"],
+      "integration_tests": ["ESP32::commissioning-orchestrator-core"],
+      "hil_tests": ["P1::box3-operational-quiesce-before-advertising"],
+      "status": "planned",
+      "waiver_reason": null,
+      "waiver_expires_at": null
+    },
+    {
       "requirement_id": "DF-ADMISSION-002",
       "normative_text_ref": "3.7/3.8 an actionable pending-enrollment projection MUST be evaluated by the Admission Authority clock and MUST NOT offer an expired generation that approval will refuse",
       "owner": "eidolon_hub+eidolon_admin",

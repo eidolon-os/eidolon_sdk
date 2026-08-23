@@ -149,13 +149,13 @@
     },
     {
       "path": "requirements/requirements.json",
-      "sha256": "40fd1b143dd707d4eb7ea39ad664a9e11e0206083f1ce6029173194abfd104fc",
-      "size": 27740
+      "sha256": "7cb02b0ddcef589050aba5b05a7381edcb10af4beb7850e23b5ec2fb4f9c278d",
+      "size": 28568
     },
     {
       "path": "state-vectors/commissioning-runtime.json",
-      "sha256": "bcaabeaf99a7347604d955349956272a5b84231a1aa8c529b1640553cab320b9",
-      "size": 2163
+      "sha256": "b4bd59365e8b1dc44a8afe7f7810db1f1d06c804b7f252f75f0c4ca2dee75dcf",
+      "size": 2297
     },
     {
       "path": "state-vectors/host-relocation.json",
@@ -175,5 +175,5 @@
   ],
   "generator": "device-foundation-v1-catalog",
   "generator_version": "1.0",
-  "source_digest": "sha256:163fe113106af15afac75cdd4aadece1ec148a135260bdb6f8ac159b9b5dffd7"
+  "source_digest": "sha256:4a0b06f1cb1b825eea8a5961010f0f9bf350bba9d90a94b52093374a59ffc1dc"
 }

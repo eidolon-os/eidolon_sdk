@@ -4,6 +4,7 @@
   "states": [
     "idle",
     "preparing-identity",
+    "quiescing-operational-runtime",
     "acquiring-radio",
     "starting-transport",
     "advertising",
@@ -14,6 +15,7 @@
   ],
   "success_sequence": [
     "identity-durable",
+    "operational-runtime-quiesced",
     "radio-lease-acquired",
     "transport-ready-evidence",
     "authenticated-session",
@@ -36,6 +38,7 @@
   "invariants": {
     "single_writer": true,
     "callbacks_enqueue_only": true,
+    "operational_runtime_quiesced_before_radio_lease": true,
     "advertising_requires_transport_ready_evidence": true,
     "network_commit_before_owner_route_validation": false,
     "trust_activation_before_owner_route_validation": false,
