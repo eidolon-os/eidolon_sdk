@@ -181,12 +181,8 @@ def check_owner_directory_vector() -> int:
     message = canonical_bytes(signing_document)
     if message != vector["canonical_signing_utf8"].encode("utf-8"):
         raise ConformanceError("Owner directory canonical signing bytes drifted")
-    key = serialization.load_pem_public_key(
-        vector["authority_signing_spki_pem"].encode("ascii")
-    )
-    if not isinstance(key, ec.EllipticCurvePublicKey) or not isinstance(
-        key.curve, ec.SECP256R1
-    ):
+    key = serialization.load_pem_public_key(vector["authority_signing_spki_pem"].encode("ascii"))
+    if not isinstance(key, ec.EllipticCurvePublicKey) or not isinstance(key.curve, ec.SECP256R1):
         raise ConformanceError("Owner directory signer is not P-256")
     spki = key.public_bytes(
         serialization.Encoding.DER,
@@ -197,9 +193,7 @@ def check_owner_directory_vector() -> int:
     raw = _b64url_decode(descriptor["signature"])
     if len(raw) != 64:
         raise ConformanceError("Owner directory signature is not 64-byte P1363")
-    der = encode_dss_signature(
-        int.from_bytes(raw[:32], "big"), int.from_bytes(raw[32:], "big")
-    )
+    der = encode_dss_signature(int.from_bytes(raw[:32], "big"), int.from_bytes(raw[32:], "big"))
     try:
         key.verify(der, message, ec.ECDSA(hashes.SHA256()))
     except InvalidSignature as exc:
@@ -363,8 +357,7 @@ def check_profile() -> int:
         or delegation["certificate_basic_constraints_ca"] is not False
         or delegation["certificate_extended_key_usage"] != "code-signing"
         or delegation["private_key_in_host_runtime"] is not False
-        or delegation["directory_signature_input"]
-        != "RFC8785(descriptor-without-signature)"
+        or delegation["directory_signature_input"] != "RFC8785(descriptor-without-signature)"
     ):
         raise ConformanceError("Owner directory delegation profile drifted")
     if profile["claim_grant_handoff"] != {
@@ -519,23 +512,12 @@ def check_state_vectors() -> int:
         raise ConformanceError("delivery acceptance is incorrectly terminal")
 
     commissioning = load_json(ROOT / "state-vectors" / "commissioning-runtime.json")
-    commissioning_invariants = commissioning["invariants"]
-    for invariant in (
-        "single_writer",
-        "callbacks_enqueue_only",
-        "softap_uri_capacity_is_explicit",
-        "transport_cleanup_claimed_exactly_once",
-    ):
-        if commissioning_invariants.get(invariant) is not True:
-            raise ConformanceError(
-                f"commissioning runtime invariant {invariant} is not frozen"
-            )
-
-    commissioning = load_json(ROOT / "state-vectors" / "commissioning-runtime.json")
     invariants = commissioning["invariants"]
     required_true = {
         "single_writer",
         "callbacks_enqueue_only",
+        "softap_uri_capacity_is_explicit",
+        "transport_cleanup_claimed_exactly_once",
         "advertising_requires_transport_ready_evidence",
         "rollback_precedes_transport_stop",
         "radio_restore_follows_transport_stop",
@@ -572,6 +554,119 @@ def check_state_vectors() -> int:
     return 4
 
 
+def check_p1_exit_evidence() -> int:
+    evidence = load_json(ROOT / "evidence" / "p1-host-independence.json")
+    if evidence["scope"] != (
+        "P1 Host-independent addressing only; no P2-P4 authority semantics are claimed"
+    ):
+        raise ConformanceError("P1 evidence overclaims its authority scope")
+
+    topologies = {item["name"]: item for item in evidence["topologies"]}
+    required_topologies = {"single-host", "host-relocated", "host-loss-recovered"}
+    if set(topologies) != required_topologies or not all(
+        item["passed"] is True for item in topologies.values()
+    ):
+        raise ConformanceError("P1 evidence does not cover all required topology fixtures")
+
+    host_a = evidence["host_a"]
+    host_b = evidence["host_b"]
+    if host_b["directory_revision"] <= host_a["directory_revision"]:
+        raise ConformanceError("P1 Host B directory revision does not advance")
+    for host in (host_a, host_b):
+        if host["deployment_status"] != "activated" or host["application_ready"] is not True:
+            raise ConformanceError("P1 Host deployment was not healthy and activated")
+        if host["service_restart_count"] != 0:
+            raise ConformanceError("P1 Host services restarted during acceptance")
+        if host["device_accepted_directory_revision"] != host["directory_revision"]:
+            raise ConformanceError("device did not accept the deployed Owner directory revision")
+        if host["device_operational_ready"] is not True:
+            raise ConformanceError("device did not reach confirmed operational readiness")
+    if host_a["admission_uri"] == host_b["admission_uri"]:
+        raise ConformanceError("P1 Host relocation evidence does not move the Admission endpoint")
+    if host_a["device_control_uri"] == host_b["device_control_uri"]:
+        raise ConformanceError("P1 Host relocation evidence does not move Device Control endpoint")
+    owner_id = evidence["owner_identity"]["owner_domain_id"]
+    expected_audiences = [
+        f"{owner_id}:admission",
+        f"{owner_id}:device-control",
+    ]
+    if (
+        host_a["logical_audiences"] != expected_audiences
+        or host_b["logical_audiences"] != expected_audiences
+    ):
+        raise ConformanceError("P1 Host move changed logical Authority addressing")
+
+    owner = evidence["owner_identity"]
+    expected_public_files = {
+        "authority_signing_certificate.pem",
+        "owner_domain_descriptor.json",
+        "owner_domain_root_ca.pem",
+    }
+    if set(owner["runtime_public_files"]) != expected_public_files:
+        raise ConformanceError("Owner runtime directory contains an unexpected artifact set")
+    if owner["runtime_contains_directory_signing_private_key"] is not False:
+        raise ConformanceError("Host runtime can access the Owner directory signing private key")
+
+    device = evidence["device"]
+    constraints = evidence["hil_constraints"]
+    kernel_projection = device["p1_preserved_kernel_projection"]
+    if (
+        kernel_projection["mount_revision"] < 1
+        or kernel_projection["active"] is not True
+        or not kernel_projection["attached_companion_id"]
+        or not (
+            kernel_projection["updated_at"]
+            < host_a["activation_receipt_observed_at"]
+            < host_b["activation_receipt_observed_at"]
+        )
+    ):
+        raise ConformanceError("Kernel Mount projection was not stable across Host relocation")
+    required_false = {
+        "entered_commissioning_during_authority_move": device[
+            "entered_commissioning_during_authority_move"
+        ],
+        "nvs_erased": device["nvs_erased"],
+    }
+    if any(value is not False for value in required_false.values()):
+        raise ConformanceError("Host relocation changed commissioning or erased device state")
+    required_true = {
+        "commissioning_was_not_repeated_for_host_move",
+        "device_claim_was_not_recreated",
+        "mount_or_assignment_was_not_mutated",
+        "nvs_was_not_erased",
+        "production_device_control_was_not_implemented",
+    }
+    if any(constraints.get(name) is not True for name in required_true):
+        raise ConformanceError("P1 HIL boundary or preserved-state assertion is missing")
+
+    storage = evidence["durable_trust_storage"]
+    if storage["default_nvs_contains_owner_trust_keys"] is not False:
+        raise ConformanceError("legacy shared NVS still owns active Owner trust")
+    if (
+        set(storage["owner_trust_slots"]) != {"ot0", "ot1"}
+        or storage["active_slot_pointer_present"] is not True
+    ):
+        raise ConformanceError("durable Owner trust does not have two-slot publication evidence")
+
+    sha256_hex = re.compile(r"^[0-9a-f]{64}$")
+    digests = [
+        owner["owner_root_certificate_sha256"],
+        owner["authority_signing_certificate_sha256"],
+        host_b["release_bundle_sha256"],
+        host_b["descriptor_sha256"],
+        storage["default_nvs_dump_sha256"],
+        storage["owner_trust_dump_sha256"],
+    ]
+    if any(sha256_hex.fullmatch(value) is None for value in digests):
+        raise ConformanceError("P1 evidence contains a malformed SHA-256 digest")
+    if len(evidence["release_source_heads"]) != 8 or any(
+        re.fullmatch(r"[0-9a-f]{40}", value) is None
+        for value in evidence["release_source_heads"].values()
+    ):
+        raise ConformanceError("P1 release source set is incomplete or malformed")
+    return 1
+
+
 def run() -> dict[str, int]:
     schemas, registry = _load_schemas()
     return {
@@ -587,6 +682,7 @@ def run() -> dict[str, int]:
         "host_independent_sources": check_host_independence(),
         "requirements": check_traceability(schemas),
         "state_vectors": check_state_vectors(),
+        "p1_exit_evidence": check_p1_exit_evidence(),
     }
 
 

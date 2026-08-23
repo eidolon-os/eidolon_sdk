@@ -8,6 +8,7 @@
     "golden/*.json",
     "profile/*.json",
     "state-vectors/*.json",
+    "evidence/*.json",
     "requirements/*.json",
     "baseline/*.json",
     "conformance/*.py",

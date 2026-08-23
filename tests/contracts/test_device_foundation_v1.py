@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -28,6 +29,41 @@ def test_conformance_runner_passes() -> None:
     assert result["fixtures"] >= 40
     assert result["requirements"] >= 15
     assert result["state_vectors"] == 4
+    assert result["p1_exit_evidence"] == 1
+
+
+def test_p1_exit_evidence_fails_if_host_move_reenters_commissioning(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    runner = _load_runner()
+    evidence = runner.load_json(CONTRACT_ROOT / "evidence" / "p1-host-independence.json")
+    evidence["device"]["entered_commissioning_during_authority_move"] = True
+    evidence_root = tmp_path / "device-foundation-v1"
+    (evidence_root / "evidence").mkdir(parents=True)
+    (evidence_root / "evidence" / "p1-host-independence.json").write_text(
+        json.dumps(evidence), encoding="utf-8"
+    )
+    monkeypatch.setattr(runner, "ROOT", evidence_root)
+
+    with pytest.raises(runner.ConformanceError, match="commissioning"):
+        runner.check_p1_exit_evidence()
+
+
+def test_p1_exit_evidence_fails_if_host_runtime_contains_owner_private_key(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    runner = _load_runner()
+    evidence = runner.load_json(CONTRACT_ROOT / "evidence" / "p1-host-independence.json")
+    evidence["owner_identity"]["runtime_contains_directory_signing_private_key"] = True
+    evidence_root = tmp_path / "device-foundation-v1"
+    (evidence_root / "evidence").mkdir(parents=True)
+    (evidence_root / "evidence" / "p1-host-independence.json").write_text(
+        json.dumps(evidence), encoding="utf-8"
+    )
+    monkeypatch.setattr(runner, "ROOT", evidence_root)
+
+    with pytest.raises(runner.ConformanceError, match="private key"):
+        runner.check_p1_exit_evidence()
 
 
 def test_generation_is_clean() -> None:
@@ -96,6 +132,32 @@ def test_canonical_source_is_unique() -> None:
             and ".migration-backups" not in path.parts
         ]
         assert matches == [CONTRACT_ROOT / marker]
+
+
+def test_p1_owner_directory_consumers_do_not_persist_host_identity() -> None:
+    workspace = SDK_ROOT.parent
+    source_roots = (
+        workspace / "eidolon-client-esp32" / "main" / "eidolon" / "authority_locator.cc",
+        workspace / "eidolon-client-esp32" / "main" / "eidolon" / "authority_locator_core.cc",
+        workspace / "eidolon_client_mobile" / "lib" / "src" / "features" / "device_setup",
+        workspace / "eidolon_hub" / "hub" / "adapters" / "security" / "owner_directory.py",
+        workspace / "eidolon_admin" / "server" / "eidolon_admin_server" / "local_api" / "config.py",
+    )
+    forbidden = re.compile(r"\b(?:host_id|hub_host|server_ip|room_name)\b")
+    matches: list[str] = []
+    for root in source_roots:
+        paths = [root] if root.is_file() else [path for path in root.rglob("*") if path.is_file()]
+        for path in paths:
+            if path.suffix not in {".cc", ".dart", ".py"}:
+                continue
+            for line_number, line in enumerate(
+                path.read_text(encoding="utf-8").splitlines(), start=1
+            ):
+                if forbidden.search(line):
+                    matches.append(f"{path.relative_to(workspace)}:{line_number}:{line.strip()}")
+    assert matches == [], "Host-bound identity leaked into Owner directory consumer:\n" + "\n".join(
+        matches
+    )
 
 
 def test_duplicate_json_keys_are_rejected(tmp_path: Path) -> None:

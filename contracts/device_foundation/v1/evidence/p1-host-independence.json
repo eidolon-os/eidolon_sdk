@@ -1,0 +1,121 @@
+{
+  "evidence_version": "1.0",
+  "evidence_id": "P1-HOST-INDEPENDENCE-BOX3-20260823",
+  "observed_at": "2026-08-23T08:49:00Z",
+  "scope": "P1 Host-independent addressing only; no P2-P4 authority semantics are claimed",
+  "topologies": [
+    {
+      "name": "single-host",
+      "evidence": "unit-and-consumer-contract",
+      "passed": true
+    },
+    {
+      "name": "host-relocated",
+      "evidence": "pi5-redeploy-and-box3-hil",
+      "passed": true
+    },
+    {
+      "name": "host-loss-recovered",
+      "evidence": "state-vector-and-authority-locator-unit",
+      "passed": true
+    }
+  ],
+  "release_source_heads": {
+    "eidolon_admin": "ed2682cbd5fd9e8a3e347f7e5ad9b7568e238980",
+    "eidolon_agent": "6e60bed38745554b66cf32301611f23a1aa4ac0d",
+    "eidolon_channel": "9800288bfc195c851620393d5ecdcf7a8ac5b566",
+    "eidolon_data": "1479580f2f652a147f692b003f5a800a24446d3a",
+    "eidolon_hub": "ca2148e39085e02d5cbd5172d272546ecf0d0793",
+    "eidolon_kernel": "5a47361e8886d4771cc7623fc1e17d6ca37c4c34",
+    "eidolon_memory": "37556ac24806c7bf850e5d70e4fc7e409a2da5b1",
+    "eidolon_sdk_runtime_support": "1868ea9718bb403fd17ea188aa4d8f125a858ae5"
+  },
+  "owner_identity": {
+    "owner_domain_id": "owner-b0a862b0aab941d64554",
+    "owner_root_certificate_sha256": "605a8df8ae5196869914f7157a7da20b0a59aa5c61244b881cb6e91074ba71e0",
+    "authority_signing_certificate_sha256": "97de37ce599bff6d9824369e5eeb2300a00767b37c732c2df8da8b9bc63cacfc",
+    "signing_key_id": "sha256:c3d5c93e7cac1078fd0971171b70dc263d8c08ef8174159688d021c4c8bf685c",
+    "runtime_public_files": [
+      "authority_signing_certificate.pem",
+      "owner_domain_descriptor.json",
+      "owner_domain_root_ca.pem"
+    ],
+    "runtime_contains_directory_signing_private_key": false
+  },
+  "host_a": {
+    "release_id": "20260823-p1-host-a-final2",
+    "transaction_id": "ed4a7d6bf7e249b68415b3af94c034a9",
+    "deployment_status": "activated",
+    "activation_receipt_observed_at": "2026-08-23T07:40:21.430486Z",
+    "application_ready": true,
+    "service_restart_count": 0,
+    "directory_revision": 3,
+    "admission_uri": "https://eidolon-hub-980046b6704894461dfb.local:8443/api/device-onboarding/v1",
+    "device_control_uri": "https://eidolon-hub-980046b6704894461dfb.local:8443/api/device-control/v1",
+    "logical_audiences": [
+      "owner-b0a862b0aab941d64554:admission",
+      "owner-b0a862b0aab941d64554:device-control"
+    ],
+    "device_accepted_directory_revision": 3,
+    "device_operational_ready": true
+  },
+  "host_b": {
+    "release_id": "20260823-p1-host-b-final",
+    "transaction_id": "8a2c522e63e946889194de3830aab8c1",
+    "release_bundle_sha256": "baa0af6b4507b3c767f290dede636003766b405a7be974a58d1257c5a0cd6445",
+    "deployment_status": "activated",
+    "activation_receipt_observed_at": "2026-08-23T08:46:19.446239Z",
+    "application_ready": true,
+    "service_restart_count": 0,
+    "directory_revision": 4,
+    "descriptor_sha256": "1e78b028413affa9117c1c5285350790568fb0017164d85f7f1e00b11cf9b578",
+    "admission_uri": "https://eidolon-hub-980046b6704894461dfb.local:9443/api/device-onboarding/v1",
+    "device_control_uri": "https://eidolon-hub-980046b6704894461dfb.local:9443/api/device-control/v1",
+    "logical_audiences": [
+      "owner-b0a862b0aab941d64554:admission",
+      "owner-b0a862b0aab941d64554:device-control"
+    ],
+    "device_accepted_directory_revision": 4,
+    "device_operational_ready": true
+  },
+  "device": {
+    "hardware": "ESP-BOX-3",
+    "device_id": "24:ec:4a:52:f3:54",
+    "firmware_git_sha": "0f6bf20997d6c96e3099e7af1422e4f99050d034",
+    "esp_idf_sdk_pin": "502ce391bf01c47dea74e1dd651c5b8945ca8906",
+    "before_and_after_authority_move": {
+      "lifecycle_state": "approved",
+      "enrollment_id": "enrollment_aYK1AyOMiJk-1khT4RP8oYyr",
+      "manifest_revision": "sha256:2302cfe45016a27c91eea68add2c738ab368b9dbd268876a27e65d9884504c8d",
+      "owner_id": "owner_683f963f54885e86892416894c9d92d1",
+      "enrolled_at": "2026-08-23T05:11:28.453325Z",
+      "updated_at": "2026-08-23T06:37:10.110211Z"
+    },
+    "p1_preserved_kernel_projection": {
+      "mount_revision": 11,
+      "active": true,
+      "attached_companion_id": "c_683f963f54885e86892416894c9d92d1",
+      "updated_at": "2026-08-23T05:40:10.398156Z",
+      "note": "read-only characterization of the pre-P3 combined mount/attachment row"
+    },
+    "entered_commissioning_during_authority_move": false,
+    "nvs_erased": false
+  },
+  "durable_trust_storage": {
+    "default_nvs_dump_sha256": "0001619e116cb1dda87e1f53a101023d49aec388a0177255a7feae73e7950745",
+    "owner_trust_dump_sha256": "68c905c3949d0e8aa32865db37e893a1e0e2d1f1520907cce7c1156e3e41674d",
+    "default_nvs_contains_owner_trust_keys": false,
+    "owner_trust_slots": [
+      "ot0",
+      "ot1"
+    ],
+    "active_slot_pointer_present": true
+  },
+  "hil_constraints": {
+    "commissioning_was_not_repeated_for_host_move": true,
+    "device_claim_was_not_recreated": true,
+    "mount_or_assignment_was_not_mutated": true,
+    "nvs_was_not_erased": true,
+    "production_device_control_was_not_implemented": true
+  }
+}
