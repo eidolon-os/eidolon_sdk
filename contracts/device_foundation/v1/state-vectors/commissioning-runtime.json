@@ -24,7 +24,8 @@
     "trust-and-network-committed",
     "controller-observed-terminal",
     "transport-stopped",
-    "previous-radio-mode-restored"
+    "station-restore-commanded",
+    "station-route-ready"
   ],
   "terminal_success_conditions": {
     "wifi_connected": true,
@@ -42,6 +43,10 @@
     "controller_route_release_before_terminal_ack": false,
     "rollback_precedes_transport_stop": true,
     "radio_restore_follows_transport_stop": true,
+    "legacy_connect_timeout_is_intent_only": true,
+    "committed_completion_requires_station_route_ready": true,
+    "admission_waits_for_station_route_ready": true,
+    "pending_enrollment_query_uses_authority_clock": true,
     "stale_generation_is_ignored": true,
     "softap_uri_capacity_is_explicit": true,
     "transport_cleanup_claimed_exactly_once": true

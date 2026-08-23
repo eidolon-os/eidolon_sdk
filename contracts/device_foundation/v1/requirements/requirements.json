@@ -510,6 +510,34 @@
       "waiver_expires_at": null
     },
     {
+      "requirement_id": "DF-COMM-014",
+      "normative_text_ref": "10.6.1.4/10.6.1.7 committed commissioning MUST retain the single RadioLease until a fresh Station route is confirmed; legacy timers submit intent only and enrollment waits for the confirmed handoff",
+      "owner": "eidolon-client-esp32+eidolon_client_mobile",
+      "schema_ids": ["common/CommissioningStatusEvidence", "common/CommissioningTerminalAck"],
+      "producer_tests": ["ESP32::TestTransportClosesOnlyAfterCommittedTerminalWasObserved"],
+      "consumer_tests": ["MOBILE::controller-route-lease-ordering"],
+      "simulator_vectors": ["DF-COMMISSIONING-RUNTIME-001"],
+      "integration_tests": ["ADMIN::test_pending_directory_uses_authority_clock"],
+      "hil_tests": ["P1::box3-committed-station-route-before-enrollment"],
+      "status": "planned",
+      "waiver_reason": null,
+      "waiver_expires_at": null
+    },
+    {
+      "requirement_id": "DF-ADMISSION-002",
+      "normative_text_ref": "3.7/3.8 an actionable pending-enrollment projection MUST be evaluated by the Admission Authority clock and MUST NOT offer an expired generation that approval will refuse",
+      "owner": "eidolon_hub+eidolon_admin",
+      "schema_ids": ["admission/EnrollmentProposal"],
+      "producer_tests": ["HUB::test_an_enrollment_past_its_window_is_not_offered_as_claimable"],
+      "consumer_tests": ["ADMIN::test_pending_directory_uses_admin_credential_and_unclaimed_scope"],
+      "simulator_vectors": ["DF-COMMISSIONING-RUNTIME-001"],
+      "integration_tests": ["ADMIN::test_pending_directory_uses_authority_clock"],
+      "hil_tests": ["P1::mobile-does-not-approve-expired-enrollment"],
+      "status": "planned",
+      "waiver_reason": null,
+      "waiver_expires_at": null
+    },
+    {
       "requirement_id": "DF-P0-BASELINE-001",
       "normative_text_ref": "19.1/16.5 every Git project MUST be explicit and additions/omissions MUST fail",
       "owner": "eidolon_sdk",

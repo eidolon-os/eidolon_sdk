@@ -539,6 +539,10 @@ def check_state_vectors() -> int:
         "advertising_requires_transport_ready_evidence",
         "rollback_precedes_transport_stop",
         "radio_restore_follows_transport_stop",
+        "legacy_connect_timeout_is_intent_only",
+        "committed_completion_requires_station_route_ready",
+        "admission_waits_for_station_route_ready",
+        "pending_enrollment_query_uses_authority_clock",
         "stale_generation_is_ignored",
     }
     if any(invariants.get(name) is not True for name in required_true):
@@ -560,7 +564,8 @@ def check_state_vectors() -> int:
         "trust-and-network-committed",
         "controller-observed-terminal",
         "transport-stopped",
-        "previous-radio-mode-restored",
+        "station-restore-commanded",
+        "station-route-ready",
     ]
     if [success.index(item) for item in ordered] != sorted(success.index(item) for item in ordered):
         raise ConformanceError("commissioning success sequence is not transactionally ordered")
