@@ -18,6 +18,11 @@
       "size": 10908
     },
     {
+      "path": "baseline/p1-release-inputs.v1.json",
+      "sha256": "e3661e866a76c3f28198a0185023b67b8053766cbcd88fbc29a0c6e8b2ae3bf5",
+      "size": 12143
+    },
+    {
       "path": "body-mesh/schemas.schema.json",
       "sha256": "559b3871a1ce7d9ba36d12fa94da1538c9270fbd6cd5dd7068ab147b265d2e2c",
       "size": 4486
@@ -180,5 +185,5 @@
   ],
   "generator": "device-foundation-v1-catalog",
   "generator_version": "1.0",
-  "source_digest": "sha256:a017d23d5229208ab0f96104f92854bdf68b2020443c26f8b086a735e5d2054b"
+  "source_digest": "sha256:05d2262416d4b38c84bbab2fbfa67074de6fea1694bdba53686fe65793670f42"
 }

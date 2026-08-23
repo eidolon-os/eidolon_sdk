@@ -94,6 +94,32 @@ def test_baseline_repository_set_matches_workspace() -> None:
     assert json.loads(result.stdout)["repository_count"] == 16
 
 
+def test_p1_release_input_commits_and_tree_digests_are_reproducible() -> None:
+    workspace = SDK_ROOT.parent
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(CONTRACT_ROOT / "baseline" / "verify.py"),
+            "--manifest",
+            str(CONTRACT_ROOT / "baseline" / "p1-release-inputs.v1.json"),
+            "--workspace-root",
+            str(workspace),
+            "--captured-commits",
+        ],
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    assert result.returncode == 0, result.stderr
+    report = json.loads(result.stdout)
+    assert report == {
+        "captured_commits": True,
+        "exact": False,
+        "ok": True,
+        "repository_count": 16,
+    }
+
+
 def test_baseline_rejects_repository_set_drift(tmp_path: Path) -> None:
     (tmp_path / "unexpected" / ".git").mkdir(parents=True)
     result = subprocess.run(

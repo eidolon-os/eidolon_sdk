@@ -37,9 +37,9 @@ def _discover(workspace: Path) -> set[str]:
     return projects
 
 
-def _artifact_digest(repo: Path) -> str:
+def _artifact_digest(repo: Path, ref: str = "HEAD") -> str:
     tree = subprocess.run(
-        ["git", "-C", str(repo), "ls-tree", "-r", "-z", "--full-tree", "HEAD"],
+        ["git", "-C", str(repo), "ls-tree", "-r", "-z", "--full-tree", ref],
         check=True,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
@@ -54,7 +54,14 @@ def main() -> int:
     parser.add_argument(
         "--exact", action="store_true", help="also compare captured branch/HEAD/dirty/digest"
     )
+    parser.add_argument(
+        "--captured-commits",
+        action="store_true",
+        help="verify every captured SHA exists and has the recorded tree digest",
+    )
     args = parser.parse_args()
+    if args.exact and args.captured_commits:
+        parser.error("--exact and --captured-commits are mutually exclusive")
     manifest = json.loads(args.manifest.read_text(encoding="utf-8"))
     workspace = (args.workspace_root or Path(manifest["workspace_root"])).resolve()
     expected_entries = {entry["path"]: entry for entry in manifest["repositories"]}
@@ -84,6 +91,32 @@ def main() -> int:
             file=sys.stderr,
         )
         return 1
+    if args.captured_commits:
+        invalid: dict[str, dict[str, object]] = {}
+        for path, entry in expected_entries.items():
+            repo = workspace / path
+            exists = (
+                subprocess.run(
+                    ["git", "-C", str(repo), "cat-file", "-e", f"{entry['head_sha']}^{{commit}}"],
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    check=False,
+                ).returncode
+                == 0
+            )
+            actual_digest = _artifact_digest(repo, entry["head_sha"]) if exists else None
+            if not exists or actual_digest != entry["artifact_digest"]:
+                invalid[path] = {
+                    "head_sha_exists": exists,
+                    "expected_artifact_digest": entry["artifact_digest"],
+                    "actual_artifact_digest": actual_digest,
+                }
+        if invalid:
+            print(
+                json.dumps({"ok": False, "invalid_captures": invalid}, indent=2, sort_keys=True),
+                file=sys.stderr,
+            )
+            return 1
     if args.exact:
         drift: dict[str, dict[str, object]] = {}
         for path, entry in expected_entries.items():
@@ -104,7 +137,13 @@ def main() -> int:
             return 1
     print(
         json.dumps(
-            {"ok": True, "repository_count": len(actual), "exact": args.exact}, sort_keys=True
+            {
+                "ok": True,
+                "repository_count": len(actual),
+                "exact": args.exact,
+                "captured_commits": args.captured_commits,
+            },
+            sort_keys=True,
         )
     )
     return 0

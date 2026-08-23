@@ -34,5 +34,15 @@ the SDK HEAD before this contract was added; a manifest stored inside a Git comm
 that same commit's own SHA. Use `baseline/verify.py --exact` only to audit the capture facts or
 diagnose later drift. Repository-set verification remains the ongoing omission/addition gate.
 
+`baseline/p1-release-inputs.v1.json` records every committed P1 release input, including the
+preserved dirty state of the docs repository. Verify that all 16 captured commits and tree digests
+remain reproducible with:
+
+```bash
+uv run python contracts/device_foundation/v1/baseline/verify.py \
+  --manifest contracts/device_foundation/v1/baseline/p1-release-inputs.v1.json \
+  --workspace-root .. --captured-commits
+```
+
 Generated output comprises `generated/catalog.json` plus the declared Dart and C++ bindings.
 The generator is the only writer for those binding files, and `--check` is the no-drift gate.
