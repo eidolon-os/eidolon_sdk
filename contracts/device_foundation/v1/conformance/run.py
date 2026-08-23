@@ -174,6 +174,39 @@ def check_es256_vectors() -> int:
     return len(vectors)
 
 
+def check_device_local_erase_vector() -> int:
+    vector = load_json(ROOT / "golden" / "device-local-erase.json")
+    operation = canonical_bytes(vector["operation"])
+    if operation != vector["operation_canonical_utf8"].encode("utf-8"):
+        raise ConformanceError("device-local.erase canonical operation bytes drifted")
+    if "sha256:" + hashlib.sha256(operation).hexdigest() != vector["operation_fingerprint"]:
+        raise ConformanceError("device-local.erase request fingerprint drifted")
+    spki = _b64url_decode(vector["public_key_spki"])
+    if "sha256:" + hashlib.sha256(spki).hexdigest() != vector["key_id"]:
+        raise ConformanceError("device-local.erase ACK key id drifted")
+    key = serialization.load_der_public_key(spki)
+    if not isinstance(key, ec.EllipticCurvePublicKey) or not isinstance(key.curve, ec.SECP256R1):
+        raise ConformanceError("device-local.erase ACK key is not P-256")
+    for document_name, canonical_name, signature_name in (
+        ("ack_signing_document", "ack_canonical_utf8", "ack_signature"),
+        ("key_proof_signing_document", None, "key_proof_signature"),
+    ):
+        message = canonical_bytes(vector[document_name])
+        if canonical_name and message != vector[canonical_name].encode("utf-8"):
+            raise ConformanceError(f"{document_name} canonical bytes drifted")
+        raw = _b64url_decode(vector[signature_name])
+        if len(raw) != 64:
+            raise ConformanceError(f"{signature_name} is not 64-byte R||S")
+        signature = encode_dss_signature(
+            int.from_bytes(raw[:32], "big"), int.from_bytes(raw[32:], "big")
+        )
+        try:
+            key.verify(signature, message, ec.ECDSA(hashes.SHA256()))
+        except InvalidSignature as exc:
+            raise ConformanceError(f"{signature_name} is invalid") from exc
+    return 1
+
+
 def check_owner_directory_vector() -> int:
     vector = load_json(ROOT / "golden" / "owner-domain-descriptor.json")
     descriptor = vector["descriptor"]
@@ -511,6 +544,44 @@ def check_state_vectors() -> int:
     if operation["delivery_acceptance_terminal"]:
         raise ConformanceError("delivery acceptance is incorrectly terminal")
 
+    erase = load_json(ROOT / "state-vectors" / "device-local-erase.json")
+    if erase["operation_type"] != "device-local.erase":
+        raise ConformanceError("device-local erase operation type drifted")
+    if set(erase["terminal_states"]) != {
+        "acknowledged",
+        "expired",
+        "permanent-failure",
+    }:
+        raise ConformanceError("device-local erase terminal states drifted")
+    if erase["delivery_acceptance_terminal"]:
+        raise ConformanceError("device-local erase treats delivery as completion")
+    erase_scenarios = {item["id"]: item for item in erase["scenarios"]}
+    required_scenarios = {
+        "online",
+        "offline",
+        "duplicate",
+        "same-id-different-payload",
+        "deadline",
+        "permanent-failure",
+        "restart",
+        "old-generation",
+        "host-relocation",
+    }
+    if set(erase_scenarios) != required_scenarios:
+        raise ConformanceError("device-local erase scenario coverage drifted")
+    if erase_scenarios["offline"]["platform_removal_blocked"]:
+        raise ConformanceError("offline local erase incorrectly blocks platform removal")
+    if erase_scenarios["duplicate"]["semantic_result"] != "replayed":
+        raise ConformanceError("device-local erase replay semantics drifted")
+    if erase_scenarios["same-id-different-payload"]["error"] != "IDEMPOTENCY_CONFLICT":
+        raise ConformanceError("device-local erase idempotency conflict drifted")
+    if erase_scenarios["deadline"]["late_ack_rewrites_terminal"]:
+        raise ConformanceError("late device-local erase ACK rewrites a terminal result")
+    if erase_scenarios["old-generation"]["new_claim_changed"]:
+        raise ConformanceError("old-generation erase ACK mutates a newer claim")
+    if erase_scenarios["host-relocation"]["operation_id_changes"]:
+        raise ConformanceError("Host relocation changes device-local erase identity")
+
     commissioning = load_json(ROOT / "state-vectors" / "commissioning-runtime.json")
     invariants = commissioning["invariants"]
     required_true = {
@@ -551,7 +622,7 @@ def check_state_vectors() -> int:
     ]
     if [success.index(item) for item in ordered] != sorted(success.index(item) for item in ordered):
         raise ConformanceError("commissioning success sequence is not transactionally ordered")
-    return 4
+    return 5
 
 
 def check_p1_exit_evidence() -> int:
@@ -674,6 +745,7 @@ def run() -> dict[str, int]:
         "fixtures": check_fixtures(schemas, registry),
         "canonical_vectors": check_canonical_vectors(),
         "es256_vectors": check_es256_vectors(),
+        "device_local_erase_vectors": check_device_local_erase_vector(),
         "owner_directory_vectors": check_owner_directory_vector(),
         "hpke_vectors": check_hpke_vector(),
         "claim_grant_aad_checks": check_claim_grant_aad(),

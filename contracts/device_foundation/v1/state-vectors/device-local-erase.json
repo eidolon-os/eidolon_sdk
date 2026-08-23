@@ -1,0 +1,17 @@
+{
+  "vector_id": "DF-DEVICE-ERASE-001",
+  "operation_type": "device-local.erase",
+  "terminal_states": ["acknowledged", "expired", "permanent-failure"],
+  "delivery_acceptance_terminal": false,
+  "scenarios": [
+    {"id": "online", "states": ["accepted", "pending", "delivery-accepted", "acknowledged"], "terminal_result": "erased"},
+    {"id": "offline", "states": ["accepted", "pending"], "platform_removal_blocked": false},
+    {"id": "duplicate", "same_operation_id": true, "same_fingerprint": true, "semantic_result": "replayed"},
+    {"id": "same-id-different-payload", "same_operation_id": true, "same_fingerprint": false, "error": "IDEMPOTENCY_CONFLICT"},
+    {"id": "deadline", "states": ["accepted", "pending", "expired"], "late_ack_rewrites_terminal": false},
+    {"id": "permanent-failure", "states": ["accepted", "delivery-accepted", "permanent-failure"], "retry": false},
+    {"id": "restart", "persisted_operation_id": true, "resume_state": "pending"},
+    {"id": "old-generation", "ack_effect": "rejected", "new_claim_changed": false},
+    {"id": "host-relocation", "operation_id_changes": false, "claim_generation_changes": false}
+  ]
+}

@@ -1,0 +1,96 @@
+{
+  "cases": [
+    {
+      "case_id": "DF-ERASE-INVALID-001",
+      "schema": "https://contracts.eidolon.live/device-foundation/v1/device-control/schemas.schema.json",
+      "definition": "DeviceLocalEraseCommand",
+      "error_contains": "claim_generation",
+      "value": {
+        "contract": "eidolon.device-foundation.device-operation",
+        "contract_version": "1.0",
+        "operation_id": "erase_operation_01",
+        "operation_type": "device-local.erase",
+        "device_ref": {
+          "device_instance_id": "device_erase_01",
+          "owner_domain_id": "owner_01",
+          "trust_epoch": 4,
+          "accepted_manifest_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "deadline": "2026-08-30T00:00:00Z",
+        "payload": {"erase_scopes": ["owner-credentials"]}
+      }
+    },
+    {
+      "case_id": "DF-ERASE-INVALID-002",
+      "schema": "https://contracts.eidolon.live/device-foundation/v1/device-control/schemas.schema.json",
+      "definition": "DeviceLocalEraseAck",
+      "error_contains": "device_signature",
+      "value": {
+        "contract": "eidolon.device-foundation.device-operation-ack",
+        "contract_version": "1.0",
+        "operation_id": "erase_operation_01",
+        "operation_type": "device-local.erase",
+        "device_ref": {
+          "device_instance_id": "device_erase_01",
+          "owner_domain_id": "owner_01",
+          "claim_generation": 7,
+          "trust_epoch": 4,
+          "accepted_manifest_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "ack_sequence": 1,
+        "result": "erased",
+        "result_code": "ERASED",
+        "device_monotonic_time": 1234
+      }
+    },
+    {
+      "case_id": "DF-ERASE-INVALID-003",
+      "schema": "https://contracts.eidolon.live/device-foundation/v1/device-control/schemas.schema.json",
+      "definition": "DeviceLocalEraseOperationStatus",
+      "error_contains": "not one of",
+      "value": {
+        "contract": "eidolon.device-foundation.device-operation-status",
+        "contract_version": "1.0",
+        "operation_id": "erase_operation_01",
+        "operation_type": "device-local.erase",
+        "request_fingerprint": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "device_ref": {
+          "device_instance_id": "device_erase_01",
+          "owner_domain_id": "owner_01",
+          "claim_generation": 7,
+          "trust_epoch": 4,
+          "accepted_manifest_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "created_at": "2026-08-23T00:00:00Z",
+        "deadline": "2026-08-30T00:00:00Z",
+        "state": "channel-revoked",
+        "attempt_count": 1,
+        "terminal_result": null
+      }
+    },
+    {
+      "case_id": "DF-ERASE-INVALID-004",
+      "schema": "https://contracts.eidolon.live/device-foundation/v1/device-control/schemas.schema.json",
+      "definition": "DeviceLocalEraseOperationStatus",
+      "value": {
+        "contract": "eidolon.device-foundation.device-operation-status",
+        "contract_version": "1.0",
+        "operation_id": "erase_operation_01",
+        "operation_type": "device-local.erase",
+        "request_fingerprint": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "device_ref": {
+          "device_instance_id": "device_erase_01",
+          "owner_domain_id": "owner_01",
+          "claim_generation": 7,
+          "trust_epoch": 4,
+          "accepted_manifest_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "created_at": "2026-08-23T00:00:00Z",
+        "deadline": "2026-08-30T00:00:00Z",
+        "state": "acknowledged",
+        "attempt_count": 1,
+        "terminal_result": "permanent-failure"
+      }
+    }
+  ]
+}

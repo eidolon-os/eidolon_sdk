@@ -28,7 +28,7 @@ def test_conformance_runner_passes() -> None:
     assert result["schemas"] == 6
     assert result["fixtures"] >= 40
     assert result["requirements"] >= 15
-    assert result["state_vectors"] == 4
+    assert result["state_vectors"] == 5
     assert result["p1_exit_evidence"] == 1
 
 

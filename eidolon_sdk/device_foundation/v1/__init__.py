@@ -12,6 +12,20 @@ from .authority_locator import (
     sign_descriptor,
     verify_descriptor,
 )
+from .device_erase import (
+    DeviceEraseContractError,
+    DeviceLocalEraseAck,
+    DeviceLocalEraseCommand,
+    DeviceLocalEraseOperationStatus,
+    DeviceLocalErasePayload,
+    DeviceOperationKeyProof,
+    canonical_bytes,
+    operation_fingerprint,
+    operation_key_id,
+    verify_device_erase_ack,
+    verify_operation_key_proof,
+    verify_p256_signature,
+)
 
 __all__ = [
     "AuthorityEndpoint",
@@ -24,4 +38,16 @@ __all__ = [
     "descriptor_key_id",
     "sign_descriptor",
     "verify_descriptor",
+    "DeviceEraseContractError",
+    "DeviceLocalEraseAck",
+    "DeviceLocalEraseCommand",
+    "DeviceLocalEraseOperationStatus",
+    "DeviceLocalErasePayload",
+    "DeviceOperationKeyProof",
+    "canonical_bytes",
+    "operation_fingerprint",
+    "operation_key_id",
+    "verify_device_erase_ack",
+    "verify_operation_key_proof",
+    "verify_p256_signature",
 ]

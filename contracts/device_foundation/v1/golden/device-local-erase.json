@@ -1,0 +1,49 @@
+{
+  "profile_id": "eidolon-trust-p256-hpke-v1",
+  "public_key_spki": "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEaxfR8uEsQkf4vOblY6RA8ncDfYEt6zOg9KE5RdiYwpZP40Li_hp_m47n60p8D54WK84zV2sxXs7LtkBoN79R9Q",
+  "key_id": "sha256:5cd252fb0ce8932436faf8ccd1040981b89ee4ad6b9fe9e2a2b7e71aacb27cd3",
+  "operation": {
+    "contract": "eidolon.device-foundation.device-operation",
+    "contract_version": "1.0",
+    "deadline": "2026-08-30T00:00:00Z",
+    "device_ref": {
+      "accepted_manifest_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "claim_generation": 7,
+      "device_instance_id": "device_erase_01",
+      "owner_domain_id": "owner_01",
+      "trust_epoch": 4
+    },
+    "operation_id": "erase_operation_01",
+    "operation_type": "device-local.erase",
+    "payload": {
+      "erase_scopes": ["owner-credentials", "owner-data", "network-profiles"]
+    }
+  },
+  "operation_canonical_utf8": "{\"contract\":\"eidolon.device-foundation.device-operation\",\"contract_version\":\"1.0\",\"deadline\":\"2026-08-30T00:00:00Z\",\"device_ref\":{\"accepted_manifest_digest\":\"sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"claim_generation\":7,\"device_instance_id\":\"device_erase_01\",\"owner_domain_id\":\"owner_01\",\"trust_epoch\":4},\"operation_id\":\"erase_operation_01\",\"operation_type\":\"device-local.erase\",\"payload\":{\"erase_scopes\":[\"owner-credentials\",\"owner-data\",\"network-profiles\"]}}",
+  "operation_fingerprint": "sha256:a1de19e602f74a44a5b4c8a9d894fb46ab669f1e662be3ba2c85669b21f62060",
+  "ack_signing_document": {
+    "ack_sequence": 1,
+    "contract": "eidolon.device-foundation.device-operation-ack",
+    "contract_version": "1.0",
+    "device_monotonic_time": 1234,
+    "device_ref": {
+      "accepted_manifest_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "claim_generation": 7,
+      "device_instance_id": "device_erase_01",
+      "owner_domain_id": "owner_01",
+      "trust_epoch": 4
+    },
+    "operation_id": "erase_operation_01",
+    "operation_type": "device-local.erase",
+    "result": "erased",
+    "result_code": "ERASED"
+  },
+  "ack_canonical_utf8": "{\"ack_sequence\":1,\"contract\":\"eidolon.device-foundation.device-operation-ack\",\"contract_version\":\"1.0\",\"device_monotonic_time\":1234,\"device_ref\":{\"accepted_manifest_digest\":\"sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"claim_generation\":7,\"device_instance_id\":\"device_erase_01\",\"owner_domain_id\":\"owner_01\",\"trust_epoch\":4},\"operation_id\":\"erase_operation_01\",\"operation_type\":\"device-local.erase\",\"result\":\"erased\",\"result_code\":\"ERASED\"}",
+  "ack_signature": "rATR7zK_PpBgIIUZKazFVSo8_BhSS0TOrKZxKdC5RcdujSXGgqtlbyRY0l2zAq10iq5syDgHcqmfWxkJS1Nzzw",
+  "key_proof_signing_document": {
+    "device_instance_id": "device_erase_01",
+    "enrollment_request_id": "enrollment_request_01",
+    "public_key_spki": "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEaxfR8uEsQkf4vOblY6RA8ncDfYEt6zOg9KE5RdiYwpZP40Li_hp_m47n60p8D54WK84zV2sxXs7LtkBoN79R9Q"
+  },
+  "key_proof_signature": "JAtFsyNTU6K_OepGSKEW4m0W0D1pXcD4cqbNB-R2_cml9Nm0oPGdMjMIreJ4X6oBQku0tJNHVSy5ctGQZHaNFA"
+}

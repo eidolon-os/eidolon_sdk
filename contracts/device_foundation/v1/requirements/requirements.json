@@ -558,6 +558,38 @@
       "waiver_expires_at": null
     },
     {
+      "requirement_id": "DF-ERASE-001",
+      "normative_text_ref": "7.2/11.4/19.3 device-local.erase MUST remain a generation-bound independent Operation until a verified device ACK, expiry, or permanent failure",
+      "owner": "eidolon_sdk+eidolon_hub+eidolon-client-esp32+eidolon_client_mobile",
+      "schema_ids": [
+        "device-control/DeviceOperationKeyProof",
+        "device-control/DeviceLocalEraseCommand",
+        "device-control/DeviceLocalEraseAck",
+        "device-control/DeviceLocalEraseOperationStatus"
+      ],
+      "producer_tests": [
+        "HUB::test_device_erase_operation_online_ack_and_signature_verification",
+        "ESP32::tests/device_local_erase_core_test.cc"
+      ],
+      "consumer_tests": [
+        "MOBILE::delivery acceptance never projects device erased",
+        "MOBILE::channel revoke condition cannot substitute for erase ACK",
+        "HUB::test_old_generation_ack_cannot_change_new_claim"
+      ],
+      "simulator_vectors": ["DF-DEVICE-ERASE-001"],
+      "integration_tests": [
+        "HUB::test_enrollment_binds_signed_operation_key_to_claim_generation",
+        "HUB::test_offline_restart_and_host_relocation_keep_original_operation_id",
+        "HUB::test_deadline_and_late_ack_do_not_rewrite_expired_terminal",
+        "HUB::test_permanent_failure_and_duplicate_ack_conflict",
+        "HUB::test_same_operation_id_with_changed_deadline_is_an_idempotency_conflict"
+      ],
+      "hil_tests": [],
+      "status": "covered",
+      "waiver_reason": null,
+      "waiver_expires_at": null
+    },
+    {
       "requirement_id": "DF-P0-BASELINE-001",
       "normative_text_ref": "19.1/16.5 every Git project MUST be explicit and additions/omissions MUST fail",
       "owner": "eidolon_sdk",

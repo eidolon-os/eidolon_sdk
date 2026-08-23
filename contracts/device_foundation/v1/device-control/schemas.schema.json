@@ -109,6 +109,167 @@
           "$ref": "../common/schemas.schema.json#/$defs/P256RawSignature"
         }
       }
+    },
+    "DeviceOperationKeyProof": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "device_instance_id",
+        "enrollment_request_id",
+        "public_key_spki",
+        "possession_signature"
+      ],
+      "properties": {
+        "device_instance_id": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 128,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+        },
+        "enrollment_request_id": { "$ref": "../common/schemas.schema.json#/$defs/Identifier" },
+        "public_key_spki": {
+          "type": "string",
+          "minLength": 120,
+          "maxLength": 256,
+          "pattern": "^[A-Za-z0-9_-]+$"
+        },
+        "possession_signature": {
+          "$ref": "../common/schemas.schema.json#/$defs/P256RawSignature"
+        }
+      }
+    },
+    "DeviceLocalErasePayload": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["erase_scopes"],
+      "properties": {
+        "erase_scopes": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "enum": ["owner-credentials", "owner-data", "network-profiles"]
+          }
+        }
+      }
+    },
+    "DeviceLocalEraseCommand": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "contract",
+        "contract_version",
+        "operation_id",
+        "operation_type",
+        "device_ref",
+        "deadline",
+        "payload"
+      ],
+      "properties": {
+        "contract": { "const": "eidolon.device-foundation.device-operation" },
+        "contract_version": { "const": "1.0" },
+        "operation_id": { "$ref": "../common/schemas.schema.json#/$defs/Identifier" },
+        "operation_type": { "const": "device-local.erase" },
+        "device_ref": { "$ref": "../common/schemas.schema.json#/$defs/DeviceRef" },
+        "deadline": { "type": "string", "format": "date-time" },
+        "payload": { "$ref": "#/$defs/DeviceLocalErasePayload" }
+      }
+    },
+    "DeviceLocalEraseAck": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "contract",
+        "contract_version",
+        "operation_id",
+        "operation_type",
+        "device_ref",
+        "ack_sequence",
+        "result",
+        "result_code",
+        "device_monotonic_time",
+        "device_signature"
+      ],
+      "properties": {
+        "contract": { "const": "eidolon.device-foundation.device-operation-ack" },
+        "contract_version": { "const": "1.0" },
+        "operation_id": { "$ref": "../common/schemas.schema.json#/$defs/Identifier" },
+        "operation_type": { "const": "device-local.erase" },
+        "device_ref": { "$ref": "../common/schemas.schema.json#/$defs/DeviceRef" },
+        "ack_sequence": { "type": "integer", "minimum": 1 },
+        "result": { "enum": ["erased", "permanent-failure"] },
+        "result_code": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "device_monotonic_time": { "type": "integer", "minimum": 0 },
+        "device_signature": {
+          "$ref": "../common/schemas.schema.json#/$defs/P256RawSignature"
+        }
+      }
+    },
+    "DeviceLocalEraseOperationStatus": {
+      "type": "object",
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": { "properties": { "state": { "const": "acknowledged" } } },
+          "then": { "properties": { "terminal_result": { "const": "erased" } } }
+        },
+        {
+          "if": { "properties": { "state": { "const": "expired" } } },
+          "then": { "properties": { "terminal_result": { "const": "deadline-expired" } } }
+        },
+        {
+          "if": { "properties": { "state": { "const": "permanent-failure" } } },
+          "then": { "properties": { "terminal_result": { "const": "permanent-failure" } } }
+        },
+        {
+          "if": {
+            "properties": {
+              "state": { "enum": ["accepted", "pending", "delivery-accepted"] }
+            }
+          },
+          "then": { "properties": { "terminal_result": { "type": "null" } } }
+        }
+      ],
+      "required": [
+        "contract",
+        "contract_version",
+        "operation_id",
+        "operation_type",
+        "request_fingerprint",
+        "device_ref",
+        "created_at",
+        "deadline",
+        "state",
+        "attempt_count",
+        "terminal_result"
+      ],
+      "properties": {
+        "contract": { "const": "eidolon.device-foundation.device-operation-status" },
+        "contract_version": { "const": "1.0" },
+        "operation_id": { "$ref": "../common/schemas.schema.json#/$defs/Identifier" },
+        "operation_type": { "const": "device-local.erase" },
+        "request_fingerprint": { "$ref": "../common/schemas.schema.json#/$defs/Sha256Digest" },
+        "device_ref": { "$ref": "../common/schemas.schema.json#/$defs/DeviceRef" },
+        "created_at": { "type": "string", "format": "date-time" },
+        "deadline": { "type": "string", "format": "date-time" },
+        "state": {
+          "enum": [
+            "accepted",
+            "pending",
+            "delivery-accepted",
+            "acknowledged",
+            "expired",
+            "permanent-failure"
+          ]
+        },
+        "attempt_count": { "type": "integer", "minimum": 0 },
+        "terminal_result": {
+          "oneOf": [
+            { "enum": ["erased", "permanent-failure", "deadline-expired"] },
+            { "type": "null" }
+          ]
+        }
+      }
     }
   }
 }
