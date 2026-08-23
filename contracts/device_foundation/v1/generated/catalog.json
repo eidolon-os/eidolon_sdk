@@ -29,8 +29,8 @@
     },
     {
       "path": "common/schemas.schema.json",
-      "sha256": "e1a7f005a25351d02fea392de91b29e74315b3167288b163c65e7418ea5fb7f9",
-      "size": 15468
+      "sha256": "d9aeec7ccda3722f4f232b158af713c7ac12e2202c6a6fccb60c13ba8e01d5c0",
+      "size": 15582
     },
     {
       "path": "conformance/run.py",
@@ -49,8 +49,8 @@
     },
     {
       "path": "events/schemas.schema.json",
-      "sha256": "bb010c5d10d37754f7478ca71ad2239dfa747f056589b95f4489c964ae1418bb",
-      "size": 3850
+      "sha256": "be1fb6d520e91c99138bbfd9eb9ec4c10c71396dcffbb71d1fc8ad6c6eaa07e5",
+      "size": 3856
     },
     {
       "path": "evidence/p1-host-independence.json",
@@ -84,8 +84,8 @@
     },
     {
       "path": "examples/valid/common.json",
-      "sha256": "c1541e235919bff1c5d110aea361c4f85cce1fa2bc496fbc2f02be8d63d1fb9b",
-      "size": 7815
+      "sha256": "b42b32a000a41d1328c14a104f0485526f36628f0492b5c121fac3616870a7cc",
+      "size": 7823
     },
     {
       "path": "examples/valid/delivery-and-events.json",
@@ -200,5 +200,5 @@
   ],
   "generator": "device-foundation-v1-catalog",
   "generator_version": "1.0",
-  "source_digest": "sha256:d3725e657a7918355a7f541f3412087fc91e44fb62c98d7f9bed7eca4c851855"
+  "source_digest": "sha256:1d56212790fbccc6b6fbfe79140be8567bc5436b0a6cf7d7cfee8fd91ebf1ee1"
 }

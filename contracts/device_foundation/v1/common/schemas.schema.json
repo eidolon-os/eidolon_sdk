@@ -28,7 +28,12 @@
         "accepted_manifest_digest"
       ],
       "properties": {
-        "device_instance_id": { "$ref": "#/$defs/Identifier" },
+        "device_instance_id": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 128,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+        },
         "owner_domain_id": { "$ref": "#/$defs/Identifier" },
         "claim_generation": { "type": "integer", "minimum": 1 },
         "trust_epoch": { "type": "integer", "minimum": 1 },

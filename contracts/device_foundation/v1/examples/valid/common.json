@@ -23,7 +23,7 @@
       "schema": "https://contracts.eidolon.live/device-foundation/v1/common/schemas.schema.json",
       "definition": "DeviceRef",
       "value": {
-        "device_instance_id": "device_01",
+        "device_instance_id": "10:51:db:7e:24:44",
         "owner_domain_id": "owner_01",
         "claim_generation": 2,
         "trust_epoch": 3,

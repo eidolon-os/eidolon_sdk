@@ -24,6 +24,18 @@ def _ref(*, owner: str = "owner_01", generation: int = 2) -> DeviceRef:
     )
 
 
+def test_device_ref_accepts_deployed_mac_style_instance_id() -> None:
+    ref = DeviceRef(
+        device_instance_id="10:51:db:7e:24:44",
+        owner_domain_id="owner_01",
+        claim_generation=2,
+        trust_epoch=4,
+        accepted_manifest_digest="sha256:" + "2" * 64,
+    )
+
+    assert ref.device_instance_id == "10:51:db:7e:24:44"
+
+
 def test_revoke_claim_requires_the_full_exact_device_ref() -> None:
     command = RevokeClaim(
         command_id="revoke_claim_01",

@@ -20,7 +20,7 @@ def _wire_datetime(value: object) -> object:
 
 class DeviceRef(_Model):
     device_instance_id: str = Field(
-        min_length=3, max_length=128, pattern=r"^[A-Za-z][A-Za-z0-9._:-]*$"
+        min_length=3, max_length=128, pattern=r"^[A-Za-z0-9][A-Za-z0-9._:-]*$"
     )
     owner_domain_id: str = Field(
         min_length=3, max_length=128, pattern=r"^[A-Za-z][A-Za-z0-9._:-]*$"
