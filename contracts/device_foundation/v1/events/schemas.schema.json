@@ -24,9 +24,10 @@
     "ClaimActivatedData": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["device_ref", "manifest_ref", "approval_decision_id", "activated_at"],
+      "required": ["device_ref", "business_owner_id", "manifest_ref", "approval_decision_id", "activated_at"],
       "properties": {
         "device_ref": { "$ref": "../common/schemas.schema.json#/$defs/DeviceRef" },
+        "business_owner_id": { "$ref": "../common/schemas.schema.json#/$defs/BusinessOwnerId" },
         "manifest_ref": { "$ref": "../common/schemas.schema.json#/$defs/ManifestRef" },
         "approval_decision_id": { "$ref": "../common/schemas.schema.json#/$defs/Identifier" },
         "activated_at": { "type": "string", "format": "date-time" }

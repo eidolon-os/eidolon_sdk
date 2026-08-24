@@ -8,7 +8,13 @@ from typing import Annotated, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
-from .lifecycle import DeviceRef, ManifestRef, OwnerDomainId, _aware_datetime
+from .lifecycle import (
+    BusinessOwnerId,
+    DeviceRef,
+    ManifestRef,
+    OwnerDomainId,
+    _aware_datetime,
+)
 
 
 class _Model(BaseModel):
@@ -37,6 +43,7 @@ class AdmissionEventType(StrEnum):
 
 class ClaimActivatedData(_Model):
     device_ref: DeviceRef
+    business_owner_id: BusinessOwnerId
     manifest_ref: ManifestRef
     approval_decision_id: str = Field(min_length=3, max_length=128)
     activated_at: datetime

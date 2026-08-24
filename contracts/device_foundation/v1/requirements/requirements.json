@@ -778,11 +778,11 @@
     },
     {
       "requirement_id": "DF-PH2B0-CLAIM-STREAM-001",
-      "normative_text_ref": "3.7/3.9/19.3.11 ClaimActivated and ClaimRevoked MUST use strict canonical CloudEvents and a dedicated durable contiguous Claim stream; transport position MUST NOT enter business equality",
+      "normative_text_ref": "3.7/3.9/6.3/11.1/19.3.11 ClaimActivated MUST carry the nominal BusinessOwnerId needed by the independent Mount Authority; ClaimActivated and ClaimRevoked MUST use strict canonical CloudEvents and a dedicated durable contiguous Claim stream; transport position MUST NOT enter business equality",
       "owner": "eidolon_sdk+eidolon_hub+eidolon_kernel",
       "schema_ids": ["events/ClaimActivatedEvent", "events/ClaimRevokedEvent", "events/ClaimEventCursor", "events/ClaimEventStreamItem", "events/ClaimEventPage"],
-      "producer_tests": ["SDK::test_claim_event_metadata_and_identity_fail_closed"],
-      "consumer_tests": ["SDK::test_claim_stream_position_is_transport_only_and_pages_are_contiguous"],
+      "producer_tests": ["SDK::test_claim_event_metadata_and_identity_fail_closed", "SDK::test_claim_activated_requires_nominal_business_owner_scope"],
+      "consumer_tests": ["SDK::test_claim_stream_position_is_transport_only_and_pages_are_contiguous", "KERNEL::test_claim_activated_mounts_distinct_business_owner_and_owner_domain"],
       "simulator_vectors": ["golden/admission-event-stream.json"],
       "integration_tests": ["CONFORMANCE::check_admission_event_stream", "HUB::canonical-claim-stream-restart"],
       "hil_tests": [], "status": "covered", "waiver_reason": null, "waiver_expires_at": null

@@ -112,6 +112,18 @@ def test_claim_event_unknown_field_fails_closed() -> None:
         ClaimRevokedEvent.model_validate(value)
 
 
+def test_claim_activated_requires_nominal_business_owner_scope() -> None:
+    value = _activated()
+    del value["data"]["business_owner_id"]
+    with pytest.raises(ValidationError, match="business_owner_id"):
+        ClaimActivatedEvent.model_validate(value)
+
+    value = _activated()
+    value["data"]["business_owner_id"] = "owner-domain_01"
+    with pytest.raises(ValidationError, match="BusinessOwnerId"):
+        ClaimActivatedEvent.model_validate(value)
+
+
 def test_claim_stream_position_is_transport_only_and_pages_are_contiguous() -> None:
     event = ClaimRevokedEvent.model_validate(_revoked())
     first = ClaimEventStreamItem(stream_position=1, event=event)

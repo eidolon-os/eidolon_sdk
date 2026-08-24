@@ -24,6 +24,7 @@
           "claim_generation": 2,
           "trust_epoch": 4
         },
+        "business_owner_id": "owner_01",
         "manifest_ref": {
           "manifest_id": "manifest_01",
           "revision": 2,
@@ -141,6 +142,7 @@
             "claim_generation": 2,
             "trust_epoch": 4
           },
+          "business_owner_id": "owner_01",
           "manifest_ref": {
             "manifest_id": "manifest_01",
             "revision": 2,

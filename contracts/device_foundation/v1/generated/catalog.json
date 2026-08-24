@@ -64,8 +64,8 @@
     },
     {
       "path": "events/schemas.schema.json",
-      "sha256": "fb6536d3dce56075a8cc8297cb8b9c1bb2066b003b7b553359052b094bf7d3b3",
-      "size": 6359
+      "sha256": "c0e2495a711c9994767dab7243b6d215ecc30f25f9f7c2cb4633265e72b6cc7f",
+      "size": 6477
     },
     {
       "path": "evidence/p1-host-independence.json",
@@ -79,8 +79,8 @@
     },
     {
       "path": "examples/invalid/authority.json",
-      "sha256": "5443b0ea60cc361f0dfbcbbd5eedf47a63669167f0a7b74ffe34095b8534d1e1",
-      "size": 8357
+      "sha256": "dcd8672338eb44be2b68a1b44fb3771269fbace628a96c34b169463fbb205f94",
+      "size": 9210
     },
     {
       "path": "examples/invalid/common.json",
@@ -99,8 +99,8 @@
     },
     {
       "path": "examples/valid/admission-consumer-surface.json",
-      "sha256": "762f8e11f37f1856a9d2a3698db599fa9d8aecafb8105fb1448e162e6e33fd29",
-      "size": 7490
+      "sha256": "6076fd411f1e11ccf8f0af51cbae3255c3e598cc9245a879be3beff3f6697c7c",
+      "size": 7535
     },
     {
       "path": "examples/valid/admission.json",
@@ -119,8 +119,8 @@
     },
     {
       "path": "examples/valid/delivery-and-events.json",
-      "sha256": "c684a24c73272cde8e79fd2e0d5f6d81beff7d8a13715d3db9ad9b1c197320fe",
-      "size": 7706
+      "sha256": "3b2521cd93b9b43aa73a582117cd5f5ba0b1108d60503fe88210a96cbb3e9ae9",
+      "size": 7790
     },
     {
       "path": "examples/valid/device-control.json",
@@ -149,8 +149,8 @@
     },
     {
       "path": "generation/templates/device_foundation_v1.dart",
-      "sha256": "567910bc58568f39eeba2dd0c3c2638c7156f0f4952382125c8e9abfcdec5dbe",
-      "size": 40954
+      "sha256": "9866911cf4a181a67a3a917b4e22287f74d2c69363fe72c361e354f5158d8b44",
+      "size": 41039
     },
     {
       "path": "generation/templates/device_foundation_v1.py",
@@ -159,8 +159,8 @@
     },
     {
       "path": "generation/templates/device_foundation_v1_generated.h",
-      "sha256": "cbf986cc77d7816f1e273cbf5369c4b80b47cff612f8d7a42c8e79c4e6abdcbd",
-      "size": 13479
+      "sha256": "c777db340de6a5713196dc596f1574be9d481346a11fd8bca1c60501990e150d",
+      "size": 13514
     },
     {
       "path": "golden/admission-event-stream.json",
@@ -244,8 +244,8 @@
     },
     {
       "path": "requirements/requirements.json",
-      "sha256": "262fe8e3a40e051a4b95700e1f16fc09903348a2e48b2d15982d330b6ea98f5d",
-      "size": 42700
+      "sha256": "b5e45dde176d69ef4a05d292fc23294cad66faf09dd5e722c4b37b57eb157be8",
+      "size": 42953
     },
     {
       "path": "state-vectors/commissioning-runtime.json",
@@ -275,5 +275,5 @@
   ],
   "generator": "device-foundation-v1-catalog",
   "generator_version": "1.0",
-  "source_digest": "sha256:7ba7d4f81ec022a95c51a84f506c789079925826e84b42a4b80defcf58ab1478"
+  "source_digest": "sha256:0bbffbf67ea6a0f643344be9ea030638b207c73840ee1030d2e1a1698d2c0e81"
 }
