@@ -22,10 +22,22 @@ SECRET = "test-secret-with-enough-entropy-32b"
 
 
 class MemoryRevocationStore:
-    def __init__(self, keys: set[str] | None = None) -> None:
+    def __init__(
+        self,
+        keys: set[str] | None = None,
+        *,
+        values: dict[str, bytes] | None = None,
+    ) -> None:
         self._keys = keys or set()
+        #: What the writer actually stores. The owner key holds the instant it
+        #: was revoked at, which is what makes it a watermark rather than a
+        #: switch; ``keys`` alone keeps the older "any value at all" shape, which
+        #: the verifier must still refuse (it cannot read it, so it fails closed).
+        self._values = values or {}
 
     async def get(self, key: str) -> bytes | None:
+        if key in self._values:
+            return self._values[key]
         return b"revoked" if key in self._keys else None
 
 
@@ -240,3 +252,122 @@ async def test_runtime_token_verifier_requires_session_claim() -> None:
 
     with pytest.raises(RuntimeUnauthenticatedError, match="missing session_id"):
         await RuntimeTokenVerifier(secret=SECRET).verify(token)
+
+
+# --- 让所有设备重新登录：a watermark, not a lockout -------------------------
+
+
+def _mark(moment: datetime) -> bytes:
+    """What the Agent writes when an Owner asks to sign every device out."""
+
+    return moment.isoformat().encode("utf-8")
+
+
+@pytest.mark.asyncio
+async def test_a_token_issued_before_the_mark_is_refused() -> None:
+    token, _exp = _sign(owner_id="owner-a")
+    store = MemoryRevocationStore(
+        values={
+            owner_revocation_keys("owner-a")[0]: _mark(
+                datetime.now(timezone.utc) + timedelta(seconds=5)
+            )
+        }
+    )
+
+    with pytest.raises(RuntimeTokenRevokedError, match="all sessions revoked"):
+        await RuntimeTokenVerifier(secret=SECRET, revocation_kv=store).verify(token)
+
+
+@pytest.mark.asyncio
+async def test_a_token_issued_after_the_mark_still_works() -> None:
+    """The property that makes the action safe to offer a person.
+
+    Signing every device out has to be something they can do and then keep using
+    their Eidolon. Presence-based refusal made it a permanent lockout of the
+    whole namespace: every *new* token failed too, and nothing in the product
+    deletes the key.
+    """
+
+    store = MemoryRevocationStore(
+        values={
+            owner_revocation_keys("owner-a")[0]: _mark(
+                datetime.now(timezone.utc) - timedelta(seconds=5)
+            )
+        }
+    )
+    token, _exp = _sign(owner_id="owner-a")
+
+    identity = await RuntimeTokenVerifier(secret=SECRET, revocation_kv=store).verify(token)
+
+    assert identity.owner_id == "owner-a"
+
+
+@pytest.mark.asyncio
+async def test_only_the_named_owner_is_signed_out() -> None:
+    store = MemoryRevocationStore(
+        values={
+            owner_revocation_keys("owner-a")[0]: _mark(
+                datetime.now(timezone.utc) + timedelta(seconds=5)
+            )
+        }
+    )
+    other, _exp = _sign(owner_id="owner-b")
+
+    identity = await RuntimeTokenVerifier(secret=SECRET, revocation_kv=store).verify(other)
+
+    assert identity.owner_id == "owner-b"
+
+
+@pytest.mark.asyncio
+async def test_a_mark_that_cannot_be_read_refuses_the_token() -> None:
+    """Fails closed. "Was this revoked" has one safe answer when the question
+    cannot be answered, and a corrupt watermark is exactly that case."""
+
+    for value in (b"revoked", b"", b"not-an-instant"):
+        store = MemoryRevocationStore(values={owner_revocation_keys("owner-a")[0]: value})
+        token, _exp = _sign(owner_id="owner-a")
+
+        with pytest.raises(RuntimeTokenRevokedError):
+            await RuntimeTokenVerifier(secret=SECRET, revocation_kv=store).verify(token)
+
+
+@pytest.mark.asyncio
+async def test_a_naive_mark_is_read_as_utc_rather_than_refused() -> None:
+    """Writers store an aware instant; one that lost its offset in transit still
+    means a time, and treating it as UTC is what the rest of this product does."""
+
+    store = MemoryRevocationStore(
+        values={
+            owner_revocation_keys("owner-a")[0]: (
+                (datetime.now(timezone.utc) - timedelta(seconds=5))
+                .replace(tzinfo=None)
+                .isoformat()
+                .encode("utf-8")
+            )
+        }
+    )
+    token, _exp = _sign(owner_id="owner-a")
+
+    identity = await RuntimeTokenVerifier(secret=SECRET, revocation_kv=store).verify(token)
+
+    assert identity.owner_id == "owner-a"
+
+
+@pytest.mark.asyncio
+async def test_a_device_or_session_key_stays_a_switch() -> None:
+    """Deliberately unlike the owner key: a stolen device should stay out until
+    something deliberately lets it back in, and "everything until now" is not a
+    thing either of these means."""
+
+    later = _mark(datetime.now(timezone.utc) + timedelta(seconds=5))
+    earlier = _mark(datetime.now(timezone.utc) - timedelta(seconds=5))
+    for key_of, label in (
+        (lambda: device_revocation_keys("device-1")[0], "device revoked"),
+        (lambda: session_revocation_keys("session-a")[0], "session revoked"),
+    ):
+        for value in (later, earlier):
+            store = MemoryRevocationStore(values={key_of(): value})
+            token, _exp = _sign()
+
+            with pytest.raises(RuntimeTokenRevokedError, match=label):
+                await RuntimeTokenVerifier(secret=SECRET, revocation_kv=store).verify(token)

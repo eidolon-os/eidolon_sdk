@@ -116,7 +116,26 @@ def device_revocation_keys(device_id: str) -> tuple[str, ...]:
 
 
 def owner_revocation_keys(owner_id: str) -> tuple[str, ...]:
-    """Return KV keys that revoke every active session for an owner."""
+    """Return KV keys that revoke every session an owner had **until now**.
+
+    A watermark, not a switch, and that difference is the whole point of the key.
+    The writer stores the instant it revoked at; a token is refused when it was
+    issued before that instant, and a token issued after it is fine. So "sign
+    every device out" is something a person can ask for and then keep using
+    their Eidolon — the devices reconnect on their own.
+
+    Presence alone used to be enough to refuse, which made this a permanent
+    lockout of an Owner's whole namespace: every *new* token failed too, nothing
+    in the product deletes the key, and the value the writer stored — already an
+    ISO instant — was never read. A management surface offering that as "让所有
+    设备重新登录" would have bricked every device an Owner has.
+
+    Deliberately unlike :func:`device_revocation_keys` and
+    :func:`session_revocation_keys`, which stay presence-based: a stolen device
+    or a poisoned session should stay out until something deliberately lets it
+    back in, and there is no "everything until now" in either.
+    """
+
     return (f"revoked.owner.{_kv_safe_token(owner_id)}",)
 
 
@@ -170,7 +189,8 @@ class RuntimeTokenVerifier:
                     if await self._kv.get(key):
                         raise RuntimeTokenRevokedError(f"device revoked: {device_id}")
             for key in owner_revocation_keys(owner_id):
-                if await self._kv.get(key):
+                mark = await self._kv.get(key)
+                if mark is not None and _issued_before(payload, mark):
                     raise RuntimeTokenRevokedError(f"all sessions revoked for owner: {owner_id}")
             for key in session_revocation_keys(session_id):
                 if await self._kv.get(key):
@@ -189,6 +209,27 @@ class RuntimeTokenVerifier:
             scopes=tuple(payload.get("scopes") or ()),
             exp=datetime.fromtimestamp(payload["exp"], tz=timezone.utc),
         )
+
+
+def _issued_before(payload: dict, mark: bytes) -> bool:
+    """Whether this token predates the watermark stored for its owner.
+
+    Fails closed on anything it cannot read. A mark that is not an instant, or a
+    token with no ``iat``, means the question cannot be answered — and the safe
+    answer to "was this revoked" is yes. Version 5 tokens always carry ``iat``,
+    so the second case is a token from somewhere else.
+    """
+
+    try:
+        revoked_at = datetime.fromisoformat(mark.decode("utf-8").strip())
+    except (UnicodeDecodeError, ValueError):
+        return True
+    if revoked_at.tzinfo is None:
+        revoked_at = revoked_at.replace(tzinfo=timezone.utc)
+    issued_at = payload.get("iat")
+    if not isinstance(issued_at, int | float):
+        return True
+    return datetime.fromtimestamp(float(issued_at), tz=timezone.utc) < revoked_at
 
 
 def _require_claim(name: str, value: str) -> None:

@@ -12,7 +12,7 @@
       {
         "authority": "admission",
         "logical_audience": "eidolon-admission",
-        "uri": "https://host-a.owner.test/api/device-onboarding/v1",
+        "uri": "https://host-a.owner.test/api/admission/v1",
         "transport_profile": "https-json",
         "priority": 10
       },
