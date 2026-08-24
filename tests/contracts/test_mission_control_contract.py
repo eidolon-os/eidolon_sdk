@@ -103,30 +103,52 @@ def test_degraded_golden_actually_exercises_partial_failure() -> None:
     assert snapshot["devices"]["truncated"] is True
     # And a lane that did read stays ok, because one dead source must not black
     # out the screen.
-    assert snapshot["companions"]["state"] == mc.LANE_OK
+    assert snapshot["services"]["state"] == mc.LANE_OK
 
 
-def test_the_snapshot_names_the_default_companion_once() -> None:
-    """One place decides which Companion answers by default.
+def test_the_snapshot_carries_no_identity() -> None:
+    """This projection observes; it does not say who exists.
 
-    A per-row ``is_primary`` flag — which this schema used to carry, mine — is a
-    second adjudication of the same question, and it is only ever right while
-    there is one Companion. The snapshot states it once and consumers compare.
+    Three versions of this schema got the ownership wrong in three ways: a
+    per-row ``is_primary`` flag (a second adjudication of a question the roster
+    already answers), then a snapshot-level ``default_companion_id``, then a
+    companions lane. All three were identity, and identity has authorities — the
+    roster for which Companions exist and ``/context`` for the Owner and the
+    default pointer, whose fields are authority fields rather than projections.
+
+    The route takes ``?companion_id=``, which is the tell: a caller that has to
+    name the Companion already knows which ones there are.
     """
 
     snapshot = _load(_V1 / "mission-control-snapshot.schema.json")
-    assert "default_companion_id" in snapshot["properties"]
-    companion = snapshot["$defs"]["companionLane"]["properties"]["items"][
-        "items"
-    ]["properties"]
-    assert "is_primary" not in companion
-    assert "is_default" not in companion
+    for absent in ("owner", "companions", "default_companion_id"):
+        assert absent not in snapshot["properties"], absent
+        assert absent not in snapshot["required"]
+    for absent in ("ownerLane", "companionLane"):
+        assert absent not in snapshot["$defs"], absent
+
+    # Every remaining lane is something observed, keyed by an id the caller holds.
+    observed = {
+        "devices",
+        "activities",
+        "turns",
+        "jobs",
+        "memory",
+        "services",
+        "events",
+    }
+    lanes = set(snapshot["properties"]) - {
+        "contract_version",
+        "coverage",
+        "generated_at",
+        "cursor",
+    }
+    assert lanes == observed
 
     for name in ("snapshot-healthy.json", "snapshot-degraded.json"):
         golden = _load(_V1 / "golden" / name)
-        assert "default_companion_id" in golden
-        for row in golden["companions"]["items"]:
-            assert "is_primary" not in row
+        for absent in ("owner", "companions", "default_companion_id"):
+            assert absent not in golden, f"{name}: {absent}"
 
 
 def test_schema_enums_match_the_exported_vocabulary() -> None:
@@ -140,15 +162,6 @@ def test_schema_enums_match_the_exported_vocabulary() -> None:
     ]["properties"]
     assert set(presence["state"]["enum"]) == mc.PRESENCE_STATES
     assert set(presence["source"]["enum"]) == mc.PRESENCE_SOURCES
-
-    companion = defs["companionLane"]["properties"]["items"]["items"]["properties"]
-    assert (
-        set(companion["lifecycle_state"]["enum"]) == mc.COMPANION_LIFECYCLE_STATES
-    )
-    # No presence field on a companion. Nothing publishes a companion heartbeat,
-    # and a field left open for one eventually gets read as though it were fed.
-    assert "presence" not in companion
-    assert "online" not in companion
 
     activity = defs["activityLane"]["properties"]["items"]["items"]["properties"]
     assert set(activity["kind"]["enum"]) == mc.ACTIVITY_KINDS
@@ -199,18 +212,18 @@ def test_event_vocabulary_is_the_audit_envelope_s() -> None:
 
 
 def test_the_companion_lifecycle_is_not_this_contracts_to_invent() -> None:
-    """One vocabulary, imported — not a second set that happens to look similar.
+    """It was never this contract's vocabulary, and now it is not its field.
 
-    These two had already diverged: this contract said
+    Two mistakes ended the same way. This schema had invented
     active/pending/suspended/removed while the Companion authority publishes
-    active/retiring/archived/deleting. It was not a naming difference. An
-    archived Companion had no representable value here, so the first projection
-    carrying a real roster would have had to drop the row or invent a state, and
-    the goldens asserted a ``pending`` that no Host can ever send.
+    active/retiring/archived/deleting — an archived Companion had no
+    representable value, and both goldens asserted a ``pending`` no Host can
+    send. The fix then was to import the shared vocabulary. The fix now is that
+    the field is gone: lifecycle is identity, identity belongs to the roster, and
+    this projection carries only what it observed.
 
-    Asserted against the shared module rather than against a literal list, so
-    the next value the authority adds arrives here as one edit rather than as a
-    second opinion.
+    The shared module still has to agree with the authority, because other
+    consumers read it, so that stays asserted here.
     """
 
     from eidolon_sdk.biz.contracts import companion, mission_control as mc
@@ -219,10 +232,6 @@ def test_the_companion_lifecycle_is_not_this_contracts_to_invent() -> None:
         companion.COMPANION_LIFECYCLE_STATES
     )
 
-    schema = _load(_V1 / "mission-control-snapshot.schema.json")
-    lane = schema["$defs"]["companionLane"]["properties"]["items"]["items"]
-    published = lane["properties"]["lifecycle_state"]["enum"]
-    assert tuple(published) == companion.COMPANION_LIFECYCLE_STATES, (
-        "the schema's order and membership are the shared vocabulary's, so a "
-        "generated client reads the same values in the same order whoever emits it"
-    )
+    schema = json.dumps(_load(_V1 / "mission-control-snapshot.schema.json"))
+    assert "lifecycle_state" not in schema
+    assert "companionLane" not in schema

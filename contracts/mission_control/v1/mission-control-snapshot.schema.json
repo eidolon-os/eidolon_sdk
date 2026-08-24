@@ -2,15 +2,13 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://eidolon.dev/contracts/mission_control/v1/mission-control-snapshot.schema.json",
   "title": "Mission Control Owner Runtime Snapshot V1",
-  "description": "What one Owner's runtime looks like at one instant, as the management plane projects it for a product client. Owner scope is derived server-side from the Controller session; there is no owner_id in the request. Read-only.",
+  "description": "What one Owner's runtime looks like at one instant, as the management plane projects it. Owner scope is derived server-side from the Controller session. Read-only, and deliberately identity-free: who the Owner is comes from /context and which Companions exist comes from the roster, both of which own those facts authoritatively. This carries only what was observed, keyed by the ids the caller already holds — which is also why the route takes ?companion_id=.",
   "type": "object",
   "additionalProperties": false,
   "required": [
     "contract_version",
     "coverage",
     "generated_at",
-    "owner",
-    "companions",
     "devices",
     "activities",
     "turns",
@@ -47,12 +45,6 @@
       },
       "description": "Where the event stream should resume. Null when this Host has no events yet."
     },
-    "owner": {
-      "$ref": "#/$defs/ownerLane"
-    },
-    "companions": {
-      "$ref": "#/$defs/companionLane"
-    },
     "devices": {
       "$ref": "#/$defs/deviceLane"
     },
@@ -73,14 +65,6 @@
     },
     "events": {
       "$ref": "#/$defs/eventLane"
-    },
-    "default_companion_id": {
-      "type": [
-        "string",
-        "null"
-      ],
-      "maxLength": 64,
-      "description": "Which Companion answers by default. Said once, here, so a consumer compares rather than trusting a per-row flag: a flag on every row is a second place the same question gets decided, and it is only ever right while there is one Companion."
     }
   },
   "$defs": {
@@ -135,112 +119,6 @@
           "type": "boolean",
           "default": false,
           "description": "The list hit its bound. Silent truncation reads as 'that is all there is', which on an observability surface is a lie."
-        }
-      }
-    },
-    "ownerLane": {
-      "type": "object",
-      "additionalProperties": false,
-      "allOf": [
-        {
-          "$ref": "#/$defs/laneHealth"
-        }
-      ],
-      "required": [
-        "state",
-        "value"
-      ],
-      "properties": {
-        "state": true,
-        "detail": true,
-        "observed_at": true,
-        "latency_ms": true,
-        "value": {
-          "type": [
-            "object",
-            "null"
-          ],
-          "additionalProperties": false,
-          "required": [
-            "owner_id"
-          ],
-          "properties": {
-            "owner_id": {
-              "type": "string",
-              "minLength": 1,
-              "maxLength": 64
-            },
-            "display_name": {
-              "type": "string",
-              "maxLength": 128,
-              "default": "",
-              "description": "Empty stays empty. An identifier is what someone falls back to when nobody will tell them what a thing is."
-            }
-          }
-        }
-      }
-    },
-    "companionLane": {
-      "type": "object",
-      "additionalProperties": false,
-      "allOf": [
-        {
-          "$ref": "#/$defs/itemsLane"
-        }
-      ],
-      "properties": {
-        "state": true,
-        "detail": true,
-        "observed_at": true,
-        "latency_ms": true,
-        "truncated": true,
-        "items": {
-          "type": "array",
-          "maxItems": 32,
-          "items": {
-            "type": "object",
-            "additionalProperties": false,
-            "required": [
-              "companion_id",
-              "lifecycle_state"
-            ],
-            "properties": {
-              "companion_id": {
-                "type": "string",
-                "minLength": 1,
-                "maxLength": 64
-              },
-              "display_name": {
-                "type": "string",
-                "maxLength": 128,
-                "default": ""
-              },
-              "lifecycle_state": {
-                "enum": [
-                  "active",
-                  "retiring",
-                  "archived",
-                  "deleting"
-                ],
-                "description": "The Companion authority's own lifecycle vocabulary, imported rather than restated (eidolon_sdk.biz.contracts.companion). An archived Companion has to be representable here: a projection that cannot express a state its producer publishes must either drop the row or invent a value."
-              },
-              "genome_id": {
-                "type": [
-                  "string",
-                  "null"
-                ],
-                "maxLength": 64,
-                "description": "Ownership of a persona, not whether one is loaded. Null means unbound."
-              },
-              "memory_realm_id": {
-                "type": [
-                  "string",
-                  "null"
-                ],
-                "maxLength": 64
-              }
-            }
-          }
         }
       }
     },

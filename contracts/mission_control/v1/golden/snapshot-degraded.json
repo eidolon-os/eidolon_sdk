@@ -5,39 +5,6 @@
   "cursor": {
     "ingest_seq": 10493
   },
-  "owner": {
-    "state": "ok",
-    "detail": "",
-    "observed_at": "2026-08-24T05:16:18Z",
-    "latency_ms": 8,
-    "value": {
-      "owner_id": "owner-shenyi",
-      "display_name": "沈亦"
-    }
-  },
-  "companions": {
-    "state": "ok",
-    "detail": "",
-    "observed_at": "2026-08-24T05:16:18Z",
-    "latency_ms": 12,
-    "truncated": false,
-    "items": [
-      {
-        "companion_id": "companion-yanzhou",
-        "display_name": "砚舟",
-        "lifecycle_state": "active",
-        "genome_id": "genome-yanzhou-7",
-        "memory_realm_id": "realm-yanzhou"
-      },
-      {
-        "companion_id": "companion-linyuan",
-        "display_name": "临渊",
-        "lifecycle_state": "archived",
-        "genome_id": null,
-        "memory_realm_id": null
-      }
-    ]
-  },
   "devices": {
     "state": "degraded",
     "detail": "blackboard 不可用，在场退到 Hub 权威",
@@ -240,6 +207,5 @@
         "summary": "临渊 请求开启摄像头，被授权边界拒绝"
       }
     ]
-  },
-  "default_companion_id": "companion-yanzhou"
+  }
 }
