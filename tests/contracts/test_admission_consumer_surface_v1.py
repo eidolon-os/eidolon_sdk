@@ -182,6 +182,31 @@ def test_dart_generated_binding_parses_envelope_and_rejects_unknown(tmp_path: Pa
     assert completed.returncode == 0, completed.stderr
 
 
+def test_generated_dart_passes_flow_control_analyzer_gate(tmp_path: Path) -> None:
+    probe_root = tmp_path / "dart-analyzer-probe"
+    probe_root.mkdir()
+    (probe_root / "analysis_options.yaml").write_text(
+        "linter:\n"
+        "  rules:\n"
+        "    curly_braces_in_flow_control_structures: true\n",
+        encoding="utf-8",
+    )
+    generated = CONTRACT / "generated/dart/device_foundation_v1.dart"
+    probe = probe_root / generated.name
+    probe.write_bytes(generated.read_bytes())
+
+    completed = subprocess.run(
+        ["dart", "analyze", "--fatal-infos", str(probe)],
+        cwd=probe_root,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    diagnostics = completed.stdout + completed.stderr
+    assert completed.returncode == 0, diagnostics
+    assert "curly_braces_in_flow_control_structures" not in diagnostics
+
+
 def test_cpp_generated_consumer_surface_compiles(tmp_path: Path) -> None:
     source = tmp_path / "probe.cc"
     source.write_text(

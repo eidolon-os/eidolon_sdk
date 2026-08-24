@@ -149,8 +149,8 @@
     },
     {
       "path": "generation/templates/device_foundation_v1.dart",
-      "sha256": "7a223bbc4870418efae079b7a36ee3b9ee80d3ad18b535c467c6ba5494d19d10",
-      "size": 35833
+      "sha256": "60d8fc90ead0c363469ccf2418fbb27fe5b85e5381a33e50264c2098517fd118",
+      "size": 35915
     },
     {
       "path": "generation/templates/device_foundation_v1.py",
@@ -239,8 +239,8 @@
     },
     {
       "path": "requirements/requirements.json",
-      "sha256": "336c6404c9e11da53740342d512e94fccb1a7ae0ff6906b515cf604fcbd4928f",
-      "size": 41642
+      "sha256": "92b1b3ad18557e84f673f3f695c9e327def3b5199bfc7956fffeb18f453939cd",
+      "size": 42434
     },
     {
       "path": "state-vectors/commissioning-runtime.json",
@@ -270,5 +270,5 @@
   ],
   "generator": "device-foundation-v1-catalog",
   "generator_version": "1.0",
-  "source_digest": "sha256:d312276d4e4759ec6ea85fc5c840652ca4af898491270c1a412289a2639443fd"
+  "source_digest": "sha256:67c566cdfe9c72052b2e7ea9cab39dace5ee06f366b9a9c1410d94775b7d19df"
 }

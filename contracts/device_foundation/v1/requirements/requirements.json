@@ -787,6 +787,17 @@
       "simulator_vectors": ["examples/valid/admission-consumer-surface.json"],
       "integration_tests": ["HUB::canonical-admission-target-composition"],
       "hil_tests": [], "status": "covered", "waiver_reason": null, "waiver_expires_at": null
+    },
+    {
+      "requirement_id": "DF-PH2B0-DART-HYGIENE-001",
+      "normative_text_ref": "6/11/19.3.11 generated Dart consumer bindings MUST pass the real Dart analyzer with flow-control infos fatal and MUST NOT require consumer edits or exclusions",
+      "owner": "eidolon_sdk",
+      "schema_ids": ["admission/**", "events/ClaimActivatedEvent", "events/ClaimRevokedEvent", "events/ClaimEventPage"],
+      "producer_tests": ["SDK::test_generated_dart_passes_flow_control_analyzer_gate"],
+      "consumer_tests": ["MOBILE::flutter-analyze-generated-device-foundation"],
+      "simulator_vectors": [],
+      "integration_tests": ["GENERATION::generate --check", "DART::analyze --fatal-infos"],
+      "hil_tests": [], "status": "covered", "waiver_reason": null, "waiver_expires_at": null
     }
   ]
 }
