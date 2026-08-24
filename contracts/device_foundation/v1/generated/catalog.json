@@ -39,13 +39,13 @@
     },
     {
       "path": "conformance/run.py",
-      "sha256": "5e93f7eca1f36c139d552b2acfff138db538a0dd9db29eba270fc9ffb77ab6fb",
-      "size": 38482
+      "sha256": "a12bc1b85a784cbce1418bb3052a9a215481470de303baaf4771932d75c8e932",
+      "size": 39420
     },
     {
       "path": "delivery-port/schemas.schema.json",
-      "sha256": "aa2f7ab9c746c1769eb6c96bc1a62ca87500fb283d0a0fe8515b014ba6726569",
-      "size": 1960
+      "sha256": "e95fac2be48c7e61e5cf6a0a39d55373f4fdd5bc397689bde0afda7804f04c97",
+      "size": 2668
     },
     {
       "path": "device-control/schemas.schema.json",
@@ -79,8 +79,8 @@
     },
     {
       "path": "examples/invalid/authority.json",
-      "sha256": "7fad002c84e11dd66bdb4cb895b22ff53ad33cab0457f81ddf7e2c696a0b8489",
-      "size": 7482
+      "sha256": "5443b0ea60cc361f0dfbcbbd5eedf47a63669167f0a7b74ffe34095b8534d1e1",
+      "size": 8357
     },
     {
       "path": "examples/invalid/common.json",
@@ -119,8 +119,8 @@
     },
     {
       "path": "examples/valid/delivery-and-events.json",
-      "sha256": "514cc0ea3823c7a1b9d141df79a30e12819ae861f80b8b380af9a74599e0951c",
-      "size": 5577
+      "sha256": "c684a24c73272cde8e79fd2e0d5f6d81beff7d8a13715d3db9ad9b1c197320fe",
+      "size": 7706
     },
     {
       "path": "examples/valid/device-control.json",
@@ -144,23 +144,23 @@
     },
     {
       "path": "generation/generate.py",
-      "sha256": "24154007a807376f1b2798222687a04e4ba882d53e76aa9acc9733b73793247d",
-      "size": 4437
+      "sha256": "52670a69ff870a4a5dfbb25b72e2f9abf6cffb3ffb2dda0f82206575e1a017ba",
+      "size": 4505
     },
     {
       "path": "generation/templates/device_foundation_v1.dart",
-      "sha256": "60d8fc90ead0c363469ccf2418fbb27fe5b85e5381a33e50264c2098517fd118",
-      "size": 35915
+      "sha256": "567910bc58568f39eeba2dd0c3c2638c7156f0f4952382125c8e9abfcdec5dbe",
+      "size": 40954
     },
     {
       "path": "generation/templates/device_foundation_v1.py",
-      "sha256": "f8f18d706c9f288dfed832e23af6d4b8b38d6913dee223b329771e081237e91a",
-      "size": 1197
+      "sha256": "1a909823d5e3b2b44dcc91d8b5bc3d8e93fc64614542e050b29bd5817192300a",
+      "size": 1262
     },
     {
       "path": "generation/templates/device_foundation_v1_generated.h",
-      "sha256": "4f304f0981ed4250e1a6d1d9b7bc9df10992965e3db92c64877893fd745ed968",
-      "size": 12714
+      "sha256": "cbf986cc77d7816f1e273cbf5369c4b80b47cff612f8d7a42c8e79c4e6abdcbd",
+      "size": 13479
     },
     {
       "path": "golden/admission-event-stream.json",
@@ -186,6 +186,11 @@
       "path": "golden/claim-revoke.json",
       "sha256": "bd8b0fbaff3d1479d720fc21d3e6ea5df5584405ce9d127c96711a4ad0b0fe78",
       "size": 1283
+    },
+    {
+      "path": "golden/device-delivery.json",
+      "sha256": "983e2236c0b40d8ab1c5e77138a04b6f020cb11182338a5c628d73b365e37500",
+      "size": 4825
     },
     {
       "path": "golden/device-local-erase.json",
@@ -239,8 +244,8 @@
     },
     {
       "path": "requirements/requirements.json",
-      "sha256": "92b1b3ad18557e84f673f3f695c9e327def3b5199bfc7956fffeb18f453939cd",
-      "size": 42434
+      "sha256": "262fe8e3a40e051a4b95700e1f16fc09903348a2e48b2d15982d330b6ea98f5d",
+      "size": 42700
     },
     {
       "path": "state-vectors/commissioning-runtime.json",
@@ -270,5 +275,5 @@
   ],
   "generator": "device-foundation-v1-catalog",
   "generator_version": "1.0",
-  "source_digest": "sha256:67c566cdfe9c72052b2e7ea9cab39dace5ee06f366b9a9c1410d94775b7d19df"
+  "source_digest": "sha256:7ba7d4f81ec022a95c51a84f506c789079925826e84b42a4b80defcf58ab1478"
 }

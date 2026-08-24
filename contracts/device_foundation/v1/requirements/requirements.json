@@ -210,9 +210,19 @@
       "requirement_id": "DF-DELIVERY-001",
       "normative_text_ref": "3.8 Adapter acceptance MUST NOT be interpreted as device execution",
       "owner": "eidolon_hub/device-control+eidolon_channel",
-      "schema_ids": ["delivery-port/DeliverEnvelope", "delivery-port/DeliveryAcceptance"],
-      "producer_tests": ["P4::delivery-acceptance"],
-      "consumer_tests": ["P4::adapter-cannot-write-terminal"],
+      "schema_ids": [
+        "delivery-port/DeliverEnvelope",
+        "delivery-port/DeliveryAcceptance",
+        "delivery-port/DeviceEvidenceEnvelope"
+      ],
+      "producer_tests": [
+        "SDK::test_delivery_binding_round_trip_and_nested_erase_contract",
+        "P4::delivery-acceptance"
+      ],
+      "consumer_tests": [
+        "SDK::test_delivery_acceptance_cannot_claim_execution_and_evidence_is_signed",
+        "P4::adapter-cannot-write-terminal"
+      ],
       "simulator_vectors": ["DF-DELIVERY-ACCEPTED-IS-NOT-EXECUTED"],
       "integration_tests": ["P4::real-delivery-adapter"],
       "hil_tests": [],

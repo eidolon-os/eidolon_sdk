@@ -66,7 +66,11 @@ def _binding_definitions() -> set[str]:
         "OwnerDomainId", "BusinessOwnerId", "DeviceRef", "ManifestRef", "ClaimGrantAAD",
         "CommandEnvelope", "CommandResult", "DeviceProblem", "RevokeClaim", "RevokeClaimResult",
     }
-    for relative in ("admission/schemas.schema.json", "events/schemas.schema.json"):
+    for relative in (
+        "admission/schemas.schema.json",
+        "delivery-port/schemas.schema.json",
+        "events/schemas.schema.json",
+    ):
         schema = json.loads((ROOT / relative).read_text(encoding="utf-8"))
         definitions.update(schema["$defs"])
     return definitions

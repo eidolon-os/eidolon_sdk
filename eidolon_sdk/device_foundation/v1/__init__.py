@@ -87,6 +87,7 @@ from .device_erase import (
     verify_operation_key_proof,
     verify_p256_signature,
 )
+from .delivery import DeliverEnvelope, DeliveryAcceptance, DeviceEvidenceEnvelope
 
 __all__ = [
     "AckClaimGrant",
@@ -166,4 +167,7 @@ __all__ = [
     "verify_device_erase_ack",
     "verify_operation_key_proof",
     "verify_p256_signature",
+    "DeliverEnvelope",
+    "DeliveryAcceptance",
+    "DeviceEvidenceEnvelope",
 ]

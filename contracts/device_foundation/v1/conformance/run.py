@@ -207,6 +207,22 @@ def check_device_local_erase_vector() -> int:
     return 1
 
 
+def check_device_delivery_vector() -> int:
+    vector = load_json(ROOT / "golden" / "device-delivery.json")
+    for name in ("deliver", "acceptance", "evidence"):
+        canonical = canonical_bytes(vector[name])
+        if canonical != vector[f"{name}_canonical_utf8"].encode("utf-8"):
+            raise ConformanceError(f"device delivery {name} canonical bytes drifted")
+        digest = "sha256:" + hashlib.sha256(canonical).hexdigest()
+        if digest != vector[f"{name}_sha256"]:
+            raise ConformanceError(f"device delivery {name} digest drifted")
+    if "device_signature" not in vector["evidence"]["payload"]:
+        raise ConformanceError("device delivery evidence dropped the device signature")
+    if "terminal_result" in vector["acceptance"]:
+        raise ConformanceError("delivery acceptance claims an operation terminal result")
+    return 1
+
+
 def check_claim_revoke_vector() -> int:
     vector = load_json(ROOT / "golden" / "claim-revoke.json")
     canonical = canonical_bytes(vector["fingerprint_document"])
@@ -804,6 +820,7 @@ def run() -> dict[str, int]:
         "canonical_vectors": check_canonical_vectors(),
         "es256_vectors": check_es256_vectors(),
         "device_local_erase_vectors": check_device_local_erase_vector(),
+        "device_delivery_vectors": check_device_delivery_vector(),
         "claim_revoke_vectors": check_claim_revoke_vector(),
         "owner_directory_vectors": check_owner_directory_vector(),
         "hpke_vectors": check_hpke_vector(),

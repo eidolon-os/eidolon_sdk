@@ -165,6 +165,27 @@
       }
     },
     {
+      "case_id": "DF-DELIVERY-EVIDENCE-REJECTS-ADAPTER-VERDICT",
+      "schema": "https://contracts.eidolon.live/device-foundation/v1/delivery-port/schemas.schema.json",
+      "definition": "DeviceEvidenceEnvelope",
+      "error_contains": "Additional properties",
+      "value": {
+        "delivery_attempt_id": "erase_attempt_01",
+        "message_id": "erase_operation_01",
+        "kind": "operation_ack",
+        "device_ref": {
+          "device_instance_id": "device_erase_01",
+          "owner_domain_id": "owner-domain_01",
+          "owner_domain_generation": 3,
+          "claim_generation": 7,
+          "trust_epoch": 4
+        },
+        "payload_schema": "https://contracts.eidolon.live/device-foundation/v1/device-control/schemas.schema.json#/$defs/DeviceLocalEraseAck",
+        "payload": {},
+        "adapter_terminal_result": "erased"
+      }
+    },
+    {
       "case_id": "DF-EVENT-REJECTS-HOST-SOURCE",
       "schema": "https://contracts.eidolon.live/device-foundation/v1/events/schemas.schema.json",
       "definition": "ClaimActivatedEvent",
