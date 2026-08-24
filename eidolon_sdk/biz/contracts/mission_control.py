@@ -59,9 +59,18 @@ PRESENCE_SOURCES = frozenset(
 # Lifecycle, not presence. Nothing in this system publishes a companion
 # heartbeat, and this contract deliberately has no field for one: a field left
 # open for a signal nobody feeds is eventually read as though it were fed.
-COMPANION_LIFECYCLE_STATES = frozenset(
-    {"active", "pending", "suspended", "removed"}
+#
+# Imported rather than spelled out. This projection is *of* Companions the
+# Companion authority publishes, and the two sets had already diverged: this
+# file said active/pending/suspended/removed while Data publishes
+# active/retiring/archived/deleting. That is not a naming difference — an
+# archived Companion had no representable value here, so a projection carrying a
+# real roster would have had to drop the row or invent a state for it.
+from eidolon_sdk.biz.contracts.companion import (  # noqa: E402
+    COMPANION_LIFECYCLE_STATES as _COMPANION_LIFECYCLE_STATES,
 )
+
+COMPANION_LIFECYCLE_STATES = frozenset(_COMPANION_LIFECYCLE_STATES)
 
 # A device's logical role comes from the companion it is bound to, never from
 # its board kind.

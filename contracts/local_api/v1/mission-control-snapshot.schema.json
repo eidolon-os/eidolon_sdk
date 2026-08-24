@@ -5,50 +5,123 @@
   "description": "What one Owner's runtime looks like at one instant, as the Local API projects it for a product client. Owner scope is derived server-side from the Controller session; there is no owner_id in the request. Read-only.",
   "type": "object",
   "additionalProperties": false,
-  "required": ["contract_version", "coverage", "generated_at", "owner", "companions", "devices", "activities", "turns", "jobs", "memory", "services", "events"],
+  "required": [
+    "contract_version",
+    "coverage",
+    "generated_at",
+    "owner",
+    "companions",
+    "devices",
+    "activities",
+    "turns",
+    "jobs",
+    "memory",
+    "services",
+    "events"
+  ],
   "properties": {
-    "contract_version": {"const": "1"},
-    "coverage": {"const": "owner-runtime"},
-    "generated_at": {"type": "string", "format": "date-time"},
+    "contract_version": {
+      "const": "1"
+    },
+    "coverage": {
+      "const": "owner-runtime"
+    },
+    "generated_at": {
+      "type": "string",
+      "format": "date-time"
+    },
     "cursor": {
-      "type": ["object", "null"],
+      "type": [
+        "object",
+        "null"
+      ],
       "additionalProperties": false,
-      "required": ["ingest_seq"],
-      "properties": {"ingest_seq": {"type": "integer", "minimum": 0}},
+      "required": [
+        "ingest_seq"
+      ],
+      "properties": {
+        "ingest_seq": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
       "description": "Where the event stream should resume. Null when this Host has no events yet."
     },
-
-    "owner": {"$ref": "#/$defs/ownerLane"},
-    "companions": {"$ref": "#/$defs/companionLane"},
-    "devices": {"$ref": "#/$defs/deviceLane"},
-    "activities": {"$ref": "#/$defs/activityLane"},
-    "turns": {"$ref": "#/$defs/turnLane"},
-    "jobs": {"$ref": "#/$defs/jobLane"},
-    "memory": {"$ref": "#/$defs/memoryLane"},
-    "services": {"$ref": "#/$defs/serviceLane"},
-    "events": {"$ref": "#/$defs/eventLane"}
+    "owner": {
+      "$ref": "#/$defs/ownerLane"
+    },
+    "companions": {
+      "$ref": "#/$defs/companionLane"
+    },
+    "devices": {
+      "$ref": "#/$defs/deviceLane"
+    },
+    "activities": {
+      "$ref": "#/$defs/activityLane"
+    },
+    "turns": {
+      "$ref": "#/$defs/turnLane"
+    },
+    "jobs": {
+      "$ref": "#/$defs/jobLane"
+    },
+    "memory": {
+      "$ref": "#/$defs/memoryLane"
+    },
+    "services": {
+      "$ref": "#/$defs/serviceLane"
+    },
+    "events": {
+      "$ref": "#/$defs/eventLane"
+    }
   },
-
   "$defs": {
     "laneHealth": {
       "type": "object",
       "description": "Every projection block carries its own health. A block that could not be read says so here, in the block itself — not in a parallel array that can disagree with it.",
-      "required": ["state"],
+      "required": [
+        "state"
+      ],
       "properties": {
-        "state": {"enum": ["ok", "degraded", "unavailable"]},
+        "state": {
+          "enum": [
+            "ok",
+            "degraded",
+            "unavailable"
+          ]
+        },
         "detail": {
           "type": "string",
           "maxLength": 256,
           "default": "",
           "description": "Required in practice when state is not ok: which authority did not answer, and why. A degraded lane with no detail is an unactionable screen."
         },
-        "observed_at": {"type": ["string", "null"], "format": "date-time"},
-        "latency_ms": {"type": ["number", "null"], "minimum": 0}
+        "observed_at": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time"
+        },
+        "latency_ms": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0
+        }
       }
     },
     "itemsLane": {
-      "allOf": [{"$ref": "#/$defs/laneHealth"}],
-      "required": ["state", "items"],
+      "allOf": [
+        {
+          "$ref": "#/$defs/laneHealth"
+        }
+      ],
+      "required": [
+        "state",
+        "items"
+      ],
       "properties": {
         "truncated": {
           "type": "boolean",
@@ -57,20 +130,38 @@
         }
       }
     },
-
     "ownerLane": {
       "type": "object",
       "additionalProperties": false,
-      "allOf": [{"$ref": "#/$defs/laneHealth"}],
-      "required": ["state", "value"],
+      "allOf": [
+        {
+          "$ref": "#/$defs/laneHealth"
+        }
+      ],
+      "required": [
+        "state",
+        "value"
+      ],
       "properties": {
-        "state": true, "detail": true, "observed_at": true, "latency_ms": true,
+        "state": true,
+        "detail": true,
+        "observed_at": true,
+        "latency_ms": true,
         "value": {
-          "type": ["object", "null"],
+          "type": [
+            "object",
+            "null"
+          ],
           "additionalProperties": false,
-          "required": ["owner_id"],
+          "required": [
+            "owner_id"
+          ],
           "properties": {
-            "owner_id": {"type": "string", "minLength": 1, "maxLength": 64},
+            "owner_id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64
+            },
             "display_name": {
               "type": "string",
               "maxLength": 128,
@@ -81,66 +172,181 @@
         }
       }
     },
-
     "companionLane": {
       "type": "object",
       "additionalProperties": false,
-      "allOf": [{"$ref": "#/$defs/itemsLane"}],
+      "allOf": [
+        {
+          "$ref": "#/$defs/itemsLane"
+        }
+      ],
       "properties": {
-        "state": true, "detail": true, "observed_at": true, "latency_ms": true, "truncated": true,
+        "state": true,
+        "detail": true,
+        "observed_at": true,
+        "latency_ms": true,
+        "truncated": true,
         "items": {
           "type": "array",
           "maxItems": 32,
           "items": {
             "type": "object",
             "additionalProperties": false,
-            "required": ["companion_id", "lifecycle_state"],
+            "required": [
+              "companion_id",
+              "lifecycle_state"
+            ],
             "properties": {
-              "companion_id": {"type": "string", "minLength": 1, "maxLength": 64},
-              "display_name": {"type": "string", "maxLength": 128, "default": ""},
-              "is_primary": {"type": "boolean", "default": false},
-              "lifecycle_state": {"enum": ["active", "pending", "suspended", "removed"]},
-              "genome_id": {"type": ["string", "null"], "maxLength": 64, "description": "Ownership of a persona, not whether one is loaded. Null means unbound."},
-              "memory_realm_id": {"type": ["string", "null"], "maxLength": 64}
+              "companion_id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 64
+              },
+              "display_name": {
+                "type": "string",
+                "maxLength": 128,
+                "default": ""
+              },
+              "is_primary": {
+                "type": "boolean",
+                "default": false
+              },
+              "lifecycle_state": {
+                "enum": [
+                  "active",
+                  "retiring",
+                  "archived",
+                  "deleting"
+                ],
+                "description": "The Companion authority's own lifecycle vocabulary, imported rather than restated (eidolon_sdk.biz.contracts.companion). An archived Companion has to be representable here: a projection that cannot express a state its producer publishes must either drop the row or invent a value."
+              },
+              "genome_id": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "maxLength": 64,
+                "description": "Ownership of a persona, not whether one is loaded. Null means unbound."
+              },
+              "memory_realm_id": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "maxLength": 64
+              }
             }
           }
         }
       }
     },
-
     "deviceLane": {
       "type": "object",
       "additionalProperties": false,
-      "allOf": [{"$ref": "#/$defs/itemsLane"}],
+      "allOf": [
+        {
+          "$ref": "#/$defs/itemsLane"
+        }
+      ],
       "properties": {
-        "state": true, "detail": true, "observed_at": true, "latency_ms": true, "truncated": true,
+        "state": true,
+        "detail": true,
+        "observed_at": true,
+        "latency_ms": true,
+        "truncated": true,
         "items": {
           "type": "array",
           "maxItems": 100,
           "items": {
             "type": "object",
             "additionalProperties": false,
-            "required": ["device_id", "presence"],
+            "required": [
+              "device_id",
+              "presence"
+            ],
             "properties": {
-              "device_id": {"type": "string", "minLength": 1, "maxLength": 128},
-              "display_name": {"type": "string", "maxLength": 128, "default": ""},
-              "device_kind": {"type": "string", "maxLength": 96, "default": "", "description": "Hardware class. Never the logical role."},
-              "role": {"type": "string", "maxLength": 64, "default": ""},
-              "role_kind": {"enum": ["guard", "persona", "unbound"], "default": "unbound"},
-              "companion_id": {"type": ["string", "null"], "maxLength": 64},
-              "capabilities": {"type": "array", "maxItems": 32, "items": {"type": "string", "maxLength": 64}},
+              "device_id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 128
+              },
+              "display_name": {
+                "type": "string",
+                "maxLength": 128,
+                "default": ""
+              },
+              "device_kind": {
+                "type": "string",
+                "maxLength": 96,
+                "default": "",
+                "description": "Hardware class. Never the logical role."
+              },
+              "role": {
+                "type": "string",
+                "maxLength": 64,
+                "default": ""
+              },
+              "role_kind": {
+                "enum": [
+                  "guard",
+                  "persona",
+                  "unbound"
+                ],
+                "default": "unbound"
+              },
+              "companion_id": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "maxLength": 64
+              },
+              "capabilities": {
+                "type": "array",
+                "maxItems": 32,
+                "items": {
+                  "type": "string",
+                  "maxLength": 64
+                }
+              },
               "presence": {
                 "type": "object",
                 "additionalProperties": false,
-                "required": ["state", "source"],
+                "required": [
+                  "state",
+                  "source"
+                ],
                 "properties": {
-                  "state": {"enum": ["online", "offline", "degraded", "unknown"]},
+                  "state": {
+                    "enum": [
+                      "online",
+                      "offline",
+                      "degraded",
+                      "unknown"
+                    ]
+                  },
                   "source": {
-                    "enum": ["runtime_blackboard", "hub", "none"],
+                    "enum": [
+                      "runtime_blackboard",
+                      "hub",
+                      "none"
+                    ],
                     "description": "Which authority answered. The Data authority is never one of them: a lifecycle status is not a presence."
                   },
-                  "observed_at": {"type": ["string", "null"], "format": "date-time"},
-                  "lease_expires_at": {"type": ["string", "null"], "format": "date-time"}
+                  "observed_at": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "format": "date-time"
+                  },
+                  "lease_expires_at": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "format": "date-time"
+                  }
                 }
               }
             }
@@ -148,51 +354,187 @@
         }
       }
     },
-
     "activityLane": {
       "type": "object",
       "additionalProperties": false,
-      "allOf": [{"$ref": "#/$defs/itemsLane"}],
+      "allOf": [
+        {
+          "$ref": "#/$defs/itemsLane"
+        }
+      ],
       "properties": {
-        "state": true, "detail": true, "observed_at": true, "latency_ms": true, "truncated": true,
+        "state": true,
+        "detail": true,
+        "observed_at": true,
+        "latency_ms": true,
+        "truncated": true,
         "items": {
           "type": "array",
           "maxItems": 64,
           "items": {
             "type": "object",
             "additionalProperties": false,
-            "required": ["activity_id", "kind", "status", "outcome", "summary"],
+            "required": [
+              "activity_id",
+              "kind",
+              "status",
+              "outcome",
+              "summary"
+            ],
             "properties": {
-              "activity_id": {"type": "string", "minLength": 1, "maxLength": 64},
-              "kind": {"enum": ["voice_turn", "guard_event", "device_command", "device_event", "background_job"]},
-              "companion_id": {"type": ["string", "null"], "maxLength": 64},
-              "status": {"type": "string", "minLength": 1, "maxLength": 32},
-              "outcome": {"$ref": "https://eidolon.dev/contracts/audit/v1/envelope.schema.json#/properties/outcome"},
-              "summary": {"type": "string", "maxLength": 512},
-              "turn_id": {"type": ["string", "null"], "maxLength": 64},
-              "origin_device_id": {"type": ["string", "null"], "maxLength": 128},
-              "target_device_ids": {"type": "array", "maxItems": 16, "items": {"type": "string", "maxLength": 128}},
-              "current_hop_id": {"type": ["string", "null"], "maxLength": 64},
-              "started_at": {"type": ["string", "null"], "format": "date-time"},
-              "updated_at": {"type": ["string", "null"], "format": "date-time"},
-              "finished_at": {"type": ["string", "null"], "format": "date-time"},
+              "activity_id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 64
+              },
+              "kind": {
+                "enum": [
+                  "voice_turn",
+                  "guard_event",
+                  "device_command",
+                  "device_event",
+                  "background_job"
+                ]
+              },
+              "companion_id": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "maxLength": 64
+              },
+              "status": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 32
+              },
+              "outcome": {
+                "$ref": "https://eidolon.dev/contracts/audit/v1/envelope.schema.json#/properties/outcome"
+              },
+              "summary": {
+                "type": "string",
+                "maxLength": 512
+              },
+              "turn_id": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "maxLength": 64
+              },
+              "origin_device_id": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "maxLength": 128
+              },
+              "target_device_ids": {
+                "type": "array",
+                "maxItems": 16,
+                "items": {
+                  "type": "string",
+                  "maxLength": 128
+                }
+              },
+              "current_hop_id": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "maxLength": 64
+              },
+              "started_at": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "format": "date-time"
+              },
+              "updated_at": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "format": "date-time"
+              },
+              "finished_at": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "format": "date-time"
+              },
               "route": {
                 "type": "array",
                 "maxItems": 32,
                 "items": {
                   "type": "object",
                   "additionalProperties": false,
-                  "required": ["hop_id", "node_type", "label", "status"],
+                  "required": [
+                    "hop_id",
+                    "node_type",
+                    "label",
+                    "status"
+                  ],
                   "properties": {
-                    "hop_id": {"type": "string", "minLength": 1, "maxLength": 64},
-                    "node_type": {"enum": ["device", "companion", "service", "memory", "tool", "provider"]},
-                    "node_id": {"type": "string", "maxLength": 128, "default": ""},
-                    "label": {"type": "string", "minLength": 1, "maxLength": 96},
-                    "stage": {"type": "string", "maxLength": 32, "default": ""},
-                    "status": {"type": "string", "minLength": 1, "maxLength": 32},
-                    "direction": {"enum": ["in", "out", "internal"], "default": "internal"},
-                    "ts": {"type": ["string", "null"], "format": "date-time"},
-                    "latency_ms": {"type": ["number", "null"], "minimum": 0}
+                    "hop_id": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 64
+                    },
+                    "node_type": {
+                      "enum": [
+                        "device",
+                        "companion",
+                        "service",
+                        "memory",
+                        "tool",
+                        "provider"
+                      ]
+                    },
+                    "node_id": {
+                      "type": "string",
+                      "maxLength": 128,
+                      "default": ""
+                    },
+                    "label": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 96
+                    },
+                    "stage": {
+                      "type": "string",
+                      "maxLength": 32,
+                      "default": ""
+                    },
+                    "status": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 32
+                    },
+                    "direction": {
+                      "enum": [
+                        "in",
+                        "out",
+                        "internal"
+                      ],
+                      "default": "internal"
+                    },
+                    "ts": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "format": "date-time"
+                    },
+                    "latency_ms": {
+                      "type": [
+                        "number",
+                        "null"
+                      ],
+                      "minimum": 0
+                    }
                   }
                 }
               }
@@ -201,45 +543,117 @@
         }
       }
     },
-
     "turnLane": {
       "type": "object",
       "additionalProperties": false,
-      "allOf": [{"$ref": "#/$defs/itemsLane"}],
+      "allOf": [
+        {
+          "$ref": "#/$defs/itemsLane"
+        }
+      ],
       "properties": {
-        "state": true, "detail": true, "observed_at": true, "latency_ms": true, "truncated": true,
+        "state": true,
+        "detail": true,
+        "observed_at": true,
+        "latency_ms": true,
+        "truncated": true,
         "items": {
           "type": "array",
           "maxItems": 32,
           "items": {
             "type": "object",
             "additionalProperties": false,
-            "required": ["turn_id", "companion_id", "status"],
+            "required": [
+              "turn_id",
+              "companion_id",
+              "status"
+            ],
             "properties": {
-              "turn_id": {"type": "string", "minLength": 1, "maxLength": 64},
-              "companion_id": {"type": "string", "minLength": 1, "maxLength": 64},
-              "device_id": {"type": ["string", "null"], "maxLength": 128},
-              "status": {"type": "string", "minLength": 1, "maxLength": 32},
-              "trigger": {"type": "string", "maxLength": 32, "default": ""},
-              "latency_ms": {"type": ["number", "null"], "minimum": 0},
+              "turn_id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 64
+              },
+              "companion_id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 64
+              },
+              "device_id": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "maxLength": 128
+              },
+              "status": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 32
+              },
+              "trigger": {
+                "type": "string",
+                "maxLength": 32,
+                "default": ""
+              },
+              "latency_ms": {
+                "type": [
+                  "number",
+                  "null"
+                ],
+                "minimum": 0
+              },
               "memory_hits": {
-                "type": ["integer", "null"],
+                "type": [
+                  "integer",
+                  "null"
+                ],
                 "minimum": 0,
                 "description": "Recall for this turn. A companion's recall is read from here rather than asked of the memory service per companion — which is also how the console computes it, and costs no extra cross-service read."
               },
-              "tool_names": {"type": "array", "maxItems": 16, "items": {"type": "string", "maxLength": 64}},
+              "tool_names": {
+                "type": "array",
+                "maxItems": 16,
+                "items": {
+                  "type": "string",
+                  "maxLength": 64
+                }
+              },
               "stages": {
                 "type": "array",
                 "maxItems": 16,
                 "items": {
                   "type": "object",
                   "additionalProperties": false,
-                  "required": ["key", "label", "status"],
+                  "required": [
+                    "key",
+                    "label",
+                    "status"
+                  ],
                   "properties": {
-                    "key": {"type": "string", "minLength": 1, "maxLength": 32, "description": "From the controlled stage vocabulary. An unknown key is compatible: a consumer lights nothing for it."},
-                    "label": {"type": "string", "minLength": 1, "maxLength": 32},
-                    "status": {"type": "string", "minLength": 1, "maxLength": 32},
-                    "latency_ms": {"type": ["number", "null"], "minimum": 0}
+                    "key": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 32,
+                      "description": "From the controlled stage vocabulary. An unknown key is compatible: a consumer lights nothing for it."
+                    },
+                    "label": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 32
+                    },
+                    "status": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 32
+                    },
+                    "latency_ms": {
+                      "type": [
+                        "number",
+                        "null"
+                      ],
+                      "minimum": 0
+                    }
                   }
                 }
               }
@@ -248,96 +662,219 @@
         }
       }
     },
-
     "jobLane": {
       "type": "object",
       "additionalProperties": false,
-      "allOf": [{"$ref": "#/$defs/itemsLane"}],
+      "allOf": [
+        {
+          "$ref": "#/$defs/itemsLane"
+        }
+      ],
       "properties": {
-        "state": true, "detail": true, "observed_at": true, "latency_ms": true, "truncated": true,
+        "state": true,
+        "detail": true,
+        "observed_at": true,
+        "latency_ms": true,
+        "truncated": true,
         "items": {
           "type": "array",
           "maxItems": 32,
           "items": {
             "type": "object",
             "additionalProperties": false,
-            "required": ["job_id", "kind", "status"],
+            "required": [
+              "job_id",
+              "kind",
+              "status"
+            ],
             "properties": {
-              "job_id": {"type": "string", "minLength": 1, "maxLength": 64},
-              "companion_id": {"type": ["string", "null"], "maxLength": 64},
-              "kind": {"type": "string", "minLength": 1, "maxLength": 64},
-              "status": {"type": "string", "minLength": 1, "maxLength": 32},
-              "summary": {"type": "string", "maxLength": 512, "default": ""}
+              "job_id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 64
+              },
+              "companion_id": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "maxLength": 64
+              },
+              "kind": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 64
+              },
+              "status": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 32
+              },
+              "summary": {
+                "type": "string",
+                "maxLength": 512,
+                "default": ""
+              }
             }
           }
         }
       }
     },
-
     "memoryLane": {
       "type": "object",
       "additionalProperties": false,
-      "allOf": [{"$ref": "#/$defs/laneHealth"}],
-      "required": ["state", "value"],
+      "allOf": [
+        {
+          "$ref": "#/$defs/laneHealth"
+        }
+      ],
+      "required": [
+        "state",
+        "value"
+      ],
       "properties": {
-        "state": true, "detail": true, "observed_at": true, "latency_ms": true,
+        "state": true,
+        "detail": true,
+        "observed_at": true,
+        "latency_ms": true,
         "value": {
-          "type": ["object", "null"],
+          "type": [
+            "object",
+            "null"
+          ],
           "additionalProperties": false,
           "description": "Per Owner, not per companion. A companion's own recall comes off its turn.",
           "properties": {
-            "realms_total": {"type": "integer", "minimum": 0},
-            "active_realm_id": {"type": "string", "maxLength": 64, "default": ""},
-            "runners_online": {"type": ["integer", "null"], "minimum": 0},
-            "runners_total": {"type": ["integer", "null"], "minimum": 0},
-            "last_write_disposition": {"type": "string", "maxLength": 64, "default": ""}
+            "realms_total": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "active_realm_id": {
+              "type": "string",
+              "maxLength": 64,
+              "default": ""
+            },
+            "runners_online": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0
+            },
+            "runners_total": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0
+            },
+            "last_write_disposition": {
+              "type": "string",
+              "maxLength": 64,
+              "default": ""
+            }
           }
         }
       }
     },
-
     "serviceLane": {
       "type": "object",
       "additionalProperties": false,
-      "allOf": [{"$ref": "#/$defs/itemsLane"}],
+      "allOf": [
+        {
+          "$ref": "#/$defs/itemsLane"
+        }
+      ],
       "properties": {
-        "state": true, "detail": true, "observed_at": true, "latency_ms": true, "truncated": true,
+        "state": true,
+        "detail": true,
+        "observed_at": true,
+        "latency_ms": true,
+        "truncated": true,
         "items": {
           "type": "array",
           "maxItems": 16,
           "items": {
             "type": "object",
             "additionalProperties": false,
-            "required": ["service_id", "tier", "online", "checked"],
+            "required": [
+              "service_id",
+              "tier",
+              "online",
+              "checked"
+            ],
             "properties": {
-              "service_id": {"type": "string", "minLength": 1, "maxLength": 64},
-              "display_name": {"type": "string", "maxLength": 64, "default": ""},
-              "code": {"type": "string", "maxLength": 64, "default": ""},
-              "mode": {"type": "string", "maxLength": 32, "default": ""},
-              "tier": {"enum": ["service", "middleware", "external"]},
-              "online": {"type": "boolean"},
+              "service_id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 64
+              },
+              "display_name": {
+                "type": "string",
+                "maxLength": 64,
+                "default": ""
+              },
+              "code": {
+                "type": "string",
+                "maxLength": 64,
+                "default": ""
+              },
+              "mode": {
+                "type": "string",
+                "maxLength": 32,
+                "default": ""
+              },
+              "tier": {
+                "enum": [
+                  "service",
+                  "middleware",
+                  "external"
+                ]
+              },
+              "online": {
+                "type": "boolean"
+              },
               "checked": {
                 "type": "boolean",
                 "description": "Whether anybody actually probed it. An unprobed service is unknown, not healthy, and this bit is what keeps a client from assuming otherwise."
               },
-              "latency_ms": {"type": ["number", "null"], "minimum": 0},
-              "detail": {"type": "string", "maxLength": 256, "default": ""}
+              "latency_ms": {
+                "type": [
+                  "number",
+                  "null"
+                ],
+                "minimum": 0
+              },
+              "detail": {
+                "type": "string",
+                "maxLength": 256,
+                "default": ""
+              }
             }
           }
         }
       }
     },
-
     "eventLane": {
       "type": "object",
       "additionalProperties": false,
-      "allOf": [{"$ref": "#/$defs/itemsLane"}],
+      "allOf": [
+        {
+          "$ref": "#/$defs/itemsLane"
+        }
+      ],
       "properties": {
-        "state": true, "detail": true, "observed_at": true, "latency_ms": true, "truncated": true,
+        "state": true,
+        "detail": true,
+        "observed_at": true,
+        "latency_ms": true,
+        "truncated": true,
         "items": {
           "type": "array",
           "maxItems": 200,
-          "items": {"$ref": "mission-control-event.schema.json"}
+          "items": {
+            "$ref": "mission-control-event.schema.json"
+          }
         }
       }
     }

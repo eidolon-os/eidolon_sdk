@@ -166,3 +166,33 @@ def test_event_vocabulary_is_the_audit_envelope_s() -> None:
     # Staged data must never be able to arrive claiming a Host said it.
     assert set(event["origin"]["enum"]) == mc.EVENT_ORIGINS
     assert "mock" not in event["origin"]["enum"]
+
+
+def test_the_companion_lifecycle_is_not_this_contracts_to_invent() -> None:
+    """One vocabulary, imported — not a second set that happens to look similar.
+
+    These two had already diverged: this contract said
+    active/pending/suspended/removed while the Companion authority publishes
+    active/retiring/archived/deleting. It was not a naming difference. An
+    archived Companion had no representable value here, so the first projection
+    carrying a real roster would have had to drop the row or invent a state, and
+    the goldens asserted a ``pending`` that no Host can ever send.
+
+    Asserted against the shared module rather than against a literal list, so
+    the next value the authority adds arrives here as one edit rather than as a
+    second opinion.
+    """
+
+    from eidolon_sdk.biz.contracts import companion, mission_control as mc
+
+    assert mc.COMPANION_LIFECYCLE_STATES == frozenset(
+        companion.COMPANION_LIFECYCLE_STATES
+    )
+
+    schema = _load(_V1 / "mission-control-snapshot.schema.json")
+    lane = schema["$defs"]["companionLane"]["properties"]["items"]["items"]
+    published = lane["properties"]["lifecycle_state"]["enum"]
+    assert tuple(published) == companion.COMPANION_LIFECYCLE_STATES, (
+        "the schema's order and membership are the shared vocabulary's, so a "
+        "generated client reads the same values in the same order whoever emits it"
+    )

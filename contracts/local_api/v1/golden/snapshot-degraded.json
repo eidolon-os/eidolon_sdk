@@ -34,7 +34,7 @@
         "companion_id": "companion-linyuan",
         "display_name": "临渊",
         "is_primary": false,
-        "lifecycle_state": "pending",
+        "lifecycle_state": "archived",
         "genome_id": null,
         "memory_realm_id": null
       }
