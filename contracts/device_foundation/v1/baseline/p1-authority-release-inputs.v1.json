@@ -1,0 +1,278 @@
+{
+  "manifest_version": "1.0",
+  "capture_kind": "p1-authority-continuity-release-inputs",
+  "captured_at": "2026-08-24T02:45:29.645981Z",
+  "capture_semantics": "Every entry records the exact committed P1 release input before this manifest file was added. The eidolon_sdk entry therefore names the parent input commit; the manifest commit itself is metadata and cannot contain its own SHA. A dirty workspace flag records unrelated uncommitted files, but release artifacts are built only from the captured commit tree and must pass clean-archive verification.",
+  "workspace_root": "/Users/manson/ai/eidolon",
+  "design_baseline": {
+    "repo": "docs",
+    "commit": "373ea2303d10988f88db8982ce2eadf0aa0afbda",
+    "subject": "权威 P1 Host/Authority 连续性与发布事务设计基线"
+  },
+  "artifact_digest_algorithm": "sha256(git-ls-tree-r-z-full-tree-output)",
+  "tool_versions": {
+    "git": "2.50.1 (Apple Git-155)",
+    "python": "3.13.13",
+    "uv": "0.11.14",
+    "node": "24.15.0",
+    "npm": "11.12.1",
+    "flutter": "3.44.7 / Dart 3.12.2",
+    "idf_py": "ESP-IDF v5.5.4"
+  },
+  "repositories": [
+    {
+      "repo": "docs",
+      "path": "docs",
+      "remote": "git@git.aimanthor.com:eidolon/docs.git",
+      "branch": "main",
+      "head_sha": "8b3ae32905e3677953e4d06c66be8c9b90467e97",
+      "dirty": false,
+      "participation": "indirect",
+      "reason": "Normative P1 RestoreAuthority, release-transaction, ACL and recovery boundary baseline; implementation is judged against commit 373ea230.",
+      "required_tests": [
+        "verify-design-baseline-commit"
+      ],
+      "artifact_digest": "sha256:4a9f8e624f79fe26c8a911620f126012f6bfd3cb891b89fc9e40dc98e441816d"
+    },
+    {
+      "repo": "eidolon-client-esp32",
+      "path": "eidolon-client-esp32",
+      "remote": "git@gitlab.aimanthor.com:eidolon/eidolon_client_esp32.git",
+      "branch": "main",
+      "head_sha": "7864966258d663efb847a2df6a3b2518fec770f0",
+      "dirty": false,
+      "participation": "direct",
+      "reason": "Generation-fencing consumer used only for simulator or read-only evidence; no device-side state mutation is authorized in this release.",
+      "required_tests": [
+        "source ESP-IDF v5.5.4 then run every tests/run_*tests.sh",
+        "P1-EVIDENCE::simulator/read-only generation-1 credential, event and DeviceRef fencing against generation 2"
+      ],
+      "artifact_digest": "sha256:ca6f8f30b806b422fb672c1dcf38da2a990969295f76feae40aae46db11e632e"
+    },
+    {
+      "repo": "eidolon-official-site",
+      "path": "eidolon-official-site",
+      "remote": "git@git.aimanthor.com:eidolon/eidolon-official-site.git",
+      "branch": "main",
+      "head_sha": "830f7cca9d6b0c543d9c0b092b01eda37ee46a12",
+      "dirty": false,
+      "participation": "out-of-scope",
+      "reason": "No device governance producer or consumer dependency found.",
+      "required_tests": [
+        "device-foundation-dependency-scan"
+      ],
+      "artifact_digest": "sha256:9668625379f3c57ed105c61210266d9996bc9908b0f549f9ad3fd4770364135d"
+    },
+    {
+      "repo": "eidolon_admin",
+      "path": "eidolon_admin",
+      "remote": "git@gitlab.aimanthor.com:eidolon/eidolon_admin.git",
+      "branch": "main",
+      "head_sha": "75af4451b79750d29aaf1c6d218143fd2d1b5051",
+      "dirty": false,
+      "participation": "direct",
+      "reason": "P1 Linux evidence depends on Local API multi-UID and SO_PEERCRED enforcement; no P2 producer work is included.",
+      "required_tests": [
+        "server/tests/test_control_plane_clients.py",
+        "server/tests/test_controller_device_admission.py",
+        "server/tests/test_local_device_admissions.py",
+        "server/tests/test_control_plane_process_e2e.py"
+      ],
+      "artifact_digest": "sha256:69f32f3b12f264a0638eca96e37134eb1ed35d29c50031da186defd1640709ff"
+    },
+    {
+      "repo": "eidolon_agent",
+      "path": "eidolon_agent",
+      "remote": "git@gitlab.aimanthor.com:eidolon/eidolon_agent.git",
+      "branch": "main",
+      "head_sha": "51adc9164adf9597dbb5dd0223e2c6a2ba4f98f4",
+      "dirty": true,
+      "dirty_note": "Pre-existing uv.lock modification belongs to another task and is excluded from the captured commit tree.",
+      "participation": "indirect",
+      "reason": "Runtime release dependency only; no P1 source change is required.",
+      "required_tests": [
+        "device-foundation-dependency-scan"
+      ],
+      "artifact_digest": "sha256:2bdb13b4125491f36275a9d2716dd85d07b24c8ff39ffab005bd616063e5cbf0"
+    },
+    {
+      "repo": "eidolon_channel",
+      "path": "eidolon_channel",
+      "remote": "git@gitlab.aimanthor.com:eidolon/eidolon_channel.git",
+      "branch": "main",
+      "head_sha": "95844e05d83bd0982d5486c3b0d683445cb4f382",
+      "dirty": false,
+      "participation": "indirect",
+      "reason": "Runtime release dependency only; Channel generation and Delivery Port work are explicit non-goals.",
+      "required_tests": [
+        "eidolon/channel_provider/tests/test_contracts.py",
+        "eidolon/channel_provider/tests/test_store_schema.py",
+        "eidolon/channel_provider/tests/test_service.py"
+      ],
+      "artifact_digest": "sha256:71598c4f6e3a19bc422269c79940df09862910c4c9eecc7de880a8d6b84c1ddf"
+    },
+    {
+      "repo": "eidolon_client_mobile",
+      "path": "eidolon_client_mobile",
+      "remote": "git@git.aimanthor.com:eidolon/eidolon_client_mobile.git",
+      "branch": "main",
+      "head_sha": "438984b02e2bdd79921ed49ef9149343cb856f69",
+      "dirty": false,
+      "participation": "indirect",
+      "reason": "Read-only generation-fencing consumer evidence only; Mobile projection changes are explicit non-goals.",
+      "required_tests": [
+        "test/owner_domain_directory_verifier_test.dart",
+        "test/device_setup_coordinator_test.dart",
+        "test/platform_device_provisioning_test.dart",
+        "test/hub_onboarding_client_test.dart",
+        "test/mobile_conversation_provisioner_test.dart",
+        "flutter analyze"
+      ],
+      "artifact_digest": "sha256:687aca5a015efec4947a9a743c3d1f9a06352cd2ad24585bb5ec9312e90f8fba"
+    },
+    {
+      "repo": "eidolon_client_web",
+      "path": "eidolon_client_web",
+      "remote": "git@gitlab.aimanthor.com:eidolon/eidolon_client_web.git",
+      "branch": "main",
+      "head_sha": "ecc5c69ec043557c1afd4c9c5f580ec28bfa6958",
+      "dirty": false,
+      "participation": "out-of-scope",
+      "reason": "No external Body Device admission or management consumer found.",
+      "required_tests": [
+        "device-foundation-dependency-scan"
+      ],
+      "artifact_digest": "sha256:f2afc2d6917b450f320387052c11c7d3abfab27d62254324352b6a57f7f677a4"
+    },
+    {
+      "repo": "eidolon_data",
+      "path": "eidolon_data",
+      "remote": "git@git.aimanthor.com:eidolon/eidolon_data.git",
+      "branch": "main",
+      "head_sha": "48dcb412750953e4f72fe1c078d94248a73f4ac6",
+      "dirty": true,
+      "dirty_note": "Pre-existing uv.lock modification belongs to another task and is excluded from the captured commit tree.",
+      "participation": "indirect",
+      "reason": "Runtime release dependency and current physical schema input; no unrelated identity-schema work is included in P1.",
+      "required_tests": [
+        "device-foundation-dependency-scan"
+      ],
+      "artifact_digest": "sha256:9d348f9c534ad863f28b69a30a8d08b2997ec7840c2397b39b11cb0c3982bdff"
+    },
+    {
+      "repo": "eidolon_hub",
+      "path": "eidolon_hub",
+      "remote": "git@gitlab.aimanthor.com:eidolon/eidolon_hub.git",
+      "branch": "main",
+      "head_sha": "a6aaec1d69a7d37aa153de73415418d2b3a8c50e",
+      "dirty": false,
+      "participation": "direct",
+      "reason": "Owns the Hub Authority database, marker, lineage anchor and the Claim/CommandResult/tombstone/outbox/inbox/cursor state restored as one same-generation snapshot.",
+      "required_tests": [
+        "tests/architecture/test_dependency_boundaries.py",
+        "tests/contract/test_json_schema_contracts.py",
+        "tests/component/test_composition_routes.py",
+        "tests/functional/test_https_device_onboarding_flow.py",
+        "tests/unit/adapters/test_zeroconf_advertiser.py",
+        "tests/unit/test_production_config.py"
+      ],
+      "artifact_digest": "sha256:2da06144ead4c59b41f4a028d5c1db2a51574bd53c833d95a6e711a860b64d7a"
+    },
+    {
+      "repo": "eidolon_kernel",
+      "path": "eidolon_kernel",
+      "remote": "git@git.aimanthor.com:eidolon/eidolon_kernel.git",
+      "branch": "main",
+      "head_sha": "941e4eb4b427e235dc90627790167cb3f438820c",
+      "dirty": false,
+      "participation": "direct",
+      "reason": "Owns sealed component activation, durable cutover receipts and the forward-only persistent-state barrier.",
+      "required_tests": [
+        "pytest -q",
+        "tests/deploy/test_activation.py::test_forward_only_failure_before_persistent_barrier_restores_previous_targets",
+        "tests/deploy/test_activation.py::test_forward_only_failure_after_persistent_barrier_requires_forward_fix",
+        "tests/deploy/test_activation.py::test_explicit_rollback_is_forbidden_for_forward_only_release"
+      ],
+      "artifact_digest": "sha256:40fd48c01be302ab35b4c8dda3b813810b4e8722b42e1c978d209f73eecaeedb"
+    },
+    {
+      "repo": "eidolon_memory",
+      "path": "eidolon_memory",
+      "remote": "git@gitlab.aimanthor.com:eidolon/eidolon_memory.git",
+      "branch": "main",
+      "head_sha": "bad7f668bb2b645cdf39719c354855ace34d8bb9",
+      "dirty": false,
+      "local_deployment_input_note": "The ignored local Pi5 profile selected hub_https_port=9443 for Host B; it is a deployment parameter, not a committed source artifact.",
+      "participation": "indirect",
+      "reason": "Runtime release dependency only; no P1 source change is required.",
+      "required_tests": [
+        "device-foundation-dependency-scan"
+      ],
+      "artifact_digest": "sha256:425677e5a3b92db8fe147d5dc16fa4e5961fcd8a59639f2c98678c8355a69ba3"
+    },
+    {
+      "repo": "eidolon_ops",
+      "path": "eidolon_ops",
+      "remote": null,
+      "branch": "main",
+      "head_sha": "e826c8e44975fd22e0b298903c8719477727e16e",
+      "dirty": false,
+      "participation": "direct",
+      "reason": "Implements explicit same-generation RestoreAuthority, Host/component/schema/lineage cutover evidence, exact sensitive-stage reclamation and ACL drift refusal.",
+      "required_tests": [
+        "pytest -q",
+        "tests/test_authority_restore.py",
+        "tests/test_release_cutover.py",
+        "tests/test_release_reclamation.py",
+        "P1-EVIDENCE::formal Pi5 prepare/dry-run/activate/reclaim and cutover receipt",
+        "P1-EVIDENCE::Pi5 multi-UID/SO_PEERCRED, ACL/ownership, cold start, crash/restart and readiness"
+      ],
+      "artifact_digest": "sha256:bf659fb78ba87dc1f9805bce03d9b0b76b4d89db04ba7aa50074705cd02aa3c1"
+    },
+    {
+      "repo": "eidolon_sdk",
+      "path": "eidolon_sdk",
+      "remote": "git@gitlab.aimanthor.com:eidolon/eidolon_sdk.git",
+      "branch": "main",
+      "head_sha": "76612a2d1cfaccc8c791a6066a791f4b41ed8901",
+      "dirty": false,
+      "participation": "direct",
+      "reason": "Owns this exact all-repository release manifest and Device Foundation conformance evidence; the captured SHA is the parent input commit by construction.",
+      "required_tests": [
+        "python contracts/device_foundation/v1/conformance/run.py",
+        "python contracts/device_foundation/v1/generation/generate.py --check",
+        "pytest tests/contracts/test_authority_locator_v1.py tests/contracts/test_device_foundation_v1.py tests/contracts/test_client_contract_mirrors.py"
+      ],
+      "artifact_digest": "sha256:2737a6a83fb82faed23cb084a36b089771d63582e9e7a309d5ece291ff2ea409"
+    },
+    {
+      "repo": "eidolon_vision",
+      "path": "eidolon_vision",
+      "remote": "git@git.aimanthor.com:eidolon/eidolon_vision.git",
+      "branch": "feat/vision-runtime-layering",
+      "head_sha": "206588f917d7e4cff438f4ee7fdf03fd3d418b10",
+      "dirty": false,
+      "participation": "out-of-scope",
+      "reason": "Runtime Hub ingress URL is an adapter setting; no persisted Device Foundation identity dependency found.",
+      "required_tests": [
+        "device-foundation-dependency-scan"
+      ],
+      "artifact_digest": "sha256:728362692dc764c69935e5a46a656363c50518ea7e5c0b0b782ec7ebc08d7720"
+    },
+    {
+      "repo": "vendor/client-sdk-esp32",
+      "path": "vendor/client-sdk-esp32",
+      "remote": "git@github.com:eidolon-os/client-sdk-esp32.git",
+      "branch": "eidolon_dev",
+      "head_sha": "502ce391bf01c47dea74e1dd651c5b8945ca8906",
+      "dirty": false,
+      "participation": "out-of-scope",
+      "reason": "External vendored Git project discovered beyond the design list; explicitly tracked but not modified. Its integration branch is not an Eidolon product development branch.",
+      "required_tests": [
+        "device-foundation-dependency-scan",
+        "explicit-external-branch-exception"
+      ],
+      "artifact_digest": "sha256:84d98d40c4ebbe85a940314ec1253c242f525f94178dbd224aad62bb3f44d6fe"
+    }
+  ]
+}
