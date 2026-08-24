@@ -1,13 +1,61 @@
 {
   "manifest_version": "1.0",
   "capture_kind": "p1-authority-continuity-release-inputs",
-  "captured_at": "2026-08-24T02:56:18.360726Z",
+  "captured_at": "2026-08-24T04:14:17.182608Z",
   "capture_semantics": "Every entry records the exact committed P1 release input before this manifest file was added. The eidolon_sdk entry therefore names the parent input commit; the manifest commit itself is metadata and cannot contain its own SHA. A dirty workspace flag records unrelated uncommitted files, but release artifacts are built only from the captured commit tree and must pass clean-archive verification.",
   "workspace_root": "/Users/manson/ai/eidolon",
   "design_baseline": {
     "repo": "docs",
     "commit": "373ea2303d10988f88db8982ce2eadf0aa0afbda",
     "subject": "权威 P1 Host/Authority 连续性与发布事务设计基线"
+  },
+  "pi5_release_evidence": {
+    "schema_changing_attempt": {
+      "release_id": "20260824-p1-authority-cutover-9",
+      "cutover_mode": "forward-only",
+      "result": "forward_fix_required",
+      "receipt": "/var/lib/eidolon/deployments/20260824-p1-authority-cutover-9-f8e824bdcccf4631acec9af827e7caa8/receipt.json",
+      "persistent_state_mutated": true,
+      "sources": {
+        "eidolon_kernel": "941e4eb4b427e235dc90627790167cb3f438820c",
+        "eidolon_data": "48dcb412750953e4f72fe1c078d94248a73f4ac6",
+        "eidolon_hub": "a6aaec1d69a7d37aa153de73415418d2b3a8c50e",
+        "eidolon_admin": "75af4451b79750d29aaf1c6d218143fd2d1b5051",
+        "eidolon_agent": "51adc9164adf9597dbb5dd0223e2c6a2ba4f98f4",
+        "eidolon_channel": "95844e05d83bd0982d5486c3b0d683445cb4f382",
+        "eidolon_memory": "bad7f668bb2b645cdf39719c354855ace34d8bb9",
+        "eidolon_sdk": "39f5d9c7a8e3643f5f37c456a7c86e3553821685"
+      }
+    },
+    "active_same_schema_forward_fix": {
+      "release_id": "20260824-p1-authority-forward-fix-12",
+      "cutover_mode": "forward-only",
+      "status": "activated",
+      "transaction_id": "5d7dc06a5fc142bea2c32246941703fd",
+      "receipt": "/var/lib/eidolon/deployments/20260824-p1-authority-forward-fix-12-5d7dc06a5fc142bea2c32246941703fd/receipt.json",
+      "host_cutover_receipt": "/var/lib/eidolon/deployments/20260824-p1-authority-forward-fix-12-host-a4b99c1e208047cd9e85739746604cbc/cutover.json",
+      "bundle_sha256": "f8d6ac18354207769978aec66c719ef8785f7bf185432e70bdd3333fd87339f4",
+      "release_tool_package_sha256": "b9095a79c0183cd40f83dc79792c680a165946d4f25b0a096400cba4b7a20d73",
+      "activation_controller": "eidolon_ops@7dbcdba70ba9dbfaaa76ea2c5df5f42512494a66",
+      "sources": {
+        "eidolon_kernel": "a12c04e54d228c4292349535581b91c6293f8d81",
+        "eidolon_data": "1479580f2f652a147f692b003f5a800a24446d3a",
+        "eidolon_hub": "a6aaec1d69a7d37aa153de73415418d2b3a8c50e",
+        "eidolon_admin": "51949903a93501285d3abad1f13a2e2aad40cb5b",
+        "eidolon_agent": "6e60bed38745554b66cf32301611f23a1aa4ac0d",
+        "eidolon_channel": "9800288bfc195c851620393d5ecdcf7a8ac5b566",
+        "eidolon_memory": "b67b55285548ecd14d1f6489690b151acd3e6bc4",
+        "eidolon_sdk": "d7c458abac432eda471e453c273f3ea61bd5c74f"
+      }
+    },
+    "same_generation_restore": {
+      "controller": "eidolon_ops@8672b72b0dc1cab87985c0294d3d5ee845ffa151",
+      "owner_domain_generation": 2,
+      "generation_advanced": false,
+      "commissioning_required": false,
+      "replay_status": "authority_restored",
+      "app_readiness": "app_ready"
+    }
   },
   "artifact_digest_algorithm": "sha256(git-ls-tree-r-z-full-tree-output)",
   "tool_versions": {
@@ -25,14 +73,15 @@
       "path": "docs",
       "remote": "git@git.aimanthor.com:eidolon/docs.git",
       "branch": "main",
-      "head_sha": "8b3ae32905e3677953e4d06c66be8c9b90467e97",
-      "dirty": false,
+      "head_sha": "9b379812bffb2e8f3a3d03fd4732cc0280078dcc",
+      "dirty": true,
+      "dirty_note": "The normative design document has an uncommitted shared-task edit and is excluded from the captured commit tree; this P1 task did not overwrite it.",
       "participation": "indirect",
       "reason": "Normative P1 RestoreAuthority, release-transaction, ACL and recovery boundary baseline; implementation is judged against commit 373ea230.",
       "required_tests": [
         "verify-design-baseline-commit"
       ],
-      "artifact_digest": "sha256:4a9f8e624f79fe26c8a911620f126012f6bfd3cb891b89fc9e40dc98e441816d"
+      "artifact_digest": "sha256:2674d3344d6128c6396270925311634734b66332b4af94f9cb84903b3acd87e1"
     },
     {
       "repo": "eidolon-client-esp32",
@@ -68,8 +117,9 @@
       "path": "eidolon_admin",
       "remote": "git@gitlab.aimanthor.com:eidolon/eidolon_admin.git",
       "branch": "main",
-      "head_sha": "75af4451b79750d29aaf1c6d218143fd2d1b5051",
-      "dirty": false,
+      "head_sha": "c9309cb9868c656a1382443dd5894465169038c5",
+      "dirty": true,
+      "dirty_note": "Uncommitted operator-plane/server/web changes belong to another task and are excluded from the captured commit tree.",
       "participation": "direct",
       "reason": "P1 Linux evidence depends on Local API multi-UID and SO_PEERCRED enforcement; no P2 producer work is included.",
       "required_tests": [
@@ -78,7 +128,7 @@
         "server/tests/test_local_device_admissions.py",
         "server/tests/test_control_plane_process_e2e.py"
       ],
-      "artifact_digest": "sha256:69f32f3b12f264a0638eca96e37134eb1ed35d29c50031da186defd1640709ff"
+      "artifact_digest": "sha256:2f38a96ab6ca253758a9f21ada5ce724ad9c19f7a926602af6e9e78781c78e86"
     },
     {
       "repo": "eidolon_agent",
@@ -87,7 +137,7 @@
       "branch": "main",
       "head_sha": "51adc9164adf9597dbb5dd0223e2c6a2ba4f98f4",
       "dirty": true,
-      "dirty_note": "Pre-existing uv.lock modification belongs to another task and is excluded from the captured commit tree.",
+      "dirty_note": "The pre-existing uv.lock modification belongs to another task and is excluded from the captured commit tree.",
       "participation": "indirect",
       "reason": "Runtime release dependency only; no P1 source change is required.",
       "required_tests": [
@@ -149,15 +199,15 @@
       "path": "eidolon_data",
       "remote": "git@git.aimanthor.com:eidolon/eidolon_data.git",
       "branch": "main",
-      "head_sha": "48dcb412750953e4f72fe1c078d94248a73f4ac6",
+      "head_sha": "5377916a96e7d2130f5bb3b3c6df4e463889a3c5",
       "dirty": true,
-      "dirty_note": "Pre-existing uv.lock modification belongs to another task and is excluded from the captured commit tree.",
+      "dirty_note": "The pre-existing uv.lock modification belongs to another task and is excluded from the captured commit tree.",
       "participation": "indirect",
       "reason": "Runtime release dependency and current physical schema input; no unrelated identity-schema work is included in P1.",
       "required_tests": [
         "device-foundation-dependency-scan"
       ],
-      "artifact_digest": "sha256:9d348f9c534ad863f28b69a30a8d08b2997ec7840c2397b39b11cb0c3982bdff"
+      "artifact_digest": "sha256:e7faa5c00d017c51e90a546aec0735a4cfad1da6da5c06eb0616e5cf94a3978e"
     },
     {
       "repo": "eidolon_hub",
@@ -183,7 +233,7 @@
       "path": "eidolon_kernel",
       "remote": "git@git.aimanthor.com:eidolon/eidolon_kernel.git",
       "branch": "main",
-      "head_sha": "941e4eb4b427e235dc90627790167cb3f438820c",
+      "head_sha": "e3b2614f62eca4d8ec7e6f34a2d1b429b3a78936",
       "dirty": false,
       "participation": "direct",
       "reason": "Owns sealed component activation, durable cutover receipts and the forward-only persistent-state barrier.",
@@ -193,7 +243,7 @@
         "tests/deploy/test_activation.py::test_forward_only_failure_after_persistent_barrier_requires_forward_fix",
         "tests/deploy/test_activation.py::test_explicit_rollback_is_forbidden_for_forward_only_release"
       ],
-      "artifact_digest": "sha256:40fd48c01be302ab35b4c8dda3b813810b4e8722b42e1c978d209f73eecaeedb"
+      "artifact_digest": "sha256:00a85f1124632ccf8bc584f1c8caab84e847ae49f80b087fd16c399ae687f161"
     },
     {
       "repo": "eidolon_memory",
@@ -215,7 +265,7 @@
       "path": "eidolon_ops",
       "remote": null,
       "branch": "main",
-      "head_sha": "9371d8faa305bc69d5d558754fef4c6d7ca64794",
+      "head_sha": "8672b72b0dc1cab87985c0294d3d5ee845ffa151",
       "dirty": false,
       "participation": "direct",
       "reason": "Implements explicit same-generation RestoreAuthority, Host/component/schema/lineage cutover evidence, exact sensitive-stage reclamation and ACL drift refusal.",
@@ -227,14 +277,14 @@
         "P1-EVIDENCE::formal Pi5 prepare/dry-run/activate/reclaim and cutover receipt",
         "P1-EVIDENCE::Pi5 multi-UID/SO_PEERCRED, ACL/ownership, cold start, crash/restart and readiness"
       ],
-      "artifact_digest": "sha256:76224cd640c006c8d6fbc7fccf029b4a3275b2a77e0dc36c29529e54d7f16203"
+      "artifact_digest": "sha256:c3a2021b3d34ead232b8ef77ac52db4cb5386e80d622531fc12ca5be60b69e8b"
     },
     {
       "repo": "eidolon_sdk",
       "path": "eidolon_sdk",
       "remote": "git@gitlab.aimanthor.com:eidolon/eidolon_sdk.git",
       "branch": "main",
-      "head_sha": "39f5d9c7a8e3643f5f37c456a7c86e3553821685",
+      "head_sha": "915ddc71e6bf2f8d69b4b968b742b3bde3d0e68e",
       "dirty": false,
       "participation": "direct",
       "reason": "Owns this exact all-repository release manifest and Device Foundation conformance evidence; the captured SHA is the parent input commit by construction.",
@@ -243,7 +293,7 @@
         "python contracts/device_foundation/v1/generation/generate.py --check",
         "pytest tests/contracts/test_authority_locator_v1.py tests/contracts/test_device_foundation_v1.py tests/contracts/test_client_contract_mirrors.py"
       ],
-      "artifact_digest": "sha256:69126076ba4f7821235cec1a42b2baa5f8d487c7597cd6e9ff643715d71e7789"
+      "artifact_digest": "sha256:914a2ebeb2db7773520ec649f82791d92d3e30240bd5719a59c7921a34116a79"
     },
     {
       "repo": "eidolon_vision",

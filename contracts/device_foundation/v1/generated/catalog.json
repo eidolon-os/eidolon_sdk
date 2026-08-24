@@ -14,8 +14,8 @@
     },
     {
       "path": "baseline/p1-authority-release-inputs.v1.json",
-      "sha256": "248c74f1c693a82a0b109ac795aaccfa9179a7f98b4c652cd0ea233f4b7d84a1",
-      "size": 13087
+      "sha256": "c5c529b15660aed1738756ce67f81d79d15772209ef1c9ff79536f04aec185f7",
+      "size": 16036
     },
     {
       "path": "baseline/p1-pre-change-heads.v1.json",
@@ -230,5 +230,5 @@
   ],
   "generator": "device-foundation-v1-catalog",
   "generator_version": "1.0",
-  "source_digest": "sha256:5a0050cc3a2df07b826d8d734fe98e97d91074c60d0d7942269a31241afd8b70"
+  "source_digest": "sha256:811037b18056cd76b38d4af2ed2edf2cb7091b3c7fc217658ea0f0bdedfb4bd7"
 }
