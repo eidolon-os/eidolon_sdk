@@ -567,7 +567,7 @@
         "lifecycle/RemovalIntent",
         "lifecycle/RevokeClaim",
         "lifecycle/RevokeClaimResult",
-        "lifecycle/ClaimEventRecord",
+        "events/ClaimEventPage",
         "events/ClaimRevokedEvent"
       ],
       "producer_tests": [
@@ -742,6 +742,50 @@
       "consumer_tests": ["HUB::test_http_problem_mapping_preserves_owner_mismatch_and_actor_is_not_body_supplied"],
       "simulator_vectors": ["DF-PH2-DEVICE-REF-REJECTS-BUSINESS-OWNER-AS-DOMAIN"],
       "integration_tests": ["HUB::canonical-admission-http"],
+      "hil_tests": [], "status": "covered", "waiver_reason": null, "waiver_expires_at": null
+    },
+    {
+      "requirement_id": "DF-PH2B0-BINDING-001",
+      "normative_text_ref": "3.5/3.11/19.3.11 every published Admission command/resource/event/query/page/cursor MUST have generated Python/Dart/C++ bindings and unknown fields MUST fail closed",
+      "owner": "eidolon_sdk",
+      "schema_ids": ["admission/**", "events/ClaimActivatedEvent", "events/ClaimRevokedEvent", "events/ClaimEventPage"],
+      "producer_tests": ["SDK::test_python_generated_surface_exports_all_consumer_objects"],
+      "consumer_tests": ["SDK::test_dart_generated_binding_parses_envelope_and_rejects_unknown", "SDK::test_cpp_generated_consumer_surface_compiles"],
+      "simulator_vectors": ["examples/valid/admission-consumer-surface.json", "examples/invalid/admission-consumer-surface.json"],
+      "integration_tests": ["GENERATION::check_binding_coverage", "GENERATION::generate --check"],
+      "hil_tests": [], "status": "covered", "waiver_reason": null, "waiver_expires_at": null
+    },
+    {
+      "requirement_id": "DF-PH2B0-GRANT-WIRE-001",
+      "normative_text_ref": "3.12/9.5 ClaimGrant outer wire envelope MUST expose the complete canonical AAD and frozen HPKE suite before open and MUST match the sealed plaintext field-for-field",
+      "owner": "eidolon_sdk+eidolon_hub+eidolon-client-esp32",
+      "schema_ids": ["common/ClaimGrantAAD", "admission/ClaimGrantWireEnvelope", "admission/CollectClaimGrantResult"],
+      "producer_tests": ["SDK::test_claim_grant_wire_envelope_exposes_pre_open_aad_and_matches_plaintext"],
+      "consumer_tests": ["ESP32::ClaimGrantWireEnvelope-open-before-stage"],
+      "simulator_vectors": ["golden/claim-grant-wire-envelope.json", "golden/claim-grant-aad.json"],
+      "integration_tests": ["CONFORMANCE::check_claim_grant_wire_envelope"],
+      "hil_tests": [], "status": "covered", "waiver_reason": null, "waiver_expires_at": null
+    },
+    {
+      "requirement_id": "DF-PH2B0-CLAIM-STREAM-001",
+      "normative_text_ref": "3.7/3.9/19.3.11 ClaimActivated and ClaimRevoked MUST use strict canonical CloudEvents and a dedicated durable contiguous Claim stream; transport position MUST NOT enter business equality",
+      "owner": "eidolon_sdk+eidolon_hub+eidolon_kernel",
+      "schema_ids": ["events/ClaimActivatedEvent", "events/ClaimRevokedEvent", "events/ClaimEventCursor", "events/ClaimEventStreamItem", "events/ClaimEventPage"],
+      "producer_tests": ["SDK::test_claim_event_metadata_and_identity_fail_closed"],
+      "consumer_tests": ["SDK::test_claim_stream_position_is_transport_only_and_pages_are_contiguous"],
+      "simulator_vectors": ["golden/admission-event-stream.json"],
+      "integration_tests": ["CONFORMANCE::check_admission_event_stream", "HUB::canonical-claim-stream-restart"],
+      "hil_tests": [], "status": "covered", "waiver_reason": null, "waiver_expires_at": null
+    },
+    {
+      "requirement_id": "DF-PH2B0-RECOVERY-QUERY-001",
+      "normative_text_ref": "3.7/3.10/14/19.3.11 owner-scoped Proposal and Claim queries MUST expose authoritative recovery state without cross-Owner existence leakage",
+      "owner": "eidolon_sdk+eidolon_hub+eidolon_client_mobile",
+      "schema_ids": ["admission/EnrollmentRecoveryProjection", "admission/EnrollmentProposalQuery", "admission/EnrollmentProposalPage", "admission/ClaimQuery", "admission/ClaimPage"],
+      "producer_tests": ["HUB::owner-scoped-proposal-claim-recovery"],
+      "consumer_tests": ["MOBILE::canonical-admission-restart-projection"],
+      "simulator_vectors": ["examples/valid/admission-consumer-surface.json"],
+      "integration_tests": ["HUB::canonical-admission-target-composition"],
       "hil_tests": [], "status": "covered", "waiver_reason": null, "waiver_expires_at": null
     }
   ]

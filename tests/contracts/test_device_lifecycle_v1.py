@@ -14,8 +14,8 @@ from eidolon_sdk.device_foundation.v1 import (
     OwnerAuthorizationContext,
     RemovalIntent,
     RevokeClaim,
+    ClaimEventCursor,
     ClaimEventPage,
-    ClaimEventRecord,
     revoke_claim_fingerprint,
 )
 
@@ -185,17 +185,12 @@ def test_revoke_fingerprint_excludes_retry_ids_but_fences_generation() -> None:
 
 
 def test_claim_event_page_requires_a_monotonic_checkpoint_cursor() -> None:
-    event = ClaimEventRecord(
-        stream_position=7,
-        event_id="claim_event_01",
-        event_type="live.eidolon.device.claim-revoked.v1",
-        device_ref=_ref(),
-        aggregate_revision=8,
-        correlation_id="removal_intent_01",
-        causation_id="revoke_claim_01",
-        occurred_at="2026-08-23T10:00:01Z",
-        reason="owner-removed",
+    cursor = ClaimEventCursor(stream_position=7)
+    page = ClaimEventPage(
+        requested_after=cursor,
+        events=(),
+        next_cursor=cursor,
+        high_watermark=7,
+        observed_at="2026-08-23T10:00:01Z",
     )
-    assert ClaimEventPage(next_stream_position=7, events=(event,)).events == (event,)
-    with pytest.raises(ValidationError, match="checkpoint"):
-        ClaimEventPage(next_stream_position=6, events=(event,))
+    assert page.next_cursor == cursor

@@ -178,6 +178,7 @@
         "time": "2026-08-18T00:05:00Z",
         "datacontenttype": "application/json",
         "dataschema": "https://contracts.eidolon.live/device-foundation/v1/events/claim-activated-data.schema.json",
+        "audience": "eidolon-claim-consumers",
         "ownerdomainid": "owner-domain_01",
         "aggregaterev": 7,
         "correlationid": "intent_01",

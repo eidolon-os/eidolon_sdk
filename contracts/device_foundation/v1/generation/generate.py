@@ -61,12 +61,42 @@ def build_outputs(config: dict[str, object]) -> dict[Path, bytes]:
     return outputs
 
 
+def _binding_definitions() -> set[str]:
+    definitions = {"OwnerDomainId", "BusinessOwnerId", "DeviceRef", "ManifestRef", "ClaimGrantAAD"}
+    for relative in ("admission/schemas.schema.json", "events/schemas.schema.json"):
+        schema = json.loads((ROOT / relative).read_text(encoding="utf-8"))
+        definitions.update(schema["$defs"])
+    return definitions
+
+
+def check_binding_coverage(outputs: dict[Path, bytes]) -> None:
+    """Fail generation when a published schema definition has no three-language symbol."""
+
+    rendered = {path.suffix: value.decode("utf-8") for path, value in outputs.items() if path.suffix in {".py", ".dart", ".h"}}
+    overrides = {
+        (".dart", "AdmissionEventSource"): "admissionEventSourceV1",
+        (".h", "AdmissionEventSource"): "kAdmissionEventSource",
+    }
+    for definition in sorted(_binding_definitions()):
+        expected = {
+            ".py": definition,
+            ".dart": overrides.get((".dart", definition), f"{definition}V1"),
+            ".h": overrides.get((".h", definition), definition),
+        }
+        for suffix, symbol in expected.items():
+            if symbol not in rendered[suffix]:
+                raise RuntimeError(
+                    f"published definition {definition} has no {suffix[1:]} binding symbol {symbol}"
+                )
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--check", action="store_true")
     args = parser.parse_args()
     config = _load_config()
     outputs = build_outputs(config)
+    check_binding_coverage(outputs)
     if args.check:
         drift = [path for path, expected in outputs.items() if not path.exists() or path.read_bytes() != expected]
         if drift:

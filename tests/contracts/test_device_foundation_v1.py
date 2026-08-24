@@ -25,8 +25,8 @@ def _load_runner():
 
 def test_conformance_runner_passes() -> None:
     result = _load_runner().run()
-    assert result["schemas"] == 7
-    assert result["fixtures"] >= 60
+    assert result["schemas"] == 9
+    assert result["fixtures"] >= 100
     assert result["requirements"] >= 40
     assert result["state_vectors"] == 5
     assert result["claim_revoke_vectors"] == 1
@@ -87,6 +87,12 @@ def test_generated_ph2_bindings_are_sdk_local() -> None:
         assert output.is_file()
         text = output.read_text(encoding="utf-8")
         assert "accepted_manifest_digest" not in text
+        for symbol in (
+            "EnrollmentProposal", "DecideEnrollment", "ClaimGrantWireEnvelope",
+            "ClaimActivatedEvent", "ClaimRevokedEvent", "ClaimEventPage",
+            "EnrollmentProposalPage", "ClaimPage",
+        ):
+            assert symbol in text
 
 
 def test_baseline_repository_set_matches_workspace() -> None:

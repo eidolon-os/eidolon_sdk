@@ -1,0 +1,77 @@
+{
+  "cases": [
+    {
+      "case_id": "DF-PH2B0-EVENT-REJECTS-UNKNOWN-FIELD",
+      "schema": "https://contracts.eidolon.live/device-foundation/v1/events/schemas.schema.json",
+      "definition": "ClaimRevokedEvent",
+      "error_contains": "Additional properties",
+      "value": {
+        "specversion": "1.0", "id": "event_01", "source": "urn:eidolon:authority:admission",
+        "type": "live.eidolon.device.claim-revoked.v1", "subject": "device-instances/device_01",
+        "time": "2026-08-18T00:05:00Z", "datacontenttype": "application/json",
+        "dataschema": "https://contracts.eidolon.live/device-foundation/v1/events/claim-revoked-data.schema.json",
+        "audience": "eidolon-claim-consumers", "ownerdomainid": "owner-domain_01", "aggregaterev": 2,
+        "correlationid": "intent_01", "causationid": "command_01",
+        "data": {"device_ref": {"device_instance_id": "device_01", "owner_domain_id": "owner-domain_01", "owner_domain_generation": 3, "claim_generation": 2, "trust_epoch": 1}, "reason": "owner-removed", "revoked_at": "2026-08-18T00:05:00Z"},
+        "stream_position": 1
+      }
+    },
+    {
+      "case_id": "DF-PH2B0-EVENT-REJECTS-WRONG-AUDIENCE",
+      "schema": "https://contracts.eidolon.live/device-foundation/v1/events/schemas.schema.json",
+      "definition": "ClaimRevokedEvent",
+      "error_contains": "was expected",
+      "value": {
+        "specversion": "1.0", "id": "event_01", "source": "urn:eidolon:authority:admission",
+        "type": "live.eidolon.device.claim-revoked.v1", "subject": "device-instances/device_01",
+        "time": "2026-08-18T00:05:00Z", "datacontenttype": "application/json",
+        "dataschema": "https://contracts.eidolon.live/device-foundation/v1/events/claim-revoked-data.schema.json",
+        "audience": "eidolon-kernel-on-host-a", "ownerdomainid": "owner-domain_01", "aggregaterev": 2,
+        "correlationid": "intent_01", "causationid": "command_01",
+        "data": {"device_ref": {"device_instance_id": "device_01", "owner_domain_id": "owner-domain_01", "owner_domain_generation": 3, "claim_generation": 2, "trust_epoch": 1}, "reason": "owner-removed", "revoked_at": "2026-08-18T00:05:00Z"}
+      }
+    },
+    {
+      "case_id": "DF-PH2B0-EVENT-REJECTS-WRONG-DATASCHEMA",
+      "schema": "https://contracts.eidolon.live/device-foundation/v1/events/schemas.schema.json",
+      "definition": "ClaimRevokedEvent",
+      "error_contains": "was expected",
+      "value": {
+        "specversion": "1.0", "id": "event_01", "source": "urn:eidolon:authority:admission",
+        "type": "live.eidolon.device.claim-revoked.v1", "subject": "device-instances/device_01",
+        "time": "2026-08-18T00:05:00Z", "datacontenttype": "application/json",
+        "dataschema": "https://contracts.eidolon.live/device-foundation/v1/events/claim-activated-data.schema.json",
+        "audience": "eidolon-claim-consumers", "ownerdomainid": "owner-domain_01", "aggregaterev": 2,
+        "correlationid": "intent_01", "causationid": "command_01",
+        "data": {"device_ref": {"device_instance_id": "device_01", "owner_domain_id": "owner-domain_01", "owner_domain_generation": 3, "claim_generation": 2, "trust_epoch": 1}, "reason": "owner-removed", "revoked_at": "2026-08-18T00:05:00Z"}
+      }
+    },
+    {
+      "case_id": "DF-PH2B0-ENVELOPE-REJECTS-BUSINESS-OWNER-AS-DOMAIN",
+      "schema": "https://contracts.eidolon.live/device-foundation/v1/admission/schemas.schema.json",
+      "definition": "ClaimGrantWireEnvelope",
+      "error_contains": "does not match",
+      "value": {
+        "contract": "eidolon.device-foundation.claim-grant-envelope", "profile_id": "eidolon-trust-p256-hpke-v1",
+        "kem": "DHKEM-P256-HKDF-SHA256", "kdf": "HKDF-SHA256", "aead": "AES-128-GCM",
+        "recipient_handoff_key_id": "sha256:3333333333333333333333333333333333333333333333333333333333333333",
+        "encapsulated_key": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+        "ciphertext": "AAAAAAAAAAAAAAAAAAAAAA",
+        "aad": {
+          "contract": "eidolon.device-foundation.claim-grant-aad", "profile_id": "eidolon-trust-p256-hpke-v1",
+          "enrollment_id": "enrollment_01", "proposal_revision": 2, "device_instance_id": "device_01",
+          "hardware_evidence_digest": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+          "manifest_ref": {"manifest_id": "manifest_01", "revision": 2, "digest": "sha256:2222222222222222222222222222222222222222222222222222222222222222"},
+          "owner_domain_id": "owner_01", "owner_domain_generation": 3, "claim_generation": 2, "trust_epoch": 1, "grant_id": "grant_01"
+        }
+      }
+    },
+    {
+      "case_id": "DF-PH2B0-EVENT-CURSOR-REJECTS-NEGATIVE-POSITION",
+      "schema": "https://contracts.eidolon.live/device-foundation/v1/events/schemas.schema.json",
+      "definition": "ClaimEventCursor",
+      "error_contains": "less than the minimum",
+      "value": {"stream_id": "admission-claims-v1", "stream_position": -1}
+    }
+  ]
+}

@@ -197,44 +197,6 @@ class RevokeClaimResult(_Model):
         return _aware_datetime(value)
 
 
-class ClaimEventRecord(_Model):
-    operation: Literal["device.claim-event"] = "device.claim-event"
-    stream_position: int = Field(ge=1)
-    event_id: str = Field(min_length=3, max_length=128, pattern=_IDENTIFIER)
-    event_type: Literal["live.eidolon.device.claim-revoked.v1"]
-    device_ref: DeviceRef
-    aggregate_revision: int = Field(ge=1)
-    correlation_id: str = Field(min_length=3, max_length=128, pattern=_IDENTIFIER)
-    causation_id: str = Field(min_length=3, max_length=128, pattern=_IDENTIFIER)
-    occurred_at: datetime
-    reason: str = Field(min_length=1, max_length=256)
-
-    @field_validator("occurred_at", mode="before")
-    @classmethod
-    def _occurred_at(cls, value: object) -> object:
-        return _aware_datetime(value)
-
-
-class ClaimEventPage(_Model):
-    operation: Literal["device.claim-event-page"] = "device.claim-event-page"
-    next_stream_position: int = Field(ge=0)
-    events: tuple[ClaimEventRecord, ...] = Field(default=(), max_length=500)
-
-    @field_validator("events", mode="before")
-    @classmethod
-    def _event_array(cls, value: object) -> object:
-        return tuple(value) if isinstance(value, list) else value
-
-    @model_validator(mode="after")
-    def _cursor_coherence(self) -> ClaimEventPage:
-        positions = [event.stream_position for event in self.events]
-        if positions != sorted(set(positions)):
-            raise ValueError("Claim event stream positions must be strictly increasing")
-        if positions and self.next_stream_position != positions[-1]:
-            raise ValueError("Claim event cursor must checkpoint the last event")
-        return self
-
-
 def revoke_claim_fingerprint(command: RevokeClaim) -> str:
     """Fingerprint one semantic revoke mutation, excluding retry/audit metadata."""
 

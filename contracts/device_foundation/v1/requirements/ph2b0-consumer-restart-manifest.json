@@ -1,0 +1,81 @@
+{
+  "manifest": "eidolon.device-foundation.ph2b0-consumer-restart",
+  "version": "1.0",
+  "publish_gate": "upstream-only",
+  "sdk_parent": "6dc69ec4a42bbba79af79042b06e073c4b9b656f",
+  "activation_forbidden_until": [
+    "all listed consumers use the generated canonical bindings",
+    "legacy DTO and route scans are zero for the activated capability",
+    "Mobile-Hub-device ClaimActive E2E passes on one exact HEAD manifest"
+  ],
+  "consumers": [
+    {
+      "repo": "eidolon_client_mobile",
+      "audited_commit": "da7b43d",
+      "imports": ["lib/src/generated/device_foundation_v1.dart"],
+      "replace": [
+        "device_setup_models.dart handwritten PendingDeviceEnrollment/Page and DeviceAdmissionProgress",
+        "hub_onboarding_models.dart legacy enrollment/handoff DTOs",
+        "hub_onboarding_client.dart legacy /api/device-onboarding/v1 enrollments and handoff",
+        "local_api_client.dart legacy pending list and implicit approval"
+      ],
+      "restart": "persist stable create/decision/collect/ack command IDs plus Enrollment ID, expected proposal revision and last recovery cursor; query EnrollmentRecoveryProjection before replay",
+      "target_tests": [
+        "pending_review through approved_awaiting_handoff and grant_delivered remains visible",
+        "reply loss replays the same command and first result",
+        "Owner Domain and business Owner mismatch fail closed without existence leakage"
+      ]
+    },
+    {
+      "repo": "eidolon_kernel",
+      "audited_commit": "159136023",
+      "replace": [
+        "contracts/bindings.py handwritten Revoked-only HubClaimEventWire/Page",
+        "external/hub-claim-event-page.schema.json six-field DeviceRef",
+        "hub_http.py legacy /api/device-management/v1/claim-events adapter"
+      ],
+      "restart": "atomically validate and checkpoint ClaimEventCursor with inbox/outcome; never discard next_cursor or advance across CURSOR_GAP",
+      "target_tests": [
+        "ClaimActivated and ClaimRevoked strict source/type/subject/dataschema/audience validation",
+        "duplicate same source+id+bytes replays; same id with different bytes conflicts",
+        "cursor replay, real gap, process restart and high-watermark recovery"
+      ]
+    },
+    {
+      "repo": "eidolon-client-esp32",
+      "audited_commit": "e5f533250da25d4a44728ac9e22e529e39ec206a",
+      "replace": [
+        "ClaimGrant retrieval capability block caused by opaque sealed_grant",
+        "manual outer-envelope parsing in device_claim_consumer_core"
+      ],
+      "restart": "ProposalRecorded replays collect; GrantStaged replays ack; Active idempotently destroys handoff material before clearing Enrollment journal",
+      "target_tests": [
+        "canonicalize complete AAD before HPKE open",
+        "plaintext ClaimGrant matches envelope/AAD/local preconditions field-for-field",
+        "any Owner/Domain/generation/Manifest/AAD mutation fails before staging"
+      ]
+    },
+    {
+      "repo": "eidolon_admin",
+      "audited_commit": "604dc404",
+      "replace": [
+        "legacy pending directory and approval producer",
+        "legacy three-state device lifecycle projection"
+      ],
+      "restart": "read Hub owner-scoped recovery projection; do not infer ClaimActive from approval or an empty pending list",
+      "target_tests": ["explicit immutable Decision actor/context", "ApprovedAwaitingHandoff remains visible"]
+    },
+    {
+      "repo": "eidolon_hub",
+      "audited_commit": "e3bccd7291ad446dc09b04dde0d895aaf9315fc5",
+      "replace": [
+        "opaque sealed_grant response",
+        "CloudEvents without dataschema/audience",
+        "legacy flat /claim-events page",
+        "unit-test-only canonical router composition"
+      ],
+      "restart": "publish the SDK wire surface from an explicit non-default target composition with transactional Claim stream positions and owner-scoped recovery queries",
+      "target_tests": ["rollback/reply loss/publish failure/restart/concurrency/cursor replay-gap", "default Pi5 composition remains unchanged"]
+    }
+  ]
+}

@@ -173,8 +173,13 @@
         "profile_id": "eidolon-trust-p256-hpke-v1",
         "enrollment_id": "enrollment_01",
         "proposal_revision": 3,
+        "device_instance_id": "device_01",
         "hardware_evidence_digest": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
-        "manifest_digest": "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+        "manifest_ref": {
+          "manifest_id": "manifest_01",
+          "revision": 7,
+          "digest": "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+        },
         "owner_domain_id": "owner-domain_01",
         "owner_domain_generation": 3,
         "claim_generation": 2,

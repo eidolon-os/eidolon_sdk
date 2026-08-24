@@ -81,6 +81,18 @@ def main() -> None:
     ).hex()
     save("claim-grant-aad.json", aad)
 
+    envelope = load("claim-grant-wire-envelope.json")
+    encoded = rfc8785.dumps(envelope["envelope"]["aad"])
+    envelope["aad_canonical_utf8"] = encoded.decode()
+    envelope["aad_sha256"] = "sha256:" + hashlib.sha256(encoded).hexdigest()
+    save("claim-grant-wire-envelope.json", envelope)
+
+    stream = load("admission-event-stream.json")
+    stream["business_event_sha256"] = "sha256:" + hashlib.sha256(
+        rfc8785.dumps(stream["event"])
+    ).hexdigest()
+    save("admission-event-stream.json", stream)
+
 
 if __name__ == "__main__":
     main()

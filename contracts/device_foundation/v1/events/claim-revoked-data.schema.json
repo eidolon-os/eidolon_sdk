@@ -1,0 +1,6 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contracts.eidolon.live/device-foundation/v1/events/claim-revoked-data.schema.json",
+  "title": "ClaimRevoked event data V1",
+  "$ref": "schemas.schema.json#/$defs/ClaimRevokedData"
+}

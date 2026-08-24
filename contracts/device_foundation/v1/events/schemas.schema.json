@@ -44,6 +44,7 @@
         "time",
         "datacontenttype",
         "dataschema",
+        "audience",
         "ownerdomainid",
         "aggregaterev",
         "correlationid",
@@ -61,6 +62,7 @@
         "dataschema": {
           "const": "https://contracts.eidolon.live/device-foundation/v1/events/claim-activated-data.schema.json"
         },
+        "audience": { "const": "eidolon-claim-consumers" },
         "ownerdomainid": { "$ref": "../common/schemas.schema.json#/$defs/OwnerDomainId" },
         "aggregaterev": { "type": "integer", "minimum": 1 },
         "correlationid": { "$ref": "../common/schemas.schema.json#/$defs/Identifier" },
@@ -83,7 +85,7 @@
       "additionalProperties": false,
       "required": [
         "specversion", "id", "source", "type", "subject", "time",
-        "datacontenttype", "dataschema", "ownerdomainid", "aggregaterev",
+        "datacontenttype", "dataschema", "audience", "ownerdomainid", "aggregaterev",
         "correlationid", "causationid", "data"
       ],
       "properties": {
@@ -97,11 +99,54 @@
         "dataschema": {
           "const": "https://contracts.eidolon.live/device-foundation/v1/events/claim-revoked-data.schema.json"
         },
+        "audience": { "const": "eidolon-claim-consumers" },
         "ownerdomainid": { "$ref": "../common/schemas.schema.json#/$defs/OwnerDomainId" },
         "aggregaterev": { "type": "integer", "minimum": 1 },
         "correlationid": { "$ref": "../common/schemas.schema.json#/$defs/Identifier" },
         "causationid": { "$ref": "../common/schemas.schema.json#/$defs/Identifier" },
         "data": { "$ref": "#/$defs/ClaimRevokedData" }
+      }
+    },
+    "ClaimEventCursor": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["stream_id", "stream_position"],
+      "properties": {
+        "stream_id": { "const": "admission-claims-v1" },
+        "stream_position": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "ClaimEventStreamItem": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["stream_position", "event"],
+      "properties": {
+        "stream_position": { "type": "integer", "minimum": 1 },
+        "event": {
+          "oneOf": [
+            { "$ref": "#/$defs/ClaimActivatedEvent" },
+            { "$ref": "#/$defs/ClaimRevokedEvent" }
+          ]
+        }
+      }
+    },
+    "ClaimEventPage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "stream_id", "requested_after", "events", "next_cursor",
+        "high_watermark", "observed_at"
+      ],
+      "properties": {
+        "stream_id": { "const": "admission-claims-v1" },
+        "requested_after": { "$ref": "#/$defs/ClaimEventCursor" },
+        "events": {
+          "type": "array", "maxItems": 500,
+          "items": { "$ref": "#/$defs/ClaimEventStreamItem" }
+        },
+        "next_cursor": { "$ref": "#/$defs/ClaimEventCursor" },
+        "high_watermark": { "type": "integer", "minimum": 0 },
+        "observed_at": { "type": "string", "format": "date-time" }
       }
     }
   }

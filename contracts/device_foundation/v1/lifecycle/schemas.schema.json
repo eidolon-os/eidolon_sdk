@@ -20,7 +20,7 @@
       "properties": {
         "workload_principal_id": { "$ref": "../common/schemas.schema.json#/$defs/Identifier" },
         "actor": { "$ref": "../common/schemas.schema.json#/$defs/ActorRef" },
-        "authorized_owner_domain_id": { "$ref": "../common/schemas.schema.json#/$defs/Identifier" },
+        "authorized_owner_domain_id": { "$ref": "../common/schemas.schema.json#/$defs/OwnerDomainId" },
         "audience": { "const": "eidolon-admission" },
         "scopes": {
           "type": "array",
@@ -100,48 +100,6 @@
           ]
         },
         "lifecycle_state": { "const": "revoked" }
-      }
-    },
-    "ClaimEventRecord": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": [
-        "operation",
-        "stream_position",
-        "event_id",
-        "event_type",
-        "device_ref",
-        "aggregate_revision",
-        "correlation_id",
-        "causation_id",
-        "occurred_at",
-        "reason"
-      ],
-      "properties": {
-        "operation": { "const": "device.claim-event" },
-        "stream_position": { "type": "integer", "minimum": 1 },
-        "event_id": { "$ref": "../common/schemas.schema.json#/$defs/Identifier" },
-        "event_type": { "const": "live.eidolon.device.claim-revoked.v1" },
-        "device_ref": { "$ref": "../common/schemas.schema.json#/$defs/DeviceRef" },
-        "aggregate_revision": { "type": "integer", "minimum": 1 },
-        "correlation_id": { "$ref": "../common/schemas.schema.json#/$defs/Identifier" },
-        "causation_id": { "$ref": "../common/schemas.schema.json#/$defs/Identifier" },
-        "occurred_at": { "type": "string", "format": "date-time" },
-        "reason": { "type": "string", "minLength": 1, "maxLength": 256 }
-      }
-    },
-    "ClaimEventPage": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": ["operation", "next_stream_position", "events"],
-      "properties": {
-        "operation": { "const": "device.claim-event-page" },
-        "next_stream_position": { "type": "integer", "minimum": 0 },
-        "events": {
-          "type": "array",
-          "maxItems": 500,
-          "items": { "$ref": "#/$defs/ClaimEventRecord" }
-        }
       }
     }
   }

@@ -359,13 +359,51 @@ def check_claim_grant_aad() -> int:
     for field in vector["mutate_each_field_must_fail"]:
         mutated = copy.deepcopy(vector["aad"])
         value = mutated[field]
-        mutated[field] = value + "-mutated" if isinstance(value, str) else value + 1
+        if isinstance(value, str):
+            mutated[field] = value + "-mutated"
+        elif isinstance(value, int):
+            mutated[field] = value + 1
+        else:
+            mutated[field] = {**value, "revision": value["revision"] + 1}
         try:
             AESGCM(key).decrypt(nonce, ciphertext, canonical_bytes(mutated))
         except InvalidTag:
             continue
         raise ConformanceError(f"ClaimGrant AAD mutation did not fail: {field}")
     return 1 + len(vector["mutate_each_field_must_fail"])
+
+
+def check_claim_grant_wire_envelope() -> int:
+    vector = load_json(ROOT / "golden" / "claim-grant-wire-envelope.json")
+    encoded = canonical_bytes(vector["envelope"]["aad"])
+    if encoded.decode() != vector["aad_canonical_utf8"]:
+        raise ConformanceError("ClaimGrant wire-envelope AAD canonical bytes drifted")
+    if "sha256:" + hashlib.sha256(encoded).hexdigest() != vector["aad_sha256"]:
+        raise ConformanceError("ClaimGrant wire-envelope AAD digest drifted")
+    expected = {
+        "profile_id", "kem", "kdf", "aead", "recipient_handoff_key_id",
+        "encapsulated_key", "ciphertext", "aad",
+    }
+    if set(vector["pre_open_mutations_must_fail"]) != expected:
+        raise ConformanceError("ClaimGrant pre-open negative matrix is incomplete")
+    return 1 + len(expected)
+
+
+def check_admission_event_stream() -> int:
+    vector = load_json(ROOT / "golden" / "admission-event-stream.json")
+    digest = "sha256:" + hashlib.sha256(canonical_bytes(vector["event"])).hexdigest()
+    if digest != vector["business_event_sha256"]:
+        raise ConformanceError("Claim event business equality digest drifted")
+    positions = [item["stream_position"] for item in vector["stream_items"]]
+    if positions != [41, 42]:
+        raise ConformanceError("Claim stream transport positions drifted")
+    if set(vector["transport_fields_excluded_from_event_equality"]) != {
+        "stream_position", "requested_after", "next_cursor", "high_watermark"
+    }:
+        raise ConformanceError("transport recovery fields entered event business equality")
+    if set(vector["semantics"]) != {"duplicate", "gap", "restart", "replay"}:
+        raise ConformanceError("Claim stream recovery semantics are incomplete")
+    return 1
 
 
 def check_protocomm_framing() -> int:
@@ -770,6 +808,8 @@ def run() -> dict[str, int]:
         "owner_directory_vectors": check_owner_directory_vector(),
         "hpke_vectors": check_hpke_vector(),
         "claim_grant_aad_checks": check_claim_grant_aad(),
+        "claim_grant_wire_checks": check_claim_grant_wire_envelope(),
+        "claim_event_stream_vectors": check_admission_event_stream(),
         "protocomm_vectors": check_protocomm_framing(),
         "profiles": check_profile(),
         "host_independent_sources": check_host_independence(),
