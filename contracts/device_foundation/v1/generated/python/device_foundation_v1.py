@@ -1,7 +1,7 @@
 # GENERATED Device Foundation V1 PH2 canonical binding export. Do not edit.
 from eidolon_sdk.device_foundation.v1 import (  # noqa: F401
     AckClaimGrant, AckClaimGrantResult, AdmissionEventSource, AdmissionEventType,
-    AdmissionListCursor, ApprovalDecision,
+    AdmissionListCursor, ApprovalDecision, CancelEnrollment, CancelEnrollmentResult,
     BusinessOwnerId, CommandEnvelope, CommandResult, DeviceProblem,
     ClaimActivatedData, ClaimActivatedEvent, ClaimEventCursor,
     ClaimEventPage, ClaimEventStreamItem, ClaimGrant, ClaimGrantAAD,

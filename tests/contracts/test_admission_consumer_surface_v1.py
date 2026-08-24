@@ -8,6 +8,8 @@ import pytest
 from pydantic import ValidationError
 
 from eidolon_sdk.device_foundation.v1 import (
+    CancelEnrollment,
+    CancelEnrollmentResult,
     ClaimActivatedEvent,
     ClaimEventCursor,
     ClaimEventPage,
@@ -41,18 +43,52 @@ def test_python_generated_surface_exports_all_consumer_objects() -> None:
     namespace: dict[str, object] = {}
     exec((CONTRACT / "generated/python/device_foundation_v1.py").read_text(), namespace)
     expected = {
-        "CommandEnvelope", "CommandResult", "DeviceProblem", "RevokeClaim",
+        "CommandEnvelope",
+        "CommandResult",
+        "DeviceProblem",
+        "RevokeClaim",
         "RevokeClaimResult",
-        "CreateEnrollment", "CreateEnrollmentResult", "DecideEnrollment",
-        "DecideEnrollmentResult", "CollectClaimGrant", "CollectClaimGrantResult",
-        "AckClaimGrant", "AckClaimGrantResult", "EnrollmentProposal",
-        "ApprovalDecision", "ClaimGrant", "GrantAck", "ClaimRecord",
-        "ClaimGrantAAD", "ClaimGrantWireEnvelope", "EnrollmentProposalQuery",
-        "EnrollmentProposalPage", "EnrollmentRecoveryProjection", "ClaimQuery",
-        "ClaimPage", "ClaimActivatedEvent", "ClaimRevokedEvent",
-        "ClaimEventCursor", "ClaimEventStreamItem", "ClaimEventPage",
+        "CreateEnrollment",
+        "CreateEnrollmentResult",
+        "CancelEnrollment",
+        "CancelEnrollmentResult",
+        "DecideEnrollment",
+        "DecideEnrollmentResult",
+        "CollectClaimGrant",
+        "CollectClaimGrantResult",
+        "AckClaimGrant",
+        "AckClaimGrantResult",
+        "EnrollmentProposal",
+        "ApprovalDecision",
+        "ClaimGrant",
+        "GrantAck",
+        "ClaimRecord",
+        "ClaimGrantAAD",
+        "ClaimGrantWireEnvelope",
+        "EnrollmentProposalQuery",
+        "EnrollmentProposalPage",
+        "EnrollmentRecoveryProjection",
+        "ClaimQuery",
+        "ClaimPage",
+        "ClaimActivatedEvent",
+        "ClaimRevokedEvent",
+        "ClaimEventCursor",
+        "ClaimEventStreamItem",
+        "ClaimEventPage",
     }
     assert expected <= set(namespace)
+
+
+def test_cancel_enrollment_has_generated_closed_bindings() -> None:
+    command = CancelEnrollment(enrollment_id="enrollment_01", reason="controller-canceled")
+    result = CancelEnrollmentResult(
+        enrollment_id=command.enrollment_id,
+        proposal_state="canceled",
+        canceled_at="2026-08-18T00:03:00Z",
+    )
+    assert result.proposal_state == "canceled"
+    with pytest.raises(ValidationError, match="Extra inputs"):
+        CancelEnrollment.model_validate({**command.model_dump(mode="json"), "owner_id": "owner_01"})
 
 
 @pytest.mark.parametrize("field", ["source", "dataschema", "audience", "subject", "ownerdomainid"])
@@ -99,13 +135,17 @@ def test_claim_stream_position_is_transport_only_and_pages_are_contiguous() -> N
 
 
 def test_claim_grant_wire_envelope_exposes_pre_open_aad_and_matches_plaintext() -> None:
-    envelope_value = json.loads(
-        (CONTRACT / "golden/claim-grant-wire-envelope.json").read_text()
-    )["envelope"]
+    envelope_value = json.loads((CONTRACT / "golden/claim-grant-wire-envelope.json").read_text())[
+        "envelope"
+    ]
     envelope = ClaimGrantWireEnvelope.model_validate(envelope_value)
     result = CollectClaimGrantResult.model_validate(
-        {"grant_id": "grant_01", "wire_envelope": envelope_value,
-         "expires_at": "2026-08-18T00:10:00Z", "approval_decision_id": "decision_01"}
+        {
+            "grant_id": "grant_01",
+            "wire_envelope": envelope_value,
+            "expires_at": "2026-08-18T00:10:00Z",
+            "approval_decision_id": "decision_01",
+        }
     )
     assert result.wire_envelope.aad.owner_domain_id.root == "owner-domain_01"
     grant = ClaimGrant.model_validate(
@@ -121,14 +161,19 @@ def test_claim_grant_wire_envelope_exposes_pre_open_aad_and_matches_plaintext() 
 
 def test_dart_generated_binding_parses_envelope_and_rejects_unknown(tmp_path: Path) -> None:
     generated = (CONTRACT / "generated/dart/device_foundation_v1.dart").as_uri()
-    envelope = json.loads(
-        (CONTRACT / "golden/claim-grant-wire-envelope.json").read_text()
-    )["envelope"]
+    envelope = json.loads((CONTRACT / "golden/claim-grant-wire-envelope.json").read_text())[
+        "envelope"
+    ]
     script = tmp_path / "probe.dart"
     script.write_text(
         f"import 'dart:convert'; import '{generated}'; void main() {{"
         f"final v=jsonDecode(r'''{json.dumps(envelope)}''') as Map<String,dynamic>;"
-        "ClaimGrantWireEnvelopeV1.fromJson(v); v['unknown']=true;"
+        "ClaimGrantWireEnvelopeV1.fromJson(v);"
+        "final cancel=<String,dynamic>{'enrollment_id':'enrollment_01',"
+        "'reason':'controller-canceled'}; CancelEnrollmentV1.fromJson(cancel);"
+        "cancel['unknown']=true; try { CancelEnrollmentV1.fromJson(cancel);"
+        "throw StateError('accepted cancel'); } on FormatException { }"
+        "v['unknown']=true;"
         "try { ClaimGrantWireEnvelopeV1.fromJson(v); throw StateError('accepted'); }"
         "on FormatException { } }",
         encoding="utf-8",
@@ -143,11 +188,24 @@ def test_cpp_generated_consumer_surface_compiles(tmp_path: Path) -> None:
         '#include "device_foundation_v1_generated.h"\n'
         "int main(){ using namespace eidolon::device_foundation::v1; "
         "ClaimGrantWireEnvelope envelope; ClaimEventPage page; EnrollmentProposalQuery query; "
-        "return IsValid(envelope) || page.high_watermark || query.limit; }\n",
+        "CancelEnrollment cancel; CancelEnrollmentResult canceled; "
+        "return IsValid(envelope) || page.high_watermark || query.limit || "
+        "cancel.reason.size() || canceled.canceled_at.size(); }\n",
         encoding="utf-8",
     )
     completed = subprocess.run(
-        ["c++", "-std=c++20", "-Wall", "-Wextra", "-Werror", "-fsyntax-only", str(source),
-         "-I", str(CONTRACT / "generated/cpp")], capture_output=True, text=True,
+        [
+            "c++",
+            "-std=c++20",
+            "-Wall",
+            "-Wextra",
+            "-Werror",
+            "-fsyntax-only",
+            str(source),
+            "-I",
+            str(CONTRACT / "generated/cpp"),
+        ],
+        capture_output=True,
+        text=True,
     )
     assert completed.returncode == 0, completed.stderr

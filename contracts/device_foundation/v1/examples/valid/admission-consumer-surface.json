@@ -1,6 +1,18 @@
 {
   "cases": [
     {
+      "case_id": "DF-PH2B0-CANCEL-ENROLLMENT-VALID",
+      "schema": "https://contracts.eidolon.live/device-foundation/v1/admission/schemas.schema.json",
+      "definition": "CancelEnrollment",
+      "value": {"enrollment_id": "enrollment_01", "reason": "controller-canceled"}
+    },
+    {
+      "case_id": "DF-PH2B0-CANCEL-ENROLLMENT-RESULT-VALID",
+      "schema": "https://contracts.eidolon.live/device-foundation/v1/admission/schemas.schema.json",
+      "definition": "CancelEnrollmentResult",
+      "value": {"enrollment_id": "enrollment_01", "proposal_state": "canceled", "canceled_at": "2026-08-18T00:03:00Z"}
+    },
+    {
       "case_id": "DF-PH2B0-GRANT-WIRE-ENVELOPE-VALID",
       "schema": "https://contracts.eidolon.live/device-foundation/v1/admission/schemas.schema.json",
       "definition": "ClaimGrantWireEnvelope",

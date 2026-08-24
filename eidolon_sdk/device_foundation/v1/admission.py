@@ -141,9 +141,7 @@ class HardwareIdentityEvidence(_Model):
 
 
 class CommissioningProof(_Model):
-    scheme: Literal["protocomm-security2-srp6a-aes256gcm"] = (
-        "protocomm-security2-srp6a-aes256gcm"
-    )
+    scheme: Literal["protocomm-security2-srp6a-aes256gcm"] = "protocomm-security2-srp6a-aes256gcm"
     proof: str = Field(min_length=16, max_length=4096)
     nonce: str = Field(min_length=16, max_length=256)
 
@@ -185,6 +183,22 @@ class CreateEnrollmentResult(_Model):
     collection_challenge: str = Field(pattern=r"^[A-Za-z0-9_-]{22,128}$")
 
     @field_validator("expires_at", mode="before")
+    @classmethod
+    def _time(cls, value: object) -> datetime:
+        return _aware_datetime(value)
+
+
+class CancelEnrollment(_Model):
+    enrollment_id: str = Field(min_length=3, max_length=128)
+    reason: str = Field(min_length=1, max_length=256)
+
+
+class CancelEnrollmentResult(_Model):
+    enrollment_id: str = Field(min_length=3, max_length=128)
+    proposal_state: Literal["canceled"] = "canceled"
+    canceled_at: datetime
+
+    @field_validator("canceled_at", mode="before")
     @classmethod
     def _time(cls, value: object) -> datetime:
         return _aware_datetime(value)
@@ -413,9 +427,14 @@ class EnrollmentProposalPage(_Model):
 
     @model_validator(mode="after")
     def _scope(self) -> EnrollmentProposalPage:
-        if self.next_cursor is not None and self.next_cursor.owner_domain_id != self.owner_domain_id:
+        if (
+            self.next_cursor is not None
+            and self.next_cursor.owner_domain_id != self.owner_domain_id
+        ):
             raise ValueError("proposal page cursor belongs to another Owner Domain")
-        if any(item.proposal.requested_owner_domain_id != self.owner_domain_id for item in self.items):
+        if any(
+            item.proposal.requested_owner_domain_id != self.owner_domain_id for item in self.items
+        ):
             raise ValueError("proposal page contains another Owner Domain")
         return self
 
@@ -459,7 +478,10 @@ class ClaimPage(_Model):
 
     @model_validator(mode="after")
     def _scope(self) -> ClaimPage:
-        if self.next_cursor is not None and self.next_cursor.owner_domain_id != self.owner_domain_id:
+        if (
+            self.next_cursor is not None
+            and self.next_cursor.owner_domain_id != self.owner_domain_id
+        ):
             raise ValueError("claim page cursor belongs to another Owner Domain")
         if any(item.device_ref.owner_domain_id != self.owner_domain_id for item in self.items):
             raise ValueError("claim page contains another Owner Domain")

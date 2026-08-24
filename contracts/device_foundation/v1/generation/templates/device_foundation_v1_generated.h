@@ -166,6 +166,8 @@ struct ClaimRecord { DeviceRef device_ref; BusinessOwnerId business_owner_id; Ma
 
 struct CreateEnrollment { std::string profile_id; std::string device_instance_candidate_id; OwnerDomainId requested_owner_domain_id; std::string hardware_identity_evidence; std::string commissioning_proof; std::string manifest; std::string handoff_key; std::string operational_key; };
 struct CreateEnrollmentResult { std::string enrollment_id; uint64_t proposal_revision = 0; std::string state; std::string expires_at; std::string reviewed_manifest_digest; std::string collection_challenge; };
+struct CancelEnrollment { std::string enrollment_id; std::string reason; };
+struct CancelEnrollmentResult { std::string enrollment_id; std::string proposal_state; std::string canceled_at; };
 struct DecideEnrollment { std::string enrollment_id; uint64_t expected_proposal_revision = 0; std::string decision; OwnerDomainId target_owner_domain_id; BusinessOwnerId target_business_owner_id; std::optional<std::string> target_space_id; ManifestRef reviewed_manifest_ref; std::vector<std::string> initial_capability_policy_refs; };
 struct DecideEnrollmentResult { std::string decision_id; std::string decision; ControllerActorRef decided_by; std::string decided_at; uint64_t proposal_revision = 0; };
 struct CollectClaimGrant { std::string enrollment_id; uint64_t proposal_revision = 0; std::string collection_challenge; std::string handoff_key_proof; };

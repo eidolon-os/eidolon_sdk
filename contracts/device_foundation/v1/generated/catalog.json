@@ -4,8 +4,8 @@
   "files": [
     {
       "path": "admission/schemas.schema.json",
-      "sha256": "8ba0ddd830b7802847e42adc277830f4f77c5339de19f5da96c844e0c40cc20a",
-      "size": 18353
+      "sha256": "7d336f03c733f7f0cc97f4a33efcb3a21a39bda00c286b077c238e77137dc9e1",
+      "size": 19091
     },
     {
       "path": "baseline/cross-repo-heads.v1.json",
@@ -74,8 +74,8 @@
     },
     {
       "path": "examples/invalid/admission-consumer-surface.json",
-      "sha256": "b7a13c3b287dd168ab34ac3424525969e7923cc38d0743dddcee9bf88703106e",
-      "size": 5039
+      "sha256": "67e6875fd319105fbc445ee1bd3f0de454d5cdd4610d06e8c7f42765d3fee882",
+      "size": 5407
     },
     {
       "path": "examples/invalid/authority.json",
@@ -99,8 +99,8 @@
     },
     {
       "path": "examples/valid/admission-consumer-surface.json",
-      "sha256": "46a8696da87f88e96d4abf0ea1b4e4687b1d82793ca3c08fea58eb49f4b8d55c",
-      "size": 6861
+      "sha256": "762f8e11f37f1856a9d2a3698db599fa9d8aecafb8105fb1448e162e6e33fd29",
+      "size": 7490
     },
     {
       "path": "examples/valid/admission.json",
@@ -149,18 +149,18 @@
     },
     {
       "path": "generation/templates/device_foundation_v1.dart",
-      "sha256": "fff61f09fa4f91540380f25cafcb2e7813dfe10a84e9ab03930b4ee04309d4df",
-      "size": 35343
+      "sha256": "7a223bbc4870418efae079b7a36ee3b9ee80d3ad18b535c467c6ba5494d19d10",
+      "size": 35833
     },
     {
       "path": "generation/templates/device_foundation_v1.py",
-      "sha256": "e6646025fc0820e6d9a956b522a7e87727c8a9b67c7629d968d4f811fa8e29ba",
-      "size": 1155
+      "sha256": "f8f18d706c9f288dfed832e23af6d4b8b38d6913dee223b329771e081237e91a",
+      "size": 1197
     },
     {
       "path": "generation/templates/device_foundation_v1_generated.h",
-      "sha256": "f53839dce7e73b79d12ed09e652fd5a29a7654757b6b481fb3941adaf275ea35",
-      "size": 12523
+      "sha256": "4f304f0981ed4250e1a6d1d9b7bc9df10992965e3db92c64877893fd745ed968",
+      "size": 12714
     },
     {
       "path": "golden/admission-event-stream.json",
@@ -239,8 +239,8 @@
     },
     {
       "path": "requirements/requirements.json",
-      "sha256": "cbbf2b8d633cd7441d08a1d1ae86164ae6f5a8fec3b1fd190d3e5c283a9c403c",
-      "size": 41515
+      "sha256": "336c6404c9e11da53740342d512e94fccb1a7ae0ff6906b515cf604fcbd4928f",
+      "size": 41642
     },
     {
       "path": "state-vectors/commissioning-runtime.json",
@@ -270,5 +270,5 @@
   ],
   "generator": "device-foundation-v1-catalog",
   "generator_version": "1.0",
-  "source_digest": "sha256:7e88310a1fdad9328e51d07be5293e540765758a7e038f16ae0c6ddf67a94159"
+  "source_digest": "sha256:d312276d4e4759ec6ea85fc5c840652ca4af898491270c1a412289a2639443fd"
 }

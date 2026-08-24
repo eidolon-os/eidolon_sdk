@@ -781,6 +781,19 @@ class CreateEnrollmentResultV1 extends _AdmissionMapV1 {
       });
 }
 
+class CancelEnrollmentV1 extends _AdmissionMapV1 {
+  CancelEnrollmentV1.fromJson(Map<String, dynamic> value)
+    : super(value, const {'enrollment_id', 'reason'});
+}
+
+class CancelEnrollmentResultV1 extends _AdmissionMapV1 {
+  CancelEnrollmentResultV1.fromJson(Map<String, dynamic> value)
+    : super(value, const {'enrollment_id', 'proposal_state', 'canceled_at'}) {
+    if (json['proposal_state'] != 'canceled')
+      throw const FormatException('Invalid canceled Proposal state');
+  }
+}
+
 class DecideEnrollmentV1 extends _AdmissionMapV1 {
   DecideEnrollmentV1.fromJson(Map<String, dynamic> value)
     : super(value, const {

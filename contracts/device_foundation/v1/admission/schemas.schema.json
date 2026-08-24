@@ -203,6 +203,25 @@
         }
       }
     },
+    "CancelEnrollment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["enrollment_id", "reason"],
+      "properties": {
+        "enrollment_id": { "$ref": "../common/schemas.schema.json#/$defs/Identifier" },
+        "reason": { "type": "string", "minLength": 1, "maxLength": 256 }
+      }
+    },
+    "CancelEnrollmentResult": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["enrollment_id", "proposal_state", "canceled_at"],
+      "properties": {
+        "enrollment_id": { "$ref": "../common/schemas.schema.json#/$defs/Identifier" },
+        "proposal_state": { "const": "canceled" },
+        "canceled_at": { "type": "string", "format": "date-time" }
+      }
+    },
     "DecideEnrollment": {
       "type": "object",
       "additionalProperties": false,
