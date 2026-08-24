@@ -77,9 +77,16 @@ class SystemDataRuntimeClient(ServiceHTTPClient):
         )
         return _runtime_snapshot(response)
 
-    async def get_owner_primary_runtime(self, owner_id: str) -> CompanionRuntimeSnapshot:
+    async def get_owner_default_runtime(self, owner_id: str) -> CompanionRuntimeSnapshot:
+        """The runtime of the Companion this Owner's unaddressed work goes to.
+
+        Named for what it is rather than for how it used to be stored: this was
+        the Companion carrying ``role='primary'``, and it is now the one the
+        Owner's ``default_companion_id`` points at. The old name described a
+        flag that no longer exists.
+        """
         response = await self._get(
-            f"/api/companion-authority/v1/owners/{_quote(owner_id)}/primary-runtime-snapshot"
+            f"/api/companion-authority/v1/owners/{_quote(owner_id)}/default-runtime-snapshot"
         )
         return _runtime_snapshot(response)
 

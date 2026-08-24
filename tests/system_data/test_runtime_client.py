@@ -55,7 +55,7 @@ async def test_runtime_client_reads_exact_snapshots_and_face() -> None:
         )
         current = await client.get_companion_runtime("companion/a")
         pinned = await client.get_companion_runtime("companion/a", genome_id="genome/a")
-        primary = await client.get_owner_primary_runtime("owner/a")
+        primary = await client.get_owner_default_runtime("owner/a")
         face = await client.get_companion_face("companion/a")
 
     assert current.owner_id == "owner-a"
@@ -67,7 +67,7 @@ async def test_runtime_client_reads_exact_snapshots_and_face() -> None:
     assert seen[0].headers["Authorization"] == "Bearer service-token-with-at-least-24-chars"
     assert seen[0].url.raw_path.endswith(b"/companions/companion%2Fa/runtime-snapshot")
     assert seen[1].url.params["genome_id"] == "genome/a"
-    assert seen[2].url.raw_path.endswith(b"/owners/owner%2Fa/primary-runtime-snapshot")
+    assert seen[2].url.raw_path.endswith(b"/owners/owner%2Fa/default-runtime-snapshot")
 
 
 @pytest.mark.asyncio
@@ -94,7 +94,7 @@ async def test_runtime_client_maps_absent_face_and_authority_errors() -> None:
         with pytest.raises(SystemDataPrecondition, match="inactive"):
             await client.get_companion_runtime("inactive")
         with pytest.raises(SystemDataUpstreamError) as upstream:
-            await client.get_owner_primary_runtime("owner-a")
+            await client.get_owner_default_runtime("owner-a")
 
     assert upstream.value.status_code == 500
 
