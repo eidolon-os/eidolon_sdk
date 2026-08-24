@@ -116,9 +116,6 @@ def test_mobile_mission_control_mirror_matches_sdk() -> None:
     assert set(_literals("laneStates")) == mc.LANE_STATES
     assert set(_literals("presenceStates")) == mc.PRESENCE_STATES
     assert set(_literals("presenceSources")) == mc.PRESENCE_SOURCES
-    assert (
-        set(_literals("companionLifecycleStates")) == mc.COMPANION_LIFECYCLE_STATES
-    )
     assert set(_literals("roleKinds")) == mc.ROLE_KINDS
     assert set(_literals("activityKinds")) == mc.ACTIVITY_KINDS
     assert set(_literals("hopNodeTypes")) == mc.HOP_NODE_TYPES
@@ -129,3 +126,43 @@ def test_mobile_mission_control_mirror_matches_sdk() -> None:
     assert set(_literals("privacyClasses")) == mc.PRIVACY_CLASSES
     assert set(_literals("eventOrigins")) == mc.EVENT_ORIGINS
     assert set(_literals("stageKeys")) == set(mc.STAGE_KEYS)
+
+
+def test_mobile_companion_lifecycle_mirror_matches_sdk() -> None:
+    """The Companion lifecycle vocabulary, checked where it actually lives.
+
+    Not in the Mission Control mirror. These values belong to the Companion
+    authority and the client's management surface consumes them too, so that
+    client keeps them in its own companion contract — the same move this package
+    made when it took them out of ``mission_control`` and into ``companion``. A
+    mirror test left pointing at the old file would keep passing while checking
+    nothing.
+    """
+
+    from eidolon_sdk.biz.contracts import companion as companion_contract
+
+    source = _source(
+        "eidolon_client_mobile/lib/src/protocol/companion_contract.dart"
+    )
+    scalars = dict(re.findall(r"const\s+(\w+)\s*=\s*'([^']*)';", source))
+    block = re.search(
+        r"const\s+companionLifecycleStates\s*=\s*<String>\{(.*?)\};",
+        source,
+        re.DOTALL,
+    )
+    assert block, "companionLifecycleStates is missing from the Dart mirror"
+
+    members: list[str] = []
+    for literal, identifier in re.findall(
+        r"'([^']*)'|([A-Za-z_]\w*)", block.group(1)
+    ):
+        if literal:
+            members.append(literal)
+            continue
+        assert identifier in scalars, f"{identifier} is not a mirrored constant"
+        members.append(scalars[identifier])
+    assert members, "the mirror read as empty, which is never agreement"
+
+    assert set(members) == set(companion_contract.COMPANION_LIFECYCLE_STATES)
+    # What a previous version of that mirror invented. No Host sends these.
+    assert not {"pending", "suspended", "removed"} & set(members)
