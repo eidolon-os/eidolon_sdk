@@ -188,6 +188,7 @@
             "IDEMPOTENCY_CONFLICT",
             "REVISION_CONFLICT",
             "GENERATION_CONFLICT",
+            "CURSOR_GAP",
             "CLAIM_REVOKED",
             "TRUST_EPOCH_STALE",
             "OWNER_DOMAIN_MISMATCH",
