@@ -4,14 +4,60 @@ from __future__ import annotations
 
 import hashlib
 from datetime import UTC, datetime
-from typing import Literal
+from enum import StrEnum
+from typing import Any, Literal
 
 import rfc8785
-from pydantic import BaseModel, ConfigDict, Field, RootModel, field_validator, model_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    GetCoreSchemaHandler,
+    RootModel,
+    field_validator,
+    model_validator,
+)
+from pydantic_core import core_schema
 
 
 class _Model(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True, strict=True)
+
+
+class WireEnum(StrEnum):
+    """A canonical enum that accepts the wire form it is written as.
+
+    These models are strict on purpose: it is what stops a producer sending
+    ``"1"`` where an integer belongs. But an enum's wire form *is* a string, and
+    strict Python-mode validation rejected it — so a model could be parsed from
+    a JSON document and never from the dictionary that same document decodes to.
+
+    That is not a distinction a wire contract can afford. It held everywhere a
+    canonical DTO crossed a process boundary as a decoded body rather than as
+    bytes, which is what every ASGI framework hands a handler: the Host's own
+    control plane answered 422 to its own Local API, and reading the pending
+    device queue failed on the Host while every test passed.
+
+    The rule this restores is one line: a canonical model validates its own
+    ``model_dump(mode="json")``. An unrecognised string is still refused.
+    """
+
+    @classmethod
+    def __get_pydantic_core_schema__(
+        cls, source: Any, handler: GetCoreSchemaHandler
+    ) -> core_schema.CoreSchema:
+        return core_schema.no_info_before_validator_function(
+            cls._accept_wire_value, handler(source)
+        )
+
+    @classmethod
+    def _accept_wire_value(cls, value: object) -> object:
+        if isinstance(value, cls) or not isinstance(value, str):
+            return value
+        try:
+            return cls(value)
+        except ValueError:
+            return value
 
 
 def _wire_datetime(value: object) -> object:

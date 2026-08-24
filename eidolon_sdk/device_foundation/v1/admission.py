@@ -3,12 +3,12 @@
 from __future__ import annotations
 
 from datetime import datetime
-from enum import StrEnum
 from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from .lifecycle import (
+    WireEnum,
     ActorRef,
     BusinessOwnerId,
     DeviceRef,
@@ -22,7 +22,7 @@ class _Model(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True, strict=True)
 
 
-class EnrollmentProposalState(StrEnum):
+class EnrollmentProposalState(WireEnum):
     PENDING_REVIEW = "pending_review"
     APPROVED_AWAITING_HANDOFF = "approved_awaiting_handoff"
     GRANT_DELIVERED = "grant_delivered"
@@ -33,7 +33,7 @@ class EnrollmentProposalState(StrEnum):
     CLAIM_REVOKED = "claim_revoked"
 
 
-class ClaimState(StrEnum):
+class ClaimState(WireEnum):
     ACTIVE = "active"
     SUSPENDED = "suspended"
     REVOKED = "revoked"

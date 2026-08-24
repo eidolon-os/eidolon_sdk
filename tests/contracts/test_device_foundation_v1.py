@@ -211,3 +211,74 @@ def test_duplicate_json_keys_are_rejected(tmp_path: Path) -> None:
     runner = _load_runner()
     with pytest.raises(runner.ConformanceError, match="duplicate JSON key"):
         runner.load_json(duplicate)
+
+
+def test_every_canonical_model_validates_its_own_wire_form() -> None:
+    """A canonical DTO must parse the dictionary its own JSON decodes to.
+
+    Not a style point. Every ASGI framework hands a handler a decoded body, not
+    bytes, so a model that only parses in JSON mode cannot be a request body —
+    and one that could be constructed and serialized but not read back had
+    exactly one symptom on a Host: the Owner's own control plane answered 422 to
+    the Local API beside it, and the pending device queue could not be read.
+
+    The examples are the canonical wire forms, so validating them, dumping them,
+    and validating that is the whole invariant.
+    """
+
+    from pydantic import BaseModel
+
+    import eidolon_sdk.device_foundation.v1 as v1
+
+    models = [
+        value
+        for value in vars(v1).values()
+        if isinstance(value, type)
+        and issubclass(value, BaseModel)
+        and value.__module__.startswith("eidolon_sdk.device_foundation")
+    ]
+    assert models, "no canonical bindings were discovered"
+
+    checked: list[str] = []
+    failures: list[str] = []
+    for path in sorted((CONTRACT_ROOT / "examples" / "valid").glob("*.json")):
+        for case in json.loads(path.read_text(encoding="utf-8")).get("cases", []):
+            value = case.get("value")
+            if not isinstance(value, dict):
+                continue
+            for model in models:
+                try:
+                    parsed = model.model_validate(value)
+                except Exception:
+                    continue
+                checked.append(f"{model.__name__}:{case.get('case_id')}")
+                try:
+                    model.model_validate(parsed.model_dump(mode="json"))
+                except Exception as exc:
+                    failures.append(f"{model.__name__} ({case.get('case_id')}): {exc}")
+
+    assert not failures, "canonical models rejected their own wire form:\n" + "\n".join(failures)
+    # Every canonical example is a wire form some binding must accept. A case
+    # no model can parse is the same defect wearing the other hat.
+    assert len(checked) >= 50
+
+
+def test_a_canonical_enum_still_refuses_a_value_it_does_not_define() -> None:
+    from eidolon_sdk.device_foundation.v1 import ClaimQuery, ClaimState
+
+    query = ClaimQuery(
+        owner_domain_id="owner-domain_01",
+        states=(ClaimState.ACTIVE,),
+        cursor=None,
+        limit=50,
+    )
+    assert ClaimQuery.model_validate(query.model_dump(mode="json")) == query
+    with pytest.raises(ValueError):
+        ClaimQuery.model_validate(
+            {
+                "owner_domain_id": "owner-domain_01",
+                "states": ["not-a-claim-state"],
+                "cursor": None,
+                "limit": 50,
+            }
+        )

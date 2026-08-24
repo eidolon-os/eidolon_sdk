@@ -11,7 +11,6 @@ from __future__ import annotations
 import base64
 import hashlib
 from datetime import UTC, datetime
-from enum import Enum
 from typing import Protocol, runtime_checkable
 
 import rfc8785
@@ -25,8 +24,10 @@ from cryptography.hazmat.primitives.asymmetric.utils import (
 )
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
+from .lifecycle import WireEnum
 
-class LogicalAuthority(str, Enum):
+
+class LogicalAuthority(WireEnum):
     ADMISSION = "admission"
     DEVICE_CONTROL = "device-control"
     BODY_MESH = "body-mesh"

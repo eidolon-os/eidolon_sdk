@@ -3,12 +3,12 @@
 from __future__ import annotations
 
 from datetime import datetime
-from enum import StrEnum
 from typing import Annotated, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from .lifecycle import (
+    WireEnum,
     BusinessOwnerId,
     DeviceRef,
     ManifestRef,
@@ -21,11 +21,11 @@ class _Model(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True, strict=True)
 
 
-class AdmissionEventSource(StrEnum):
+class AdmissionEventSource(WireEnum):
     ADMISSION = "urn:eidolon:authority:admission"
 
 
-class AdmissionEventType(StrEnum):
+class AdmissionEventType(WireEnum):
     PROPOSAL_CREATED = "live.eidolon.device.enrollment-proposal-created.v1"
     APPROVED = "live.eidolon.device.enrollment-approved.v1"
     REJECTED = "live.eidolon.device.enrollment-rejected.v1"
