@@ -107,9 +107,10 @@ def test_esp32_topics_header_matches_python_wire_contract() -> None:
     assert strings["kSessionIntentProactive"] == c.SESSION_INTENT_PROACTIVE
 
 
-def test_esp32_onboarding_and_roll_call_handler_match_e2e_contract() -> None:
+def test_esp32_canonical_claim_consumer_and_roll_call_handler_match_contract() -> None:
     hub_types = _esp32_source("main/eidolon/hub_types.h")
     onboarding = _esp32_source("main/eidolon/hub_onboarding_protocol.cc")
+    claim_core = _esp32_source("main/eidolon/device_claim_consumer_core.cc")
     controller = _esp32_source("main/eidolon/eidolon_voice_controller.cc")
     feedback = _esp32_source("main/eidolon/eidolon_local_feedback.cc")
 
@@ -118,10 +119,12 @@ def test_esp32_onboarding_and_roll_call_handler_match_e2e_contract() -> None:
     assert "kTxtDescriptorUri" not in hub_types
     assert "kTxtEnrollmentUri" not in hub_types
     assert "kTxtRegisterUrl" not in hub_types
-    assert "ParseHandoffResponse" in onboarding
-    assert 'JsonString(item, "binding_format") != kLiveKitBindingFormat' in onboarding
-    assert 'assignment.opaque_binding = JsonString(item, "opaque_binding")' in onboarding
-    assert "status = assignment.opaque_binding.empty()" in onboarding
+    assert "ParseHandoffResponse" not in onboarding
+    assert "retrieval_token" not in onboarding
+    assert "ClaimGrantAad" in claim_core
+    assert "UnsealClaimGrant" in claim_core
+    assert "DestroyEnrollmentMaterial" in claim_core
+    assert "ResumePending" in claim_core
     assert (
         "{kControlOpDeviceRollCall, 1, "
         "&EidolonVoiceController::HandleDeviceRollCallCommand}" in controller

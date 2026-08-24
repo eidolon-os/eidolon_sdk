@@ -41,6 +41,8 @@ def test_python_generated_surface_exports_all_consumer_objects() -> None:
     namespace: dict[str, object] = {}
     exec((CONTRACT / "generated/python/device_foundation_v1.py").read_text(), namespace)
     expected = {
+        "CommandEnvelope", "CommandResult", "DeviceProblem", "RevokeClaim",
+        "RevokeClaimResult",
         "CreateEnrollment", "CreateEnrollmentResult", "DecideEnrollment",
         "DecideEnrollmentResult", "CollectClaimGrant", "CollectClaimGrantResult",
         "AckClaimGrant", "AckClaimGrantResult", "EnrollmentProposal",
