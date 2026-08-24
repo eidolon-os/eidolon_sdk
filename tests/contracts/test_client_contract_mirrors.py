@@ -49,3 +49,83 @@ def test_admin_contract_mirror_matches_sdk() -> None:
     assert constants["SESSION_INTENT_FIELD"] == c.SESSION_INTENT_FIELD
     assert constants["SESSION_INTENT_USER_INITIATED"] == c.SESSION_INTENT_USER_INITIATED
     assert constants["SESSION_INTENT_PROACTIVE"] == c.SESSION_INTENT_PROACTIVE
+
+
+def test_mobile_mission_control_mirror_matches_sdk() -> None:
+    """Mobile's Mission Control vocabulary against this package's.
+
+    Skips while the client checkout does not carry the file yet — the same
+    arrangement as the mirrors above, and the reason this can be written before
+    the branch that adds it lands.
+    """
+
+    from eidolon_sdk.biz.contracts import mission_control as mc
+
+    source = _source(
+        "eidolon_client_mobile/lib/src/protocol/mission_control_contract.dart"
+    )
+
+    scalars = dict(re.findall(r"const\s+(\w+)\s*=\s*'([^']*)';", source))
+    assert scalars["missionControlContractVersion"] == mc.CONTRACT_VERSION
+    assert scalars["missionControlSnapshotCoverage"] == mc.SNAPSHOT_COVERAGE
+    assert scalars["laneStateOk"] == mc.LANE_OK
+    assert scalars["laneStateDegraded"] == mc.LANE_DEGRADED
+    assert scalars["laneStateUnavailable"] == mc.LANE_UNAVAILABLE
+    assert scalars["presenceOnline"] == mc.PRESENCE_ONLINE
+    assert scalars["presenceOffline"] == mc.PRESENCE_OFFLINE
+    assert scalars["presenceDegraded"] == mc.PRESENCE_DEGRADED
+    assert scalars["presenceUnknown"] == mc.PRESENCE_UNKNOWN
+    assert scalars["presenceSourceBlackboard"] == mc.PRESENCE_SOURCE_BLACKBOARD
+    assert scalars["presenceSourceHub"] == mc.PRESENCE_SOURCE_HUB
+    assert scalars["presenceSourceNone"] == mc.PRESENCE_SOURCE_NONE
+    assert scalars["cursorField"] == mc.CURSOR_FIELD
+    assert scalars["streamResetEvent"] == mc.STREAM_RESET_EVENT
+
+    def _literals(name: str) -> list[str]:
+        """Members of a Dart set/list literal, whether spelled out or referenced.
+
+        The mirror composes some of its sets from the constants above it rather
+        than repeating the strings, which is the right way to write it and the
+        wrong thing to read with a bare string-literal regex — the first version
+        of this test read those sets as empty and passed. So an element is either
+        a quoted literal or an identifier resolved through the scalars.
+        """
+
+        block = re.search(
+            rf"const\s+{name}\s*=\s*<String>[\{{\[](.*?)[\}}\]];",
+            source,
+            re.DOTALL,
+        )
+        assert block, f"{name} is missing from the Dart mirror"
+        members: list[str] = []
+        for token in re.findall(r"'([^']*)'|([A-Za-z_]\w*)", block.group(1)):
+            literal, identifier = token
+            if literal:
+                members.append(literal)
+                continue
+            assert identifier in scalars, (
+                f"{name} references {identifier}, which is not a mirrored constant"
+            )
+            members.append(scalars[identifier])
+        assert members, f"{name} came out empty — the mirror was not read"
+        return members
+
+    # Sets compare as sets; the stage list is ordered on purpose and compares
+    # as a set too, because request order is documented by the SDK tuple and a
+    # consumer that reorders its own copy is not thereby wrong.
+    assert set(_literals("laneStates")) == mc.LANE_STATES
+    assert set(_literals("presenceStates")) == mc.PRESENCE_STATES
+    assert set(_literals("presenceSources")) == mc.PRESENCE_SOURCES
+    assert (
+        set(_literals("companionLifecycleStates")) == mc.COMPANION_LIFECYCLE_STATES
+    )
+    assert set(_literals("roleKinds")) == mc.ROLE_KINDS
+    assert set(_literals("activityKinds")) == mc.ACTIVITY_KINDS
+    assert set(_literals("hopNodeTypes")) == mc.HOP_NODE_TYPES
+    assert set(_literals("hopDirections")) == mc.HOP_DIRECTIONS
+    assert set(_literals("serviceTiers")) == mc.SERVICE_TIERS
+    assert set(_literals("outcomes")) == mc.OUTCOMES
+    assert set(_literals("severities")) == mc.SEVERITIES
+    assert set(_literals("privacyClasses")) == mc.PRIVACY_CLASSES
+    assert set(_literals("eventOrigins")) == mc.EVENT_ORIGINS
+    assert set(_literals("stageKeys")) == set(mc.STAGE_KEYS)

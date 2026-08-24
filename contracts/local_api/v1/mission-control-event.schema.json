@@ -1,0 +1,59 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://eidolon.dev/contracts/local_api/v1/mission-control-event.schema.json",
+  "title": "Mission Control Runtime Event V1",
+  "description": "One runtime event as the Owner-scoped Local API projects it. This is the audit envelope (eidolon.audit.v1) projected for a client: the shared vocabularies are $ref'd from that schema rather than restated, so they cannot drift. Subject references the envelope carries as subject_type/subject_id are expanded into named fields here, because a client should not have to know the taxonomy to find out which companion an event was about.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "event_id",
+    "ingest_seq",
+    "ts",
+    "source",
+    "type",
+    "severity",
+    "outcome",
+    "privacy",
+    "origin",
+    "summary"
+  ],
+  "properties": {
+    "event_id": {"type": "string", "minLength": 1, "maxLength": 64},
+    "ingest_seq": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "The audit index's total order on this Host. This is the stream cursor; a client submits the last one it consumed."
+    },
+    "producer_seq": {
+      "type": ["integer", "null"],
+      "minimum": 1,
+      "description": "Monotonic per producer, so a client can detect a gap in one producer without having to trust that the total order has none."
+    },
+    "ts": {"type": "string", "format": "date-time"},
+    "source": {"type": "string", "minLength": 1, "maxLength": 64},
+    "type": {"type": "string", "minLength": 1, "maxLength": 128},
+    "severity": {"$ref": "https://eidolon.dev/contracts/audit/v1/envelope.schema.json#/properties/severity"},
+    "outcome": {"$ref": "https://eidolon.dev/contracts/audit/v1/envelope.schema.json#/properties/outcome"},
+    "privacy": {"$ref": "https://eidolon.dev/contracts/audit/v1/envelope.schema.json#/properties/data_classification"},
+    "origin": {
+      "enum": ["live", "polling", "replay"],
+      "description": "No 'mock'. Staged data exists only inside a client."
+    },
+    "trace_id": {"type": ["string", "null"], "maxLength": 64},
+    "companion_id": {"type": ["string", "null"], "maxLength": 64},
+    "device_id": {"type": ["string", "null"], "maxLength": 128},
+    "turn_id": {"type": ["string", "null"], "maxLength": 64},
+    "job_id": {"type": ["string", "null"], "maxLength": 64},
+    "milestone": {
+      "type": "string",
+      "maxLength": 64,
+      "default": "",
+      "description": "The semantic phase this event reports, when it carries one. Beats source when a consumer decides which leg of a companion's circuit lit up."
+    },
+    "summary": {
+      "type": "string",
+      "maxLength": 512,
+      "description": "Human-readable, composed by the producer. A client must not assemble this from ids: it has neither the taxonomy nor the language."
+    }
+  }
+}

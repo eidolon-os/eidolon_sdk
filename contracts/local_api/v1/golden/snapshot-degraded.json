@@ -1,0 +1,246 @@
+{
+  "contract_version": "1",
+  "coverage": "owner-runtime",
+  "generated_at": "2026-08-24T05:16:18Z",
+  "cursor": {
+    "ingest_seq": 10493
+  },
+  "owner": {
+    "state": "ok",
+    "detail": "",
+    "observed_at": "2026-08-24T05:16:18Z",
+    "latency_ms": 8,
+    "value": {
+      "owner_id": "owner-shenyi",
+      "display_name": "沈亦"
+    }
+  },
+  "companions": {
+    "state": "ok",
+    "detail": "",
+    "observed_at": "2026-08-24T05:16:18Z",
+    "latency_ms": 12,
+    "truncated": false,
+    "items": [
+      {
+        "companion_id": "companion-yanzhou",
+        "display_name": "砚舟",
+        "is_primary": true,
+        "lifecycle_state": "active",
+        "genome_id": "genome-yanzhou-7",
+        "memory_realm_id": "realm-yanzhou"
+      },
+      {
+        "companion_id": "companion-linyuan",
+        "display_name": "临渊",
+        "is_primary": false,
+        "lifecycle_state": "pending",
+        "genome_id": null,
+        "memory_realm_id": null
+      }
+    ]
+  },
+  "devices": {
+    "state": "degraded",
+    "detail": "blackboard 不可用，在场退到 Hub 权威",
+    "observed_at": "2026-08-24T05:16:18Z",
+    "latency_ms": 12,
+    "truncated": true,
+    "items": [
+      {
+        "device_id": "dev-esp32-living",
+        "display_name": "客厅音箱",
+        "device_kind": "esp32-s3",
+        "role": "对话身体",
+        "role_kind": "persona",
+        "companion_id": "companion-yanzhou",
+        "capabilities": [
+          "voice.duplex",
+          "audio.playback"
+        ],
+        "presence": {
+          "state": "online",
+          "source": "runtime_blackboard",
+          "observed_at": "2026-08-24T05:16:17Z",
+          "lease_expires_at": "2026-08-24T05:17:17Z"
+        }
+      }
+    ]
+  },
+  "activities": {
+    "state": "unavailable",
+    "detail": "运行投影读不到活动：Agent 未响应",
+    "observed_at": null,
+    "latency_ms": null,
+    "truncated": false,
+    "items": []
+  },
+  "turns": {
+    "state": "ok",
+    "detail": "",
+    "observed_at": "2026-08-24T05:16:18Z",
+    "latency_ms": 12,
+    "truncated": false,
+    "items": [
+      {
+        "turn_id": "turn-0007",
+        "companion_id": "companion-yanzhou",
+        "device_id": "dev-esp32-living",
+        "status": "running",
+        "trigger": "voice",
+        "latency_ms": 780,
+        "memory_hits": 4,
+        "tool_names": [],
+        "stages": [
+          {
+            "key": "input",
+            "label": "输入",
+            "status": "done",
+            "latency_ms": 42
+          },
+          {
+            "key": "memory_recall",
+            "label": "记忆召回",
+            "status": "done",
+            "latency_ms": 61
+          },
+          {
+            "key": "agent_turn",
+            "label": "推理",
+            "status": "running",
+            "latency_ms": null
+          },
+          {
+            "key": "memory_write",
+            "label": "写回",
+            "status": "pending",
+            "latency_ms": null
+          }
+        ]
+      }
+    ]
+  },
+  "jobs": {
+    "state": "ok",
+    "detail": "",
+    "observed_at": "2026-08-24T05:16:18Z",
+    "latency_ms": 12,
+    "truncated": false,
+    "items": []
+  },
+  "memory": {
+    "state": "unavailable",
+    "detail": "记忆服务没有回应（连接超时 2s）",
+    "observed_at": null,
+    "latency_ms": null,
+    "value": null
+  },
+  "services": {
+    "state": "ok",
+    "detail": "",
+    "observed_at": "2026-08-24T05:16:18Z",
+    "latency_ms": 12,
+    "truncated": false,
+    "items": [
+      {
+        "service_id": "hub",
+        "display_name": "设备中枢",
+        "code": "eidolon_hub",
+        "mode": "代理",
+        "tier": "service",
+        "online": true,
+        "checked": true,
+        "latency_ms": 12,
+        "detail": "7 个身体注册在册"
+      },
+      {
+        "service_id": "mementos",
+        "display_name": "Mementos",
+        "code": "mementos",
+        "mode": "托管",
+        "tier": "external",
+        "online": false,
+        "checked": true,
+        "latency_ms": null,
+        "detail": "进程没有回应"
+      },
+      {
+        "service_id": "nats",
+        "display_name": "NATS",
+        "code": "nats-server",
+        "mode": "基础",
+        "tier": "middleware",
+        "online": true,
+        "checked": false,
+        "latency_ms": null,
+        "detail": ""
+      }
+    ]
+  },
+  "events": {
+    "state": "degraded",
+    "detail": "事件尾部轮询失败一次，可能有缺口",
+    "observed_at": "2026-08-24T05:16:18Z",
+    "latency_ms": 12,
+    "truncated": false,
+    "items": [
+      {
+        "event_id": "event-10491",
+        "ingest_seq": 10491,
+        "producer_seq": 10491,
+        "ts": "2026-08-24T05:16:18Z",
+        "source": "hub",
+        "type": "hub.device.joined",
+        "severity": "info",
+        "outcome": "success",
+        "privacy": "safe",
+        "origin": "live",
+        "trace_id": null,
+        "companion_id": "companion-yanzhou",
+        "device_id": "dev-esp32-living",
+        "turn_id": null,
+        "job_id": null,
+        "milestone": "",
+        "summary": "客厅音箱 加入语音房间"
+      },
+      {
+        "event_id": "event-10492",
+        "ingest_seq": 10492,
+        "producer_seq": 10492,
+        "ts": "2026-08-24T05:16:18Z",
+        "source": "memory",
+        "type": "memory.recall.recalled",
+        "severity": "info",
+        "outcome": "success",
+        "privacy": "safe",
+        "origin": "live",
+        "trace_id": null,
+        "companion_id": "companion-yanzhou",
+        "device_id": null,
+        "turn_id": "turn-0007",
+        "job_id": null,
+        "milestone": "memory_recall",
+        "summary": "召回 4 条相关记忆"
+      },
+      {
+        "event_id": "event-10493",
+        "ingest_seq": 10493,
+        "producer_seq": 10493,
+        "ts": "2026-08-24T05:16:18Z",
+        "source": "hub",
+        "type": "hub.guard.denied",
+        "severity": "warn",
+        "outcome": "denied",
+        "privacy": "sensitive",
+        "origin": "live",
+        "trace_id": null,
+        "companion_id": "companion-linyuan",
+        "device_id": null,
+        "turn_id": null,
+        "job_id": null,
+        "milestone": "",
+        "summary": "临渊 请求开启摄像头，被授权边界拒绝"
+      }
+    ]
+  }
+}
