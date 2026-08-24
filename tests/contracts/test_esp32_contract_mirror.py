@@ -122,7 +122,7 @@ def test_esp32_canonical_claim_consumer_and_roll_call_handler_match_contract() -
     assert "ParseHandoffResponse" not in onboarding
     assert "retrieval_token" not in onboarding
     assert "ClaimGrantAad" in claim_core
-    assert "UnsealClaimGrant" in claim_core
+    assert "OpenClaimGrant" in claim_core
     assert "DestroyEnrollmentMaterial" in claim_core
     assert "ResumePending" in claim_core
     assert (
