@@ -1,4 +1,11 @@
-"""The Mission Control Local API contract, held to its own schemas.
+"""The Mission Control contract, held to its own schemas.
+
+Lives under ``contracts/mission_control`` rather than ``contracts/local_api``:
+the payload is a management-plane projection, and naming a directory after
+``/api/local/v1`` — the Owner product surface the convergence plan deletes —
+would have it lie in whichever direction the reader was going. It folds into
+``eidolon_admin/contracts/management/v1``'s generated OpenAPI document when that
+describes these routes; until then this is the working description.
 
 Three kinds of drift are guarded here, because all three are silent:
 
@@ -24,7 +31,7 @@ from referencing import Registry, Resource
 from eidolon_sdk.biz.contracts import mission_control as mc
 
 _ROOT = Path(__file__).resolve().parents[2]
-_V1 = _ROOT / "contracts/local_api/v1"
+_V1 = _ROOT / "contracts/mission_control/v1"
 _AUDIT = _ROOT / "contracts/audit/envelope.schema.json"
 
 
@@ -97,6 +104,29 @@ def test_degraded_golden_actually_exercises_partial_failure() -> None:
     # And a lane that did read stays ok, because one dead source must not black
     # out the screen.
     assert snapshot["companions"]["state"] == mc.LANE_OK
+
+
+def test_the_snapshot_names_the_default_companion_once() -> None:
+    """One place decides which Companion answers by default.
+
+    A per-row ``is_primary`` flag — which this schema used to carry, mine — is a
+    second adjudication of the same question, and it is only ever right while
+    there is one Companion. The snapshot states it once and consumers compare.
+    """
+
+    snapshot = _load(_V1 / "mission-control-snapshot.schema.json")
+    assert "default_companion_id" in snapshot["properties"]
+    companion = snapshot["$defs"]["companionLane"]["properties"]["items"][
+        "items"
+    ]["properties"]
+    assert "is_primary" not in companion
+    assert "is_default" not in companion
+
+    for name in ("snapshot-healthy.json", "snapshot-degraded.json"):
+        golden = _load(_V1 / "golden" / name)
+        assert "default_companion_id" in golden
+        for row in golden["companions"]["items"]:
+            assert "is_primary" not in row
 
 
 def test_schema_enums_match_the_exported_vocabulary() -> None:

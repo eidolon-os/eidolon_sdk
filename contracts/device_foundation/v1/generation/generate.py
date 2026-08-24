@@ -62,7 +62,10 @@ def build_outputs(config: dict[str, object]) -> dict[Path, bytes]:
 
 
 def _binding_definitions() -> set[str]:
-    definitions = {"OwnerDomainId", "BusinessOwnerId", "DeviceRef", "ManifestRef", "ClaimGrantAAD"}
+    definitions = {
+        "OwnerDomainId", "BusinessOwnerId", "DeviceRef", "ManifestRef", "ClaimGrantAAD",
+        "CommandEnvelope", "CommandResult", "DeviceProblem", "RevokeClaim", "RevokeClaimResult",
+    }
     for relative in ("admission/schemas.schema.json", "events/schemas.schema.json"):
         schema = json.loads((ROOT / relative).read_text(encoding="utf-8"))
         definitions.update(schema["$defs"])

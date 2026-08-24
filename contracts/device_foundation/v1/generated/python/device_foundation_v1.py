@@ -2,7 +2,8 @@
 from eidolon_sdk.device_foundation.v1 import (  # noqa: F401
     AckClaimGrant, AckClaimGrantResult, AdmissionEventSource, AdmissionEventType,
     AdmissionListCursor, ApprovalDecision,
-    BusinessOwnerId, ClaimActivatedData, ClaimActivatedEvent, ClaimEventCursor,
+    BusinessOwnerId, CommandEnvelope, CommandResult, DeviceProblem,
+    ClaimActivatedData, ClaimActivatedEvent, ClaimEventCursor,
     ClaimEventPage, ClaimEventStreamItem, ClaimGrant, ClaimGrantAAD,
     ClaimGrantWireEnvelope, ClaimPage, ClaimQuery, ClaimRecord, ClaimRevokedData,
     ClaimRevokedEvent, ClaimState, CollectClaimGrant, CollectClaimGrantResult,
@@ -12,6 +13,7 @@ from eidolon_sdk.device_foundation.v1 import (  # noqa: F401
     EnrollmentProposalState, EnrollmentRecoveryProjection, GrantAck,
     GrantDeliveryRecord, HandoffPublicKey, HardwareIdentityEvidence,
     ManifestDocument, ManifestRef, OperationalPublicKey, OwnerDomainId,
+    RevokeClaim, RevokeClaimResult,
 )
 
 __all__ = [name for name in globals() if not name.startswith("_")]

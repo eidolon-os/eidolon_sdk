@@ -144,23 +144,23 @@
     },
     {
       "path": "generation/generate.py",
-      "sha256": "144b4ace86cf1b02dc7917a9a9c0d54f2bf26e86ca1f4cc30a62423e42fc5b56",
-      "size": 4325
+      "sha256": "24154007a807376f1b2798222687a04e4ba882d53e76aa9acc9733b73793247d",
+      "size": 4437
     },
     {
       "path": "generation/templates/device_foundation_v1.dart",
-      "sha256": "0edf44f169eaed39ef38db46a72f14a8fd53c9fda8c007dbea7b5608feed492e",
-      "size": 33357
+      "sha256": "fff61f09fa4f91540380f25cafcb2e7813dfe10a84e9ab03930b4ee04309d4df",
+      "size": 35343
     },
     {
       "path": "generation/templates/device_foundation_v1.py",
-      "sha256": "92b1bead0a0df9b9a38a8ea5faf9f628c0442608326e21ce7be9407208bf726f",
-      "size": 1068
+      "sha256": "e6646025fc0820e6d9a956b522a7e87727c8a9b67c7629d968d4f811fa8e29ba",
+      "size": 1155
     },
     {
       "path": "generation/templates/device_foundation_v1_generated.h",
-      "sha256": "f82f6652cde0c07e50bd260844055835bb8dd53fcf5455a4b45c23a0b4ab4790",
-      "size": 11149
+      "sha256": "f53839dce7e73b79d12ed09e652fd5a29a7654757b6b481fb3941adaf275ea35",
+      "size": 12523
     },
     {
       "path": "golden/admission-event-stream.json",
@@ -270,5 +270,5 @@
   ],
   "generator": "device-foundation-v1-catalog",
   "generator_version": "1.0",
-  "source_digest": "sha256:aa8f9c9b3cdec3078dbb0a7d9bc8fa2a877f9556380fd10eeddf849d353286ff"
+  "source_digest": "sha256:4cff0669ebe6e5b3a2c1758c4b01bc430ced21679fc9929218fbf3a9bd5e3d3d"
 }

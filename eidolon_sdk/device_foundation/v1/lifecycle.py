@@ -80,6 +80,67 @@ class DeviceRef(_Model):
     trust_epoch: int = Field(ge=1)
 
 
+class CommandEnvelope(_Model):
+    contract: Literal["eidolon.device-foundation.command"] = "eidolon.device-foundation.command"
+    contract_version: Literal["1.0"] = "1.0"
+    command_type: str = Field(min_length=3, max_length=128, pattern=_IDENTIFIER)
+    command_id: str = Field(min_length=3, max_length=128, pattern=_IDENTIFIER)
+    correlation_id: str = Field(min_length=3, max_length=128, pattern=_IDENTIFIER)
+    causation_id: str | None = Field(default=None, min_length=3, max_length=128)
+    issued_at: datetime
+    deadline: datetime | None
+    payload: dict[str, object]
+    extensions: dict[str, object]
+
+    @field_validator("issued_at", "deadline", mode="before")
+    @classmethod
+    def _time(cls, value: object) -> datetime | None:
+        return None if value is None else _aware_datetime(value)
+
+
+class CommandResult(_Model):
+    command_id: str = Field(min_length=3, max_length=128, pattern=_IDENTIFIER)
+    outcome: Literal["committed", "replayed", "accepted"]
+    resource_ref: dict[str, object]
+    resource_revision: int | None = Field(default=None, ge=0)
+    occurred_at: datetime
+    extensions: dict[str, object]
+
+    @field_validator("occurred_at", mode="before")
+    @classmethod
+    def _time(cls, value: object) -> datetime:
+        return _aware_datetime(value)
+
+
+class DeviceProblem(_Model):
+    code: Literal[
+        "INVALID_ARGUMENT", "CONTRACT_UNSUPPORTED", "UNAUTHENTICATED", "FORBIDDEN",
+        "NOT_FOUND", "IDEMPOTENCY_CONFLICT", "REVISION_CONFLICT", "GENERATION_CONFLICT",
+        "CLAIM_REVOKED", "TRUST_EPOCH_STALE", "OWNER_DOMAIN_MISMATCH",
+        "BUSINESS_OWNER_MISMATCH", "DECISION_REQUIRED", "HANDOFF_PROOF_INVALID",
+        "GRANT_EXPIRED", "PROPOSAL_TERMINAL", "PROPOSAL_EXPIRED", "OPERATION_EXPIRED",
+        "RATE_LIMITED", "AUTHORITY_UNAVAILABLE", "DELIVERY_UNAVAILABLE", "INTERNAL",
+    ]
+    category: Literal["invalid", "auth", "forbidden", "missing", "conflict", "expired", "unavailable", "internal"]
+    retryable: bool
+    authority: Literal["admission", "device-control", "body-mesh", "companion", "delivery"]
+    command_id: str | None = None
+    resource_ref: dict[str, object] | None
+    current_revision: int | None = Field(default=None, ge=0)
+    current_generation: int | None = Field(default=None, ge=0)
+    retry_after_ms: int | None = Field(default=None, ge=1)
+    detail: str = Field(max_length=1024)
+    incident_id: str = Field(min_length=3, max_length=128, pattern=_IDENTIFIER)
+
+    @model_validator(mode="after")
+    def _retry(self) -> DeviceProblem:
+        if not self.retryable and self.retry_after_ms is not None:
+            raise ValueError("non-retryable problem cannot carry retry_after_ms")
+        if self.code == "RATE_LIMITED" and (not self.retryable or self.retry_after_ms is None):
+            raise ValueError("RATE_LIMITED must be retryable with retry_after_ms")
+        return self
+
+
 class ActorRef(_Model):
     principal_id: str = Field(
         min_length=3, max_length=128, pattern=_IDENTIFIER

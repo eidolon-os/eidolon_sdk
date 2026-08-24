@@ -577,6 +577,84 @@ class _AdmissionMapV1 {
   Map<String, dynamic> toJson() => Map<String, dynamic>.from(json);
 }
 
+class CommandEnvelopeV1 extends _AdmissionMapV1 {
+  CommandEnvelopeV1.fromJson(Map<String, dynamic> value)
+    : super(value, const {
+        'contract',
+        'contract_version',
+        'command_type',
+        'command_id',
+        'correlation_id',
+        'causation_id',
+        'issued_at',
+        'deadline',
+        'payload',
+        'extensions',
+      });
+}
+
+class CommandResultV1 extends _AdmissionMapV1 {
+  CommandResultV1.fromJson(Map<String, dynamic> value)
+    : super(value, const {
+        'command_id',
+        'outcome',
+        'resource_ref',
+        'resource_revision',
+        'occurred_at',
+        'extensions',
+      });
+}
+
+class DeviceProblemV1 extends _AdmissionMapV1 {
+  DeviceProblemV1.fromJson(Map<String, dynamic> value)
+    : super(value, const {
+        'code',
+        'category',
+        'retryable',
+        'authority',
+        'command_id',
+        'resource_ref',
+        'current_revision',
+        'current_generation',
+        'retry_after_ms',
+        'detail',
+        'incident_id',
+      });
+}
+
+class RevokeClaimV1 extends _AdmissionMapV1 {
+  RevokeClaimV1.fromJson(Map<String, dynamic> value)
+    : super(value, const {
+        'operation',
+        'command_id',
+        'correlation_id',
+        'device_ref',
+        'reason',
+      }) {
+    if (json['operation'] != 'device.claim-revocation')
+      throw const FormatException('Invalid revoke operation');
+    DeviceRefV1.fromJson(_map(json['device_ref']));
+  }
+}
+
+class RevokeClaimResultV1 extends _AdmissionMapV1 {
+  RevokeClaimResultV1.fromJson(Map<String, dynamic> value)
+    : super(value, const {
+        'operation',
+        'command_id',
+        'outcome',
+        'device_ref',
+        'aggregate_revision',
+        'occurred_at',
+        'event_id',
+        'lifecycle_state',
+      }) {
+    if (json['operation'] != 'device.claim-revocation-result')
+      throw const FormatException('Invalid revoke result');
+    DeviceRefV1.fromJson(_map(json['device_ref']));
+  }
+}
+
 class EnrollmentProposalV1 extends _AdmissionMapV1 {
   EnrollmentProposalV1.fromJson(Map<String, dynamic> value)
     : super(value, const {

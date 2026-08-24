@@ -91,6 +91,12 @@ struct DeviceRef {
     uint32_t trust_epoch = 0;
 };
 
+struct CommandEnvelope { std::string contract = "eidolon.device-foundation.command"; std::string contract_version = "1.0"; std::string command_type; std::string command_id; std::string correlation_id; std::optional<std::string> causation_id; std::string issued_at; std::optional<std::string> deadline; std::string payload_json; std::string extensions_json; };
+struct CommandResult { std::string command_id; std::string outcome; std::string resource_ref_json; std::optional<uint64_t> resource_revision; std::string occurred_at; std::string extensions_json; };
+struct DeviceProblem { std::string code; std::string category; bool retryable = false; std::string authority; std::optional<std::string> command_id; std::string resource_ref_json; std::optional<uint64_t> current_revision; std::optional<uint64_t> current_generation; std::optional<uint64_t> retry_after_ms; std::string detail; std::string incident_id; };
+struct RevokeClaim { std::string operation = "device.claim-revocation"; std::string command_id; std::string correlation_id; DeviceRef device_ref; std::string reason; };
+struct RevokeClaimResult { std::string operation = "device.claim-revocation-result"; std::string command_id; std::string outcome; DeviceRef device_ref; uint64_t aggregate_revision = 0; std::string occurred_at; std::optional<std::string> event_id; std::string lifecycle_state = "revoked"; };
+
 struct ManifestRef {
     std::string manifest_id;
     uint64_t revision = 0;

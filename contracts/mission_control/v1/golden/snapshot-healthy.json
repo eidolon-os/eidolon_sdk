@@ -25,7 +25,6 @@
       {
         "companion_id": "companion-yanzhou",
         "display_name": "砚舟",
-        "is_primary": true,
         "lifecycle_state": "active",
         "genome_id": "genome-yanzhou-7",
         "memory_realm_id": "realm-yanzhou"
@@ -33,7 +32,6 @@
       {
         "companion_id": "companion-linyuan",
         "display_name": "临渊",
-        "is_primary": false,
         "lifecycle_state": "archived",
         "genome_id": null,
         "memory_realm_id": null
@@ -331,5 +329,6 @@
         "summary": "临渊 请求开启摄像头，被授权边界拒绝"
       }
     ]
-  }
+  },
+  "default_companion_id": "companion-yanzhou"
 }

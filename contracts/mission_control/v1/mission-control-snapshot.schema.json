@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://eidolon.dev/contracts/local_api/v1/mission-control-snapshot.schema.json",
+  "$id": "https://eidolon.dev/contracts/mission_control/v1/mission-control-snapshot.schema.json",
   "title": "Mission Control Owner Runtime Snapshot V1",
-  "description": "What one Owner's runtime looks like at one instant, as the Local API projects it for a product client. Owner scope is derived server-side from the Controller session; there is no owner_id in the request. Read-only.",
+  "description": "What one Owner's runtime looks like at one instant, as the management plane projects it for a product client. Owner scope is derived server-side from the Controller session; there is no owner_id in the request. Read-only.",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -73,6 +73,14 @@
     },
     "events": {
       "$ref": "#/$defs/eventLane"
+    },
+    "default_companion_id": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "maxLength": 64,
+      "description": "Which Companion answers by default. Said once, here, so a consumer compares rather than trusting a per-row flag: a flag on every row is a second place the same question gets decided, and it is only ever right while there is one Companion."
     }
   },
   "$defs": {
@@ -206,10 +214,6 @@
                 "type": "string",
                 "maxLength": 128,
                 "default": ""
-              },
-              "is_primary": {
-                "type": "boolean",
-                "default": false
               },
               "lifecycle_state": {
                 "enum": [
