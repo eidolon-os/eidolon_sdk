@@ -9,21 +9,20 @@
         "actor": {
           "principal_id": "controller_01",
           "principal_type": "controller",
-          "owner_domain_id": "owner_01",
+          "owner_domain_id": "owner-domain_01",
           "granted_scopes": ["device.claim.revoke"],
           "authentication_strength": "hardware-backed"
         },
-        "authorized_owner_domain_id": "owner_01",
+        "authorized_owner_domain_id": "owner-domain_01",
         "audience": "eidolon-host-pi5",
         "scopes": ["device.claim.revoke"],
         "intent_id": "removal_intent_01",
         "target_device_ref": {
           "device_instance_id": "device_01",
-          "owner_domain_id": "owner_01",
+          "owner_domain_id": "owner-domain_01",
           "owner_domain_generation": 3,
           "claim_generation": 2,
-          "trust_epoch": 4,
-          "accepted_manifest_digest": "sha256:2222222222222222222222222222222222222222222222222222222222222222"
+          "trust_epoch": 4
         },
         "issued_at": "2026-08-23T10:00:00Z",
         "expires_at": "2026-08-23T10:01:00Z"
@@ -40,9 +39,8 @@
         "correlation_id": "removal_intent_01",
         "device_ref": {
           "device_instance_id": "device_01",
-          "owner_domain_id": "owner_01",
-          "trust_epoch": 4,
-          "accepted_manifest_digest": "sha256:2222222222222222222222222222222222222222222222222222222222222222"
+          "owner_domain_id": "owner-domain_01",
+          "trust_epoch": 4
         },
         "reason": "owner-removed"
       },
@@ -58,10 +56,9 @@
         "correlation_id": "removal_intent_01",
         "device_ref": {
           "device_instance_id": "device_01",
-          "owner_domain_id": "owner_01",
+          "owner_domain_id": "owner-domain_01",
           "owner_domain_generation": 3,
-          "claim_generation": 2,
-          "accepted_manifest_digest": "sha256:2222222222222222222222222222222222222222222222222222222222222222"
+          "claim_generation": 2
         },
         "reason": "owner-removed"
       },
@@ -76,21 +73,20 @@
         "actor": {
           "principal_id": "controller_01",
           "principal_type": "controller",
-          "owner_domain_id": "owner_01",
+          "owner_domain_id": "owner-domain_01",
           "granted_scopes": ["device.read"],
           "authentication_strength": "hardware-backed"
         },
-        "authorized_owner_domain_id": "owner_01",
+        "authorized_owner_domain_id": "owner-domain_01",
         "audience": "eidolon-admission",
         "scopes": ["device.read"],
         "intent_id": "removal_intent_01",
         "target_device_ref": {
           "device_instance_id": "device_01",
-          "owner_domain_id": "owner_01",
+          "owner_domain_id": "owner-domain_01",
           "owner_domain_generation": 3,
           "claim_generation": 2,
-          "trust_epoch": 4,
-          "accepted_manifest_digest": "sha256:2222222222222222222222222222222222222222222222222222222222222222"
+          "trust_epoch": 4
         },
         "issued_at": "2026-08-23T10:00:00Z",
         "expires_at": "2026-08-23T10:01:00Z"
@@ -106,16 +102,15 @@
         "ingress_request_id": "01A0B1C2-D3E4-4F50-8123-456789ABCDEF",
         "device_ref": {
           "device_instance_id": "10:51:db:7e:24:44",
-          "owner_domain_id": "owner_01",
+          "owner_domain_id": "owner-domain_01",
           "owner_domain_generation": 3,
           "claim_generation": 2,
-          "trust_epoch": 4,
-          "accepted_manifest_digest": "sha256:2222222222222222222222222222222222222222222222222222222222222222"
+          "trust_epoch": 4
         },
         "actor": {
           "principal_id": "controller_01",
           "principal_type": "controller",
-          "owner_domain_id": "owner_01",
+          "owner_domain_id": "owner-domain_01",
           "granted_scopes": ["device.claim.revoke"],
           "authentication_strength": "hardware-backed"
         },

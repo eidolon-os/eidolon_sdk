@@ -13,6 +13,18 @@
       "value": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
     },
     {
+      "case_id": "DF-COMMON-OWNER-DOMAIN-ID-VALID",
+      "schema": "https://contracts.eidolon.live/device-foundation/v1/common/schemas.schema.json",
+      "definition": "OwnerDomainId",
+      "value": "owner-domain_01"
+    },
+    {
+      "case_id": "DF-COMMON-BUSINESS-OWNER-ID-VALID",
+      "schema": "https://contracts.eidolon.live/device-foundation/v1/common/schemas.schema.json",
+      "definition": "BusinessOwnerId",
+      "value": "owner_01"
+    },
+    {
       "case_id": "DF-COMMON-P256-SIGNATURE-VALID",
       "schema": "https://contracts.eidolon.live/device-foundation/v1/common/schemas.schema.json",
       "definition": "P256RawSignature",
@@ -24,11 +36,10 @@
       "definition": "DeviceRef",
       "value": {
         "device_instance_id": "10:51:db:7e:24:44",
-        "owner_domain_id": "owner_01",
+        "owner_domain_id": "owner-domain_01",
         "owner_domain_generation": 3,
         "claim_generation": 2,
-        "trust_epoch": 3,
-        "accepted_manifest_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        "trust_epoch": 3
       }
     },
     {
@@ -42,14 +53,33 @@
       }
     },
     {
+      "case_id": "DF-COMMON-MANIFEST-REF-VALID",
+      "schema": "https://contracts.eidolon.live/device-foundation/v1/common/schemas.schema.json",
+      "definition": "ManifestRef",
+      "value": {
+        "manifest_id": "manifest_01", "revision": 2,
+        "digest": "sha256:2222222222222222222222222222222222222222222222222222222222222222"
+      }
+    },
+    {
       "case_id": "DF-COMMON-ACTOR-VALID",
       "schema": "https://contracts.eidolon.live/device-foundation/v1/common/schemas.schema.json",
       "definition": "ActorRef",
       "value": {
         "principal_id": "controller_01",
         "principal_type": "controller",
-        "owner_domain_id": "owner_01",
+        "owner_domain_id": "owner-domain_01",
         "granted_scopes": ["device.claim.approve"],
+        "authentication_strength": "hardware-backed"
+      }
+    },
+    {
+      "case_id": "DF-COMMON-CONTROLLER-ACTOR-VALID",
+      "schema": "https://contracts.eidolon.live/device-foundation/v1/common/schemas.schema.json",
+      "definition": "ControllerActorRef",
+      "value": {
+        "principal_id": "controller_01", "principal_type": "controller",
+        "owner_domain_id": "owner-domain_01", "granted_scopes": ["device.claim.approve"],
         "authentication_strength": "hardware-backed"
       }
     },
@@ -106,7 +136,7 @@
       "schema": "https://contracts.eidolon.live/device-foundation/v1/common/schemas.schema.json",
       "definition": "OwnerDomainDescriptor",
       "value": {
-        "owner_domain_id": "owner_01",
+        "owner_domain_id": "owner-domain_01",
         "owner_domain_generation": 3,
         "directory_revision": 7,
         "trust_root_refs": [
@@ -145,7 +175,7 @@
         "proposal_revision": 3,
         "hardware_evidence_digest": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
         "manifest_digest": "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
-        "owner_domain_id": "owner_01",
+        "owner_domain_id": "owner-domain_01",
         "owner_domain_generation": 3,
         "claim_generation": 2,
         "trust_epoch": 4,

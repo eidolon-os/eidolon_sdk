@@ -46,13 +46,11 @@
     "ReconcileEndpoints": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["mount_id", "expected_mount_revision", "accepted_manifest_digest", "endpoints"],
+      "required": ["mount_id", "expected_mount_revision", "manifest_ref", "endpoints"],
       "properties": {
         "mount_id": { "$ref": "../common/schemas.schema.json#/$defs/Identifier" },
         "expected_mount_revision": { "type": "integer", "minimum": 1 },
-        "accepted_manifest_digest": {
-          "$ref": "../common/schemas.schema.json#/$defs/Sha256Digest"
-        },
+        "manifest_ref": { "$ref": "../common/schemas.schema.json#/$defs/ManifestRef" },
         "endpoints": {
           "type": "array",
           "items": {

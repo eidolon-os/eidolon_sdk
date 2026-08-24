@@ -23,7 +23,7 @@ from eidolon_sdk.device_foundation.v1 import (
 
 
 NOW = datetime(2026, 8, 18, 12, tzinfo=UTC)
-OWNER_ID = "owner_01"
+OWNER_ID = "owner-domain_01"
 
 
 def _key(scalar: int = 0x123456789ABCDEF) -> ec.EllipticCurvePrivateKey:

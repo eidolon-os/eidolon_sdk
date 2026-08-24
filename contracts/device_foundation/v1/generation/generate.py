@@ -56,7 +56,7 @@ def build_outputs(config: dict[str, object]) -> dict[Path, bytes]:
     }
     for binding in config["binding_outputs"]:
         template = ROOT / binding["template"]
-        output = EIDOLON_ROOT / binding["repo"] / binding["path"]
+        output = ROOT / binding["path"]
         outputs[output] = template.read_bytes()
     return outputs
 

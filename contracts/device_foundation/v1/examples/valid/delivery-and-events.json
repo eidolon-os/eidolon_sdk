@@ -1,17 +1,33 @@
 {
   "cases": [
     {
+      "case_id": "DF-EVENT-ADMISSION-SOURCE-VALID",
+      "schema": "https://contracts.eidolon.live/device-foundation/v1/events/schemas.schema.json",
+      "definition": "AdmissionEventSource",
+      "value": "urn:eidolon:authority:admission"
+    },
+    {
+      "case_id": "DF-EVENT-ADMISSION-TYPE-VALID",
+      "schema": "https://contracts.eidolon.live/device-foundation/v1/events/schemas.schema.json",
+      "definition": "AdmissionEventType",
+      "value": "live.eidolon.device.claim-activated.v1"
+    },
+    {
       "case_id": "DF-EVENT-CLAIM-ACTIVATED-DATA-VALID",
       "schema": "https://contracts.eidolon.live/device-foundation/v1/events/schemas.schema.json",
       "definition": "ClaimActivatedData",
       "value": {
         "device_ref": {
           "device_instance_id": "device_01",
-          "owner_domain_id": "owner_01",
+          "owner_domain_id": "owner-domain_01",
           "owner_domain_generation": 3,
           "claim_generation": 2,
-          "trust_epoch": 4,
-          "accepted_manifest_digest": "sha256:2222222222222222222222222222222222222222222222222222222222222222"
+          "trust_epoch": 4
+        },
+        "manifest_ref": {
+          "manifest_id": "manifest_01",
+          "revision": 2,
+          "digest": "sha256:2222222222222222222222222222222222222222222222222222222222222222"
         },
         "approval_decision_id": "decision_01",
         "activated_at": "2026-08-18T00:05:00Z"
@@ -27,11 +43,10 @@
         "kind": "operation",
         "device_ref": {
           "device_instance_id": "device_01",
-          "owner_domain_id": "owner_01",
+          "owner_domain_id": "owner-domain_01",
           "owner_domain_generation": 3,
           "claim_generation": 2,
-          "trust_epoch": 4,
-          "accepted_manifest_digest": "sha256:2222222222222222222222222222222222222222222222222222222222222222"
+          "trust_epoch": 4
         },
         "deadline": "2026-08-18T00:20:00Z",
         "payload_schema": "https://contracts.eidolon.live/device-foundation/v1/device-control/create-operation.schema.json",
@@ -61,18 +76,22 @@
         "time": "2026-08-18T00:05:00Z",
         "datacontenttype": "application/json",
         "dataschema": "https://contracts.eidolon.live/device-foundation/v1/events/claim-activated-data.schema.json",
-        "ownerdomainid": "owner_01",
+        "ownerdomainid": "owner-domain_01",
         "aggregaterev": 7,
         "correlationid": "intent_01",
         "causationid": "command_01",
         "data": {
           "device_ref": {
             "device_instance_id": "device_01",
-            "owner_domain_id": "owner_01",
+            "owner_domain_id": "owner-domain_01",
             "owner_domain_generation": 3,
             "claim_generation": 2,
-            "trust_epoch": 4,
-            "accepted_manifest_digest": "sha256:2222222222222222222222222222222222222222222222222222222222222222"
+            "trust_epoch": 4
+          },
+          "manifest_ref": {
+            "manifest_id": "manifest_01",
+            "revision": 2,
+            "digest": "sha256:2222222222222222222222222222222222222222222222222222222222222222"
           },
           "approval_decision_id": "decision_01",
           "activated_at": "2026-08-18T00:05:00Z"
@@ -86,11 +105,10 @@
       "value": {
         "device_ref": {
           "device_instance_id": "device_01",
-          "owner_domain_id": "owner_01",
+          "owner_domain_id": "owner-domain_01",
           "owner_domain_generation": 3,
           "claim_generation": 2,
-          "trust_epoch": 4,
-          "accepted_manifest_digest": "sha256:2222222222222222222222222222222222222222222222222222222222222222"
+          "trust_epoch": 4
         },
         "reason": "owner-removed",
         "revoked_at": "2026-08-23T10:00:01Z"
@@ -109,18 +127,17 @@
         "time": "2026-08-23T10:00:01Z",
         "datacontenttype": "application/json",
         "dataschema": "https://contracts.eidolon.live/device-foundation/v1/events/claim-revoked-data.schema.json",
-        "ownerdomainid": "owner_01",
+        "ownerdomainid": "owner-domain_01",
         "aggregaterev": 8,
         "correlationid": "removal_intent_01",
         "causationid": "revoke_claim_01",
         "data": {
           "device_ref": {
             "device_instance_id": "device_01",
-            "owner_domain_id": "owner_01",
+            "owner_domain_id": "owner-domain_01",
             "owner_domain_generation": 3,
             "claim_generation": 2,
-            "trust_epoch": 4,
-            "accepted_manifest_digest": "sha256:2222222222222222222222222222222222222222222222222222222222222222"
+            "trust_epoch": 4
           },
           "reason": "owner-removed",
           "revoked_at": "2026-08-23T10:00:01Z"

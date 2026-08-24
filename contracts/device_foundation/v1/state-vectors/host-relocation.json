@@ -1,15 +1,14 @@
 {
   "vector_id": "DF-HOST-001",
   "given": {
-    "owner_domain_id": "owner_01",
+    "owner_domain_id": "owner-domain_01",
     "owner_root": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
     "device_ref": {
       "device_instance_id": "device_01",
-      "owner_domain_id": "owner_01",
+      "owner_domain_id": "owner-domain_01",
       "owner_domain_generation": 3,
       "claim_generation": 2,
-      "trust_epoch": 4,
-      "accepted_manifest_digest": "sha256:2222222222222222222222222222222222222222222222222222222222222222"
+      "trust_epoch": 4
     },
     "mount_revision": 8,
     "assignment_generation": 3,

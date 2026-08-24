@@ -7,7 +7,7 @@ from datetime import UTC, datetime
 from typing import Literal
 
 import rfc8785
-from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict, Field, RootModel, field_validator, model_validator
 
 
 class _Model(BaseModel):
@@ -32,17 +32,52 @@ def _aware_datetime(value: object) -> datetime:
 _IDENTIFIER = r"^[A-Za-z0-9][A-Za-z0-9._:-]*$"
 
 
+class OwnerDomainId(RootModel[str]):
+    """Nominal Owner Sovereign Domain identifier; never a tenant/account id."""
+
+    model_config = ConfigDict(frozen=True, strict=True)
+
+    @field_validator("root")
+    @classmethod
+    def _valid(cls, value: str) -> str:
+        if not 3 <= len(value) <= 128 or not value.startswith("owner-"):
+            raise ValueError("OwnerDomainId must use the owner- namespace")
+        return value
+
+    def __str__(self) -> str:
+        return self.root
+
+
+class BusinessOwnerId(RootModel[str]):
+    """Nominal business Owner/tenant identifier; never an Owner Domain id."""
+
+    model_config = ConfigDict(frozen=True, strict=True)
+
+    @field_validator("root")
+    @classmethod
+    def _valid(cls, value: str) -> str:
+        if not 3 <= len(value) <= 128 or not value.startswith("owner_"):
+            raise ValueError("BusinessOwnerId must use the owner_ namespace")
+        return value
+
+    def __str__(self) -> str:
+        return self.root
+
+
+class ManifestRef(_Model):
+    manifest_id: str = Field(min_length=3, max_length=128, pattern=_IDENTIFIER)
+    revision: int = Field(ge=1)
+    digest: str = Field(pattern=r"^sha256:[0-9a-f]{64}$")
+
+
 class DeviceRef(_Model):
     device_instance_id: str = Field(
         min_length=3, max_length=128, pattern=r"^[A-Za-z0-9][A-Za-z0-9._:-]*$"
     )
-    owner_domain_id: str = Field(
-        min_length=3, max_length=128, pattern=_IDENTIFIER
-    )
+    owner_domain_id: OwnerDomainId
     owner_domain_generation: int = Field(ge=1)
     claim_generation: int = Field(ge=1)
     trust_epoch: int = Field(ge=1)
-    accepted_manifest_digest: str = Field(pattern=r"^sha256:[0-9a-f]{64}$")
 
 
 class ActorRef(_Model):
@@ -50,9 +85,7 @@ class ActorRef(_Model):
         min_length=3, max_length=128, pattern=_IDENTIFIER
     )
     principal_type: Literal["controller", "device", "service", "operator"]
-    owner_domain_id: str | None = Field(
-        default=None, min_length=3, max_length=128, pattern=_IDENTIFIER
-    )
+    owner_domain_id: OwnerDomainId | None = None
     granted_scopes: tuple[str, ...] = Field(min_length=1)
     authentication_strength: Literal[
         "software", "hardware-backed", "physical-presence"
@@ -75,9 +108,7 @@ class OwnerAuthorizationContext(_Model):
         min_length=3, max_length=128, pattern=_IDENTIFIER
     )
     actor: ActorRef
-    authorized_owner_domain_id: str = Field(
-        min_length=3, max_length=128, pattern=_IDENTIFIER
-    )
+    authorized_owner_domain_id: OwnerDomainId
     audience: Literal["eidolon-admission"] = "eidolon-admission"
     scopes: tuple[Literal["device.read", "device.claim.revoke"], ...] = Field(
         min_length=1
@@ -209,7 +240,7 @@ def revoke_claim_fingerprint(command: RevokeClaim) -> str:
 
     document = {
         "command_type": "device.claim.revoke",
-        "owner_domain_id": command.device_ref.owner_domain_id,
+        "owner_domain_id": str(command.device_ref.owner_domain_id),
         "payload": {
             "device_ref": command.device_ref.model_dump(mode="json"),
             "reason": command.reason,

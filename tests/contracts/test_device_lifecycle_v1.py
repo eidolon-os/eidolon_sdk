@@ -7,7 +7,10 @@ from pydantic import ValidationError
 
 from eidolon_sdk.device_foundation.v1 import (
     ActorRef,
+    BusinessOwnerId,
     DeviceRef,
+    ManifestRef,
+    OwnerDomainId,
     OwnerAuthorizationContext,
     RemovalIntent,
     RevokeClaim,
@@ -17,28 +20,46 @@ from eidolon_sdk.device_foundation.v1 import (
 )
 
 
-def _ref(*, owner: str = "owner_01", generation: int = 2) -> DeviceRef:
+def _ref(*, owner: str = "owner-domain_01", generation: int = 2) -> DeviceRef:
     return DeviceRef(
         device_instance_id="device_01",
         owner_domain_id=owner,
         owner_domain_generation=3,
         claim_generation=generation,
         trust_epoch=4,
-        accepted_manifest_digest="sha256:" + "2" * 64,
     )
 
 
 def test_device_ref_accepts_deployed_mac_style_instance_id() -> None:
     ref = DeviceRef(
         device_instance_id="10:51:db:7e:24:44",
-        owner_domain_id="owner_01",
+        owner_domain_id="owner-domain_01",
         owner_domain_generation=3,
         claim_generation=2,
         trust_epoch=4,
-        accepted_manifest_digest="sha256:" + "2" * 64,
     )
 
     assert ref.device_instance_id == "10:51:db:7e:24:44"
+    assert set(ref.model_dump(mode="json")) == {
+        "device_instance_id", "owner_domain_id", "owner_domain_generation",
+        "claim_generation", "trust_epoch",
+    }
+
+
+def test_owner_domain_business_owner_and_actor_are_nominally_distinct() -> None:
+    domain = OwnerDomainId("owner-domain_01")
+    owner = BusinessOwnerId("owner_01")
+    assert type(domain) is not type(owner)
+    with pytest.raises(ValidationError):
+        DeviceRef(
+            device_instance_id="device_01", owner_domain_id=owner,
+            owner_domain_generation=3, claim_generation=2, trust_epoch=4,
+        )
+    manifest = ManifestRef(
+        manifest_id="manifest_01", revision=2, digest="sha256:" + "2" * 64
+    )
+    assert "digest" not in DeviceRef.model_fields
+    assert manifest.digest.startswith("sha256:")
 
 
 def test_revoke_claim_requires_the_full_exact_device_ref() -> None:
@@ -68,11 +89,11 @@ def test_owner_authorization_separates_workload_actor_owner_and_audience() -> No
         "actor": ActorRef(
             principal_id="controller_01",
             principal_type="controller",
-            owner_domain_id="owner_01",
+            owner_domain_id="owner-domain_01",
             granted_scopes=("device.claim.revoke",),
             authentication_strength="hardware-backed",
         ),
-        "authorized_owner_domain_id": "owner_01",
+        "authorized_owner_domain_id": "owner-domain_01",
         "scopes": ("device.claim.revoke",),
         "intent_id": "removal_intent_01",
         "target_device_ref": _ref(),
@@ -86,7 +107,7 @@ def test_owner_authorization_separates_workload_actor_owner_and_audience() -> No
     assert context.workload_principal_id != context.actor.principal_id
     with pytest.raises(ValidationError, match="do not match"):
         OwnerAuthorizationContext(
-            **{**values, "target_device_ref": _ref(owner="owner_02")}
+            **{**values, "target_device_ref": _ref(owner="owner-domain_02")}
         )
     with pytest.raises(ValidationError, match="exceed"):
         OwnerAuthorizationContext(
@@ -108,7 +129,7 @@ def test_removal_intent_freezes_actor_and_exact_device_generation() -> None:
         actor=ActorRef(
             principal_id="controller_01",
             principal_type="controller",
-            owner_domain_id="owner_01",
+            owner_domain_id="owner-domain_01",
             granted_scopes=("device.claim.revoke",),
             authentication_strength="hardware-backed",
         ),
@@ -132,7 +153,7 @@ def test_removal_intent_accepts_uuid_ingress_and_rejects_naive_time() -> None:
         "actor": ActorRef(
             principal_id="controller_01",
             principal_type="controller",
-            owner_domain_id="owner_01",
+            owner_domain_id="owner-domain_01",
             granted_scopes=("device.claim.revoke",),
             authentication_strength="hardware-backed",
         ),

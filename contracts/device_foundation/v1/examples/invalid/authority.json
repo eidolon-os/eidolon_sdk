@@ -8,7 +8,7 @@
       "value": {
         "profile_id": "implementation-selected",
         "device_instance_candidate_id": "device_candidate_01",
-        "requested_owner_domain_id": "owner_01",
+        "requested_owner_domain_id": "owner-domain_01",
         "hardware_identity_evidence": {
           "scheme": "manufacturer-p256",
           "evidence": "bWFudWZhY3R1cmVyLWNoYWlu",
@@ -20,12 +20,17 @@
           "nonce": "bm9uY2Utbm9uY2Utbm9uY2U"
         },
         "manifest": {
+          "manifest_id": "manifest_01",
           "revision": 2,
           "digest": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
           "document": {}
         },
         "handoff_key": {
           "scheme": "DHKEM-P256-HKDF-SHA256",
+          "public_key": "p256-spki:MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE"
+        },
+        "operational_key": {
+          "scheme": "ES256-P256",
           "public_key": "p256-spki:MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE"
         }
       }
@@ -39,9 +44,14 @@
         "enrollment_id": "enrollment_01",
         "expected_proposal_revision": 1,
         "decision": "approve",
-        "target_owner_domain_id": "owner_01",
+        "target_owner_domain_id": "owner-domain_01",
+        "target_business_owner_id": "owner_01",
         "target_space_id": null,
-        "reviewed_manifest_digest": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+        "reviewed_manifest_ref": {
+          "manifest_id": "manifest_01",
+          "revision": 2,
+          "digest": "sha256:2222222222222222222222222222222222222222222222222222222222222222"
+        },
         "initial_assignment_intent": null,
         "initial_capability_policy_refs": [],
         "decided_by": "body-supplied-actor"
@@ -68,11 +78,10 @@
       "value": {
         "device_ref": {
           "device_instance_id": "device_01",
-          "owner_domain_id": "owner_01",
+          "owner_domain_id": "owner-domain_01",
           "owner_domain_generation": 3,
           "claim_generation": 2,
-          "trust_epoch": 4,
-          "accepted_manifest_digest": "sha256:2222222222222222222222222222222222222222222222222222222222222222"
+          "trust_epoch": 4
         },
         "expected_revision": 0,
         "spec": {
@@ -105,11 +114,10 @@
       "value": {
         "device_ref": {
           "device_instance_id": "device_01",
-          "owner_domain_id": "owner_01",
+          "owner_domain_id": "owner-domain_01",
           "owner_domain_generation": 3,
           "claim_generation": 2,
           "trust_epoch": 4,
-          "accepted_manifest_digest": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
           "host_id": "host_01"
         },
         "report_id": "report_01",
@@ -127,11 +135,10 @@
       "value": {
         "device_ref": {
           "device_instance_id": "device_01",
-          "owner_domain_id": "owner_01",
+          "owner_domain_id": "owner-domain_01",
           "owner_domain_generation": 3,
           "claim_generation": 2,
-          "trust_epoch": 4,
-          "accepted_manifest_digest": "sha256:2222222222222222222222222222222222222222222222222222222222222222"
+          "trust_epoch": 4
         },
         "operation_id": "operation_01",
         "operation_type": "device.restart",
@@ -171,18 +178,22 @@
         "time": "2026-08-18T00:05:00Z",
         "datacontenttype": "application/json",
         "dataschema": "https://contracts.eidolon.live/device-foundation/v1/events/claim-activated-data.schema.json",
-        "ownerdomainid": "owner_01",
+        "ownerdomainid": "owner-domain_01",
         "aggregaterev": 7,
         "correlationid": "intent_01",
         "causationid": "command_01",
         "data": {
           "device_ref": {
             "device_instance_id": "device_01",
-            "owner_domain_id": "owner_01",
+            "owner_domain_id": "owner-domain_01",
             "owner_domain_generation": 3,
             "claim_generation": 2,
-            "trust_epoch": 4,
-            "accepted_manifest_digest": "sha256:2222222222222222222222222222222222222222222222222222222222222222"
+            "trust_epoch": 4
+          },
+          "manifest_ref": {
+            "manifest_id": "manifest_01",
+            "revision": 2,
+            "digest": "sha256:2222222222222222222222222222222222222222222222222222222222222222"
           },
           "approval_decision_id": "decision_01",
           "activated_at": "2026-08-18T00:05:00Z"

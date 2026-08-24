@@ -19,23 +19,26 @@
   "outputs": ["generated/catalog.json"],
   "binding_outputs": [
     {
+      "language": "python",
+      "path": "generated/python/device_foundation_v1.py",
+      "template": "generation/templates/device_foundation_v1.py"
+    },
+    {
       "language": "dart",
-      "repo": "eidolon_client_mobile",
-      "path": "lib/src/generated/device_foundation_v1.dart",
+      "path": "generated/dart/device_foundation_v1.dart",
       "template": "generation/templates/device_foundation_v1.dart"
     },
     {
       "language": "cpp",
-      "repo": "eidolon-client-esp32",
-      "path": "main/eidolon/device_foundation_v1_generated.h",
+      "path": "generated/cpp/device_foundation_v1_generated.h",
       "template": "generation/templates/device_foundation_v1_generated.h"
     }
   ],
   "binding_targets": [
-    { "language": "python", "status": "canonical-runtime", "owner": "eidolon_sdk" },
-    { "language": "dart", "status": "generated", "owner": "eidolon_sdk" },
+    { "language": "python", "status": "generated", "owner": "eidolon_sdk" },
+    { "language": "dart", "status": "generated-cutover-input", "owner": "eidolon_sdk" },
     { "language": "kotlin", "status": "transport-adapter-only", "owner": "eidolon_client_mobile" },
-    { "language": "cpp", "status": "generated", "owner": "eidolon_sdk" }
+    { "language": "cpp", "status": "generated-cutover-input", "owner": "eidolon_sdk" }
   ],
   "policy": {
     "generated_files_are_read_only": true,

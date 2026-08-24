@@ -1,38 +1,40 @@
 {
   "profile_id": "eidolon-trust-p256-hpke-v1",
-  "public_key_spki": "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE5vPc7n-PZAfYfydYSjgD_prv1_vMqhWK3V4PkmTVXCSik3KwH5u30WQu0pad-LgIwLcSnr2zfmVDdIOngURgag",
-  "key_id": "sha256:988f874397609b0066ad82cff299e03f8ea080c9f54ec8a3a9e09beab9c174ae",
+  "public_key_spki": "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEtnQCGRdqvyj-Y1o_EBErJSYZ4OmMXMBvHHsrdJXtgy_gDjPYMJ-J5VHTsSCcdKyH1xQb-nYni36ZYVJ-f_82xQ",
+  "key_id": "sha256:591d7c62d0bc738376935f77ff2acd5472bbee64207a765df03af6d6240c07dc",
   "operation": {
     "contract": "eidolon.device-foundation.device-operation",
     "contract_version": "1.0",
     "deadline": "2026-08-30T00:00:00Z",
     "device_ref": {
-      "accepted_manifest_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
       "claim_generation": 7,
       "device_instance_id": "device_erase_01",
       "owner_domain_generation": 3,
-      "owner_domain_id": "owner_01",
+      "owner_domain_id": "owner-domain_01",
       "trust_epoch": 4
     },
     "operation_id": "erase_operation_01",
     "operation_type": "device-local.erase",
     "payload": {
-      "erase_scopes": ["owner-credentials", "owner-data", "network-profiles"]
+      "erase_scopes": [
+        "owner-credentials",
+        "owner-data",
+        "network-profiles"
+      ]
     }
   },
-  "operation_canonical_utf8": "{\"contract\":\"eidolon.device-foundation.device-operation\",\"contract_version\":\"1.0\",\"deadline\":\"2026-08-30T00:00:00Z\",\"device_ref\":{\"accepted_manifest_digest\":\"sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"claim_generation\":7,\"device_instance_id\":\"device_erase_01\",\"owner_domain_generation\":3,\"owner_domain_id\":\"owner_01\",\"trust_epoch\":4},\"operation_id\":\"erase_operation_01\",\"operation_type\":\"device-local.erase\",\"payload\":{\"erase_scopes\":[\"owner-credentials\",\"owner-data\",\"network-profiles\"]}}",
-  "operation_fingerprint": "sha256:a1d3e8ce81d040caed030a5c2285e76feafb253febae465a3207d91431bd0d88",
+  "operation_canonical_utf8": "{\"contract\":\"eidolon.device-foundation.device-operation\",\"contract_version\":\"1.0\",\"deadline\":\"2026-08-30T00:00:00Z\",\"device_ref\":{\"claim_generation\":7,\"device_instance_id\":\"device_erase_01\",\"owner_domain_generation\":3,\"owner_domain_id\":\"owner-domain_01\",\"trust_epoch\":4},\"operation_id\":\"erase_operation_01\",\"operation_type\":\"device-local.erase\",\"payload\":{\"erase_scopes\":[\"owner-credentials\",\"owner-data\",\"network-profiles\"]}}",
+  "operation_fingerprint": "sha256:db4db5a1baf21755c5e8945c0923e5be95466ad036d55df54c964b9a5c0f03b4",
   "ack_signing_document": {
     "ack_sequence": 1,
     "contract": "eidolon.device-foundation.device-operation-ack",
     "contract_version": "1.0",
     "device_monotonic_time": 1234,
     "device_ref": {
-      "accepted_manifest_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
       "claim_generation": 7,
       "device_instance_id": "device_erase_01",
       "owner_domain_generation": 3,
-      "owner_domain_id": "owner_01",
+      "owner_domain_id": "owner-domain_01",
       "trust_epoch": 4
     },
     "operation_id": "erase_operation_01",
@@ -40,12 +42,12 @@
     "result": "erased",
     "result_code": "ERASED"
   },
-  "ack_canonical_utf8": "{\"ack_sequence\":1,\"contract\":\"eidolon.device-foundation.device-operation-ack\",\"contract_version\":\"1.0\",\"device_monotonic_time\":1234,\"device_ref\":{\"accepted_manifest_digest\":\"sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"claim_generation\":7,\"device_instance_id\":\"device_erase_01\",\"owner_domain_generation\":3,\"owner_domain_id\":\"owner_01\",\"trust_epoch\":4},\"operation_id\":\"erase_operation_01\",\"operation_type\":\"device-local.erase\",\"result\":\"erased\",\"result_code\":\"ERASED\"}",
-  "ack_signature": "geu8E4ozkoSMZnmsutOStBbSGhYGfZHjkExJ_SrvXIu20Mq_SUMp6QiUM--rcVEDakUL39G9gcisOIHtooufog",
+  "ack_canonical_utf8": "{\"ack_sequence\":1,\"contract\":\"eidolon.device-foundation.device-operation-ack\",\"contract_version\":\"1.0\",\"device_monotonic_time\":1234,\"device_ref\":{\"claim_generation\":7,\"device_instance_id\":\"device_erase_01\",\"owner_domain_generation\":3,\"owner_domain_id\":\"owner-domain_01\",\"trust_epoch\":4},\"operation_id\":\"erase_operation_01\",\"operation_type\":\"device-local.erase\",\"result\":\"erased\",\"result_code\":\"ERASED\"}",
+  "ack_signature": "9YwY2X3VwSxtmJWwIBQTsv0Tufr-tUbRz4MyDGK7h0VAXI_D4EQ_RV_h7jwTkVauiBMhgbY-2omxMmpku6DSpw",
   "key_proof_signing_document": {
     "device_instance_id": "device_erase_01",
     "enrollment_request_id": "enrollment_request_01",
     "public_key_spki": "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE5vPc7n-PZAfYfydYSjgD_prv1_vMqhWK3V4PkmTVXCSik3KwH5u30WQu0pad-LgIwLcSnr2zfmVDdIOngURgag"
   },
-  "key_proof_signature": "QDvohvBr4HiEHj1EHDFZiksEQfMZu5MQ0u4E2bjeogBrAAxfj7mGZuXBdW-RFQR0w9hHao3ZcjsAcqKASx7PeQ"
+  "key_proof_signature": "F2Yei2t4NmEfBz32PB88bwX6RFC1SgTktBbx3LlSvv7Z5ooq-Vyfm5F8XrJzw9Rsp2unczD8xuDMrFZ5hLxI2Q"
 }

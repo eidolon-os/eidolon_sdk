@@ -7,12 +7,32 @@
       "error_contains": "Additional properties",
       "value": {
         "device_instance_id": "device_01",
-        "owner_domain_id": "owner_01",
+        "owner_domain_id": "owner-domain_01",
         "owner_domain_generation": 3,
         "claim_generation": 2,
         "trust_epoch": 3,
-        "accepted_manifest_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
         "host_id": "host_01"
+      }
+    },
+    {
+      "case_id": "DF-PH2-DEVICE-REF-REJECTS-MANIFEST-DIGEST",
+      "schema": "https://contracts.eidolon.live/device-foundation/v1/common/schemas.schema.json",
+      "definition": "DeviceRef",
+      "error_contains": "Additional properties",
+      "value": {
+        "device_instance_id": "device_01", "owner_domain_id": "owner-domain_01",
+        "owner_domain_generation": 3, "claim_generation": 2, "trust_epoch": 3,
+        "accepted_manifest_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      }
+    },
+    {
+      "case_id": "DF-PH2-DEVICE-REF-REJECTS-BUSINESS-OWNER-AS-DOMAIN",
+      "schema": "https://contracts.eidolon.live/device-foundation/v1/common/schemas.schema.json",
+      "definition": "DeviceRef",
+      "error_contains": "does not match",
+      "value": {
+        "device_instance_id": "device_01", "owner_domain_id": "owner_01",
+        "owner_domain_generation": 3, "claim_generation": 2, "trust_epoch": 3
       }
     },
     {
@@ -89,7 +109,7 @@
       "definition": "OwnerDomainDescriptor",
       "error_contains": "Additional properties",
       "value": {
-        "owner_domain_id": "owner_01",
+        "owner_domain_id": "owner-domain_01",
         "owner_domain_generation": 3,
         "directory_revision": 7,
         "trust_root_refs": [

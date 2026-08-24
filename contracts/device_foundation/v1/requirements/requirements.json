@@ -1,6 +1,6 @@
 {
   "manifest_version": "1.0",
-  "design_source": "docs/跨系统/设备生命周期状态机与恢复边.md@f2ee75670a747af65a591ba88056fd9d49ca36e2",
+  "design_source": "docs/跨系统/设备生命周期状态机与恢复边.md@2e19e7f084d5e7d8c212586df30dc5983b5687ca",
   "requirements": [
     {
       "requirement_id": "DF-CONTRACT-001",
@@ -666,6 +666,83 @@
       "status": "covered",
       "waiver_reason": null,
       "waiver_expires_at": null
+    },
+    {
+      "requirement_id": "DF-PH2-CONTRACT-001",
+      "normative_text_ref": "3.4/3.6.2/19.2.2 DeviceRef MUST contain exactly five identity/generation fields and ManifestRef MUST be separate",
+      "owner": "eidolon_sdk",
+      "schema_ids": ["common/DeviceRef", "common/ManifestRef"],
+      "producer_tests": ["SDK::test_device_ref_has_exact_five_fields"],
+      "consumer_tests": ["SDK::test_generated_ph2_bindings_are_sdk_local"],
+      "simulator_vectors": ["DF-PH2-DEVICE-REF-REJECTS-MANIFEST-DIGEST"],
+      "integration_tests": ["CONFORMANCE::check_fixtures", "GENERATION::generate --check"],
+      "hil_tests": [], "status": "covered", "waiver_reason": null, "waiver_expires_at": null
+    },
+    {
+      "requirement_id": "DF-PH2-IDENTITY-001",
+      "normative_text_ref": "19.3.8 OwnerDomainId, business OwnerId and Controller ActorRef MUST use distinct schema/type/field and MUST NOT be implicitly interchanged",
+      "owner": "eidolon_sdk+eidolon_hub",
+      "schema_ids": ["common/OwnerDomainId", "common/BusinessOwnerId", "common/ControllerActorRef"],
+      "producer_tests": ["HUB::test_http_problem_mapping_preserves_owner_mismatch_and_actor_is_not_body_supplied"],
+      "consumer_tests": ["SDK::test_owner_domain_business_owner_and_actor_are_nominally_distinct"],
+      "simulator_vectors": ["DF-PH2-DEVICE-REF-REJECTS-BUSINESS-OWNER-AS-DOMAIN"],
+      "integration_tests": ["CONFORMANCE::check_fixtures"],
+      "hil_tests": [], "status": "covered", "waiver_reason": null, "waiver_expires_at": null
+    },
+    {
+      "requirement_id": "DF-PH2-ADMISSION-001",
+      "normative_text_ref": "3.8/6.1/9.5 Proposal, immutable Decision, proof-bound Grant, verified Ack and Active Claim MUST be distinct committed facts",
+      "owner": "eidolon_hub",
+      "schema_ids": ["admission/EnrollmentProposal", "admission/ApprovalDecision", "admission/ClaimGrant", "admission/GrantAck", "admission/ClaimRecord"],
+      "producer_tests": ["HUB::test_decision_collection_ack_activate_once_and_restart_replays_first_result"],
+      "consumer_tests": ["SDK::valid/admission.json"],
+      "simulator_vectors": ["HUB::test_characterization_network_or_provider_success_cannot_imply_decision_or_claim"],
+      "integration_tests": ["HUB::canonical-admission-real-sqlite"],
+      "hil_tests": [], "status": "covered", "waiver_reason": null, "waiver_expires_at": null
+    },
+    {
+      "requirement_id": "DF-PH2-IDEM-001",
+      "normative_text_ref": "3.7/3.9 command replay MUST return first durable result/time; payload conflict MUST fail; fact/result/outbox MUST commit atomically",
+      "owner": "eidolon_hub",
+      "schema_ids": ["common/CommandResult", "events/AdmissionEventType"],
+      "producer_tests": ["HUB::test_same_command_different_payload_conflicts_and_invalid_proof_rolls_back"],
+      "consumer_tests": ["HUB::SqlAdmissionStore.pending_outbox"],
+      "simulator_vectors": ["state-vectors/idempotency.json"],
+      "integration_tests": ["HUB::restart-replays-first-result", "HUB::outbox-failure-recovers"],
+      "hil_tests": [], "status": "covered", "waiver_reason": null, "waiver_expires_at": null
+    },
+    {
+      "requirement_id": "DF-PH2-REVOKE-001",
+      "normative_text_ref": "19.3.8 Revoke MUST cover ApprovedAwaitingHandoff and ClaimActive; old Grant/Ack/Controller request MUST never revive Claim",
+      "owner": "eidolon_hub",
+      "schema_ids": ["admission/EnrollmentProposalState", "admission/ClaimState", "events/ClaimRevokedEvent"],
+      "producer_tests": ["HUB::test_revoke_approved_awaiting_handoff_fences_old_grant_and_ack"],
+      "consumer_tests": ["HUB::ClaimRevoked-outbox"],
+      "simulator_vectors": ["DF-IDEM-002"],
+      "integration_tests": ["HUB::canonical-admission-real-sqlite"],
+      "hil_tests": [], "status": "covered", "waiver_reason": null, "waiver_expires_at": null
+    },
+    {
+      "requirement_id": "DF-PH2-BOUNDARY-001",
+      "normative_text_ref": "3.2/5/19.3.8 Admission commit MUST NOT synchronously call Channel, Delivery, Kernel Mount or Companion assignment and new path MUST remain off default traffic until PH2-B",
+      "owner": "eidolon_hub",
+      "schema_ids": ["events/AdmissionEventSource", "events/AdmissionEventType"],
+      "producer_tests": ["HUB::test_canonical_admission_has_no_channel_kernel_companion_or_delivery_dependency"],
+      "consumer_tests": ["HUB::test_canonical_admission_router_is_not_wired_to_default_pi5_traffic"],
+      "simulator_vectors": [],
+      "integration_tests": ["HUB::architecture-boundaries"],
+      "hil_tests": [], "status": "covered", "waiver_reason": null, "waiver_expires_at": null
+    },
+    {
+      "requirement_id": "DF-PH2-OWNER-SCOPE-001",
+      "normative_text_ref": "3.10/19.3.8 owner-scoped query MUST NOT disclose cross-Owner existence; identity mismatch MUST retain stable canonical problem",
+      "owner": "eidolon_hub",
+      "schema_ids": ["common/DeviceProblem"],
+      "producer_tests": ["HUB::test_owner_scoped_query_does_not_leak_cross_owner_and_outbox_failure_recovers"],
+      "consumer_tests": ["HUB::test_http_problem_mapping_preserves_owner_mismatch_and_actor_is_not_body_supplied"],
+      "simulator_vectors": ["DF-PH2-DEVICE-REF-REJECTS-BUSINESS-OWNER-AS-DOMAIN"],
+      "integration_tests": ["HUB::canonical-admission-http"],
+      "hil_tests": [], "status": "covered", "waiver_reason": null, "waiver_expires_at": null
     }
   ]
 }

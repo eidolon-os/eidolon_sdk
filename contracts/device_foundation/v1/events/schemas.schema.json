@@ -3,12 +3,31 @@
   "$id": "https://contracts.eidolon.live/device-foundation/v1/events/schemas.schema.json",
   "title": "Eidolon Device Foundation V1 event schemas",
   "$defs": {
+    "AdmissionEventSource": { "const": "urn:eidolon:authority:admission" },
+    "AdmissionEventType": {
+      "enum": [
+        "live.eidolon.device.enrollment-proposal-created.v1",
+        "live.eidolon.device.enrollment-approved.v1",
+        "live.eidolon.device.enrollment-rejected.v1",
+        "live.eidolon.device.enrollment-expired.v1",
+        "live.eidolon.device.enrollment-canceled.v1",
+        "live.eidolon.device.claim-grant-delivered.v1",
+        "live.eidolon.device.claim-grant-acknowledged.v1",
+        "live.eidolon.device.claim-activated.v1",
+        "live.eidolon.device.claim-suspended.v1",
+        "live.eidolon.device.claim-resumed.v1",
+        "live.eidolon.device.claim-revoked.v1",
+        "live.eidolon.device.claim-trust-epoch-changed.v1",
+        "live.eidolon.device.manifest-accepted.v1"
+      ]
+    },
     "ClaimActivatedData": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["device_ref", "approval_decision_id", "activated_at"],
+      "required": ["device_ref", "manifest_ref", "approval_decision_id", "activated_at"],
       "properties": {
         "device_ref": { "$ref": "../common/schemas.schema.json#/$defs/DeviceRef" },
+        "manifest_ref": { "$ref": "../common/schemas.schema.json#/$defs/ManifestRef" },
         "approval_decision_id": { "$ref": "../common/schemas.schema.json#/$defs/Identifier" },
         "activated_at": { "type": "string", "format": "date-time" }
       }
@@ -34,7 +53,7 @@
       "properties": {
         "specversion": { "const": "1.0" },
         "id": { "$ref": "../common/schemas.schema.json#/$defs/Identifier" },
-        "source": { "const": "urn:eidolon:authority:admission" },
+        "source": { "$ref": "#/$defs/AdmissionEventSource" },
         "type": { "const": "live.eidolon.device.claim-activated.v1" },
         "subject": { "type": "string", "pattern": "^device-instances/[A-Za-z0-9][A-Za-z0-9._:-]*$" },
         "time": { "type": "string", "format": "date-time" },
@@ -42,7 +61,7 @@
         "dataschema": {
           "const": "https://contracts.eidolon.live/device-foundation/v1/events/claim-activated-data.schema.json"
         },
-        "ownerdomainid": { "$ref": "../common/schemas.schema.json#/$defs/Identifier" },
+        "ownerdomainid": { "$ref": "../common/schemas.schema.json#/$defs/OwnerDomainId" },
         "aggregaterev": { "type": "integer", "minimum": 1 },
         "correlationid": { "$ref": "../common/schemas.schema.json#/$defs/Identifier" },
         "causationid": { "$ref": "../common/schemas.schema.json#/$defs/Identifier" },
@@ -70,7 +89,7 @@
       "properties": {
         "specversion": { "const": "1.0" },
         "id": { "$ref": "../common/schemas.schema.json#/$defs/Identifier" },
-        "source": { "const": "urn:eidolon:authority:admission" },
+        "source": { "$ref": "#/$defs/AdmissionEventSource" },
         "type": { "const": "live.eidolon.device.claim-revoked.v1" },
         "subject": { "type": "string", "pattern": "^device-instances/[A-Za-z0-9][A-Za-z0-9._:-]*$" },
         "time": { "type": "string", "format": "date-time" },
@@ -78,7 +97,7 @@
         "dataschema": {
           "const": "https://contracts.eidolon.live/device-foundation/v1/events/claim-revoked-data.schema.json"
         },
-        "ownerdomainid": { "$ref": "../common/schemas.schema.json#/$defs/Identifier" },
+        "ownerdomainid": { "$ref": "../common/schemas.schema.json#/$defs/OwnerDomainId" },
         "aggregaterev": { "type": "integer", "minimum": 1 },
         "correlationid": { "$ref": "../common/schemas.schema.json#/$defs/Identifier" },
         "causationid": { "$ref": "../common/schemas.schema.json#/$defs/Identifier" },

@@ -78,6 +78,17 @@ def test_generation_is_clean() -> None:
     assert result.returncode == 0, result.stderr
 
 
+def test_generated_ph2_bindings_are_sdk_local() -> None:
+    config = json.loads((CONTRACT_ROOT / "generation" / "config.json").read_text())
+    assert {item["language"] for item in config["binding_outputs"]} == {"python", "dart", "cpp"}
+    assert all("repo" not in item for item in config["binding_outputs"])
+    for item in config["binding_outputs"]:
+        output = CONTRACT_ROOT / item["path"]
+        assert output.is_file()
+        text = output.read_text(encoding="utf-8")
+        assert "accepted_manifest_digest" not in text
+
+
 def test_baseline_repository_set_matches_workspace() -> None:
     workspace = SDK_ROOT.parent
     result = subprocess.run(
