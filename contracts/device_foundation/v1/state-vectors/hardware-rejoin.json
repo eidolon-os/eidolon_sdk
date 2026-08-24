@@ -1,0 +1,26 @@
+{
+  "vector_id": "DF-PH2-REJOIN-001",
+  "stable_hardware_identity_ref": "hardware-box-3-golden",
+  "incarnations": [
+    {
+      "device_instance_id": "device-instance-5cd252fb0ce8932436faf8ccd1040981b89ee4ad6b9fe9e2a2b7e71aacb27cd3",
+      "claim_generation": 1,
+      "terminal_state": "revoked"
+    },
+    {
+      "device_instance_id": "device-instance-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "claim_generation": 2,
+      "state": "active"
+    }
+  ],
+  "invariants": {
+    "hardware_identity_ref_changes": false,
+    "device_instance_id_changes_after_physical_recovery": true,
+    "claim_generation_monotonic_per_owner_and_hardware": true,
+    "old_claim_tombstone_retained": true,
+    "old_request_can_mutate_new_claim": false,
+    "old_operation_can_mutate_new_claim": false,
+    "hardware_identity_from_operational_evidence_digest": false,
+    "mac_is_device_instance_id": false
+  }
+}

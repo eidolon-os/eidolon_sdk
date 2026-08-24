@@ -808,6 +808,20 @@
       "simulator_vectors": [],
       "integration_tests": ["GENERATION::generate --check", "DART::analyze --fatal-infos"],
       "hil_tests": [], "status": "covered", "waiver_reason": null, "waiver_expires_at": null
+    },
+    {
+      "requirement_id": "DF-PH2-REJOIN-IDENTITY-001",
+      "normative_text_ref": "0.6/4.1/4.3/9.6 physical recovery MUST preserve verified hardware identity, rotate operational incarnation, monotonically advance Claim generation, and fence old requests/operations",
+      "owner": "eidolon_sdk+eidolon_hub+eidolon-client-esp32",
+      "schema_ids": ["common/DeviceRef", "admission/CreateEnrollment", "admission/ClaimRecord"],
+      "producer_tests": ["HUB::test_same_hardware_rejoins_as_new_instance_generation_two_and_old_claim_is_fenced"],
+      "consumer_tests": ["ESP32::physical-recovery-rotates-operational-instance"],
+      "simulator_vectors": ["state-vectors/hardware-rejoin.json", "golden/development-commissioning-identity.json"],
+      "integration_tests": ["CONFORMANCE::check_development_commissioning_identity", "HUB::development-registry-v2-fail-closed"],
+      "hil_tests": ["HIL::erase-rejoin-generation-two-and-old-operation-rejected"],
+      "status": "covered",
+      "waiver_reason": null,
+      "waiver_expires_at": null
     }
   ]
 }

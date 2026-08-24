@@ -656,6 +656,32 @@ def check_state_vectors() -> int:
     if erase_scenarios["host-relocation"]["operation_id_changes"]:
         raise ConformanceError("Host relocation changes device-local erase identity")
 
+    rejoin = load_json(ROOT / "state-vectors" / "hardware-rejoin.json")
+    incarnations = rejoin["incarnations"]
+    rejoin_invariants = rejoin["invariants"]
+    if len(incarnations) != 2 or incarnations[0]["device_instance_id"] == incarnations[1][
+        "device_instance_id"
+    ]:
+        raise ConformanceError("hardware rejoin does not rotate the operational incarnation")
+    if [item["claim_generation"] for item in incarnations] != [1, 2]:
+        raise ConformanceError("hardware rejoin Claim generation is not monotonic")
+    rejoin_true = {
+        "device_instance_id_changes_after_physical_recovery",
+        "claim_generation_monotonic_per_owner_and_hardware",
+        "old_claim_tombstone_retained",
+    }
+    if any(rejoin_invariants[name] is not True for name in rejoin_true):
+        raise ConformanceError("hardware rejoin positive invariant drifted")
+    rejoin_false = {
+        "hardware_identity_ref_changes",
+        "old_request_can_mutate_new_claim",
+        "old_operation_can_mutate_new_claim",
+        "hardware_identity_from_operational_evidence_digest",
+        "mac_is_device_instance_id",
+    }
+    if any(rejoin_invariants[name] is not False for name in rejoin_false):
+        raise ConformanceError("hardware rejoin fencing invariant drifted")
+
     commissioning = load_json(ROOT / "state-vectors" / "commissioning-runtime.json")
     invariants = commissioning["invariants"]
     required_true = {
@@ -696,7 +722,54 @@ def check_state_vectors() -> int:
     ]
     if [success.index(item) for item in ordered] != sorted(success.index(item) for item in ordered):
         raise ConformanceError("commissioning success sequence is not transactionally ordered")
-    return 5
+    return 6
+
+
+def check_development_commissioning_identity() -> int:
+    vector = load_json(ROOT / "golden" / "development-commissioning-identity.json")
+    canonical = canonical_bytes(vector["evidence_document"])
+    if canonical.decode() != vector["evidence_canonical_utf8"]:
+        raise ConformanceError("development evidence JCS bytes drifted")
+    if vector["wire_evidence"] != (
+        vector["evidence_canonical_utf8"] + "." + vector["evidence_signature"]
+    ):
+        raise ConformanceError("development evidence wire framing drifted")
+    spki_der = _b64url_decode(vector["operational_public_key"].removeprefix("p256-spki:"))
+    digest = hashlib.sha256(spki_der).hexdigest()
+    if vector["operational_spki_sha256"] != "sha256:" + digest:
+        raise ConformanceError("operational SPKI fingerprint drifted")
+    if vector["device_instance_id"] != "device-instance-" + digest:
+        raise ConformanceError("device instance id is not the operational SPKI fingerprint")
+    raw_signature = _b64url_decode(vector["evidence_signature"])
+    if len(raw_signature) != 64:
+        raise ConformanceError("development evidence signature is not raw ES256 r||s")
+    public_key = serialization.load_der_public_key(spki_der)
+    if not isinstance(public_key, ec.EllipticCurvePublicKey) or not isinstance(
+        public_key.curve, ec.SECP256R1
+    ):
+        raise ConformanceError("development evidence operational key is not P-256")
+    try:
+        public_key.verify(
+            encode_dss_signature(
+                int.from_bytes(raw_signature[:32], "big"),
+                int.from_bytes(raw_signature[32:], "big"),
+            ),
+            canonical,
+            ec.ECDSA(hashes.SHA256()),
+        )
+    except InvalidSignature as exc:
+        raise ConformanceError("development evidence signature is invalid") from exc
+    setup_secret = _b64url_decode(vector["setup_secret_base64url"])
+    expected_proof = base64.urlsafe_b64encode(
+        hmac.new(
+            setup_secret,
+            vector["hmac_input_utf8_with_nul_separators"].encode(),
+            hashlib.sha256,
+        ).digest()
+    ).rstrip(b"=").decode()
+    if not hmac.compare_digest(expected_proof, vector["commissioning_proof"]):
+        raise ConformanceError("development commissioning HMAC vector drifted")
+    return 1
 
 
 def check_p1_exit_evidence() -> int:
@@ -828,6 +901,7 @@ def run() -> dict[str, int]:
         "claim_grant_wire_checks": check_claim_grant_wire_envelope(),
         "claim_event_stream_vectors": check_admission_event_stream(),
         "protocomm_vectors": check_protocomm_framing(),
+        "development_commissioning_identity": check_development_commissioning_identity(),
         "profiles": check_profile(),
         "host_independent_sources": check_host_independence(),
         "requirements": check_traceability(schemas),
