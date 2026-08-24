@@ -1,7 +1,7 @@
 {
   "manifest_version": "1.0",
   "capture_kind": "p1-authority-continuity-release-inputs",
-  "captured_at": "2026-08-24T02:45:29.645981Z",
+  "captured_at": "2026-08-24T02:56:18.360726Z",
   "capture_semantics": "Every entry records the exact committed P1 release input before this manifest file was added. The eidolon_sdk entry therefore names the parent input commit; the manifest commit itself is metadata and cannot contain its own SHA. A dirty workspace flag records unrelated uncommitted files, but release artifacts are built only from the captured commit tree and must pass clean-archive verification.",
   "workspace_root": "/Users/manson/ai/eidolon",
   "design_baseline": {
@@ -215,7 +215,7 @@
       "path": "eidolon_ops",
       "remote": null,
       "branch": "main",
-      "head_sha": "e826c8e44975fd22e0b298903c8719477727e16e",
+      "head_sha": "9371d8faa305bc69d5d558754fef4c6d7ca64794",
       "dirty": false,
       "participation": "direct",
       "reason": "Implements explicit same-generation RestoreAuthority, Host/component/schema/lineage cutover evidence, exact sensitive-stage reclamation and ACL drift refusal.",
@@ -227,14 +227,14 @@
         "P1-EVIDENCE::formal Pi5 prepare/dry-run/activate/reclaim and cutover receipt",
         "P1-EVIDENCE::Pi5 multi-UID/SO_PEERCRED, ACL/ownership, cold start, crash/restart and readiness"
       ],
-      "artifact_digest": "sha256:bf659fb78ba87dc1f9805bce03d9b0b76b4d89db04ba7aa50074705cd02aa3c1"
+      "artifact_digest": "sha256:76224cd640c006c8d6fbc7fccf029b4a3275b2a77e0dc36c29529e54d7f16203"
     },
     {
       "repo": "eidolon_sdk",
       "path": "eidolon_sdk",
       "remote": "git@gitlab.aimanthor.com:eidolon/eidolon_sdk.git",
       "branch": "main",
-      "head_sha": "76612a2d1cfaccc8c791a6066a791f4b41ed8901",
+      "head_sha": "39f5d9c7a8e3643f5f37c456a7c86e3553821685",
       "dirty": false,
       "participation": "direct",
       "reason": "Owns this exact all-repository release manifest and Device Foundation conformance evidence; the captured SHA is the parent input commit by construction.",
@@ -243,7 +243,7 @@
         "python contracts/device_foundation/v1/generation/generate.py --check",
         "pytest tests/contracts/test_authority_locator_v1.py tests/contracts/test_device_foundation_v1.py tests/contracts/test_client_contract_mirrors.py"
       ],
-      "artifact_digest": "sha256:2737a6a83fb82faed23cb084a36b089771d63582e9e7a309d5ece291ff2ea409"
+      "artifact_digest": "sha256:69126076ba4f7821235cec1a42b2baa5f8d487c7597cd6e9ff643715d71e7789"
     },
     {
       "repo": "eidolon_vision",
