@@ -209,8 +209,8 @@
     },
     {
       "path": "golden/owner-domain-descriptor.json",
-      "sha256": "bf15911980bd35c0dada2e5e5d73cafe0eeacff1ac5027c64ce2d2f12fc57c40",
-      "size": 2143
+      "sha256": "d54b81939a804eb2810a1df1ce6406a9f34e64e7ceec4cbd60c78b51e2c8303d",
+      "size": 2127
     },
     {
       "path": "golden/protocomm-security2-framing.json",
@@ -285,5 +285,5 @@
   ],
   "generator": "device-foundation-v1-catalog",
   "generator_version": "1.0",
-  "source_digest": "sha256:cbeaf42d024849f0ca62d26af3503ad5cf7b8a017387ddb05630bbf40de41ea8"
+  "source_digest": "sha256:ab94574f0babd5a27cf362276ed9b239b716a033d5256385fd9b78c5a1b56a74"
 }
