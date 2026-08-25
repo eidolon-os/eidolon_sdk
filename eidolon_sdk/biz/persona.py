@@ -377,8 +377,44 @@ def runtime_manifest_hash(manifest: str) -> str:
     return f"manifest_{digest[:32]}"
 
 
+#: Why a persona mutation was refused, in a word a consumer can act on.
+#:
+#: The refusals were all real and all indistinguishable: the authority raised
+#: exceptions carrying English sentences, so anything across a process boundary
+#: had to match on prose to tell "someone changed it while you were deciding"
+#: from "that genome is not this Companion's". One of those is worth retrying
+#: after a re-read and the other never is.
+#:
+#: Here rather than in the producer because the producer is not the only reader:
+#: the code has to survive an HTTP hop and be understood identically by the
+#: Agent, whose evolution path drives these commands, and by anything that later
+#: relays a refusal to a person.
+PersonaConflictCode = Literal[
+    #: The proposal was written against a genome that is no longer current. The
+    #: work is not wrong, it is just out of date — re-read and propose again.
+    "base_not_current",
+    #: The base genome id matches but its content does not. Same shape of
+    #: staleness, caught by hash rather than by pointer, and worth its own code
+    #: because it means something rewrote a genome in place.
+    "base_hash_mismatch",
+    #: The current genome moved between the proposal and its activation. The
+    #: proposal is marked stale by the authority, so retrying *this* one cannot
+    #: succeed.
+    "current_changed",
+    #: The genome is not in a state this command accepts — approving something
+    #: already committed, rejecting something already rejected, rolling back to
+    #: a proposal a Companion never became.
+    "state_not_eligible",
+    #: The genome exists but belongs to another Companion, or to nobody. Never a
+    #: retry: it is a request about something that is not there.
+    "not_this_companion",
+    #: The Companion this command names does not exist.
+    "companion_missing",
+]
+
 __all__ = [
     "PERSONA_GENOME_SCHEMA",
+    "PersonaConflictCode",
     "PERSONA_REALIZER",
     "PersonaAuthoringDraft",
     "PersonaCharacter",

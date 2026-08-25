@@ -6,27 +6,53 @@
     "PatchDesired": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["device_ref", "expected_twin_generation", "patch", "field_mask"],
+      "required": [
+        "device_ref",
+        "expected_twin_generation",
+        "patch",
+        "field_mask"
+      ],
       "properties": {
-        "device_ref": { "$ref": "../common/schemas.schema.json#/$defs/DeviceRef" },
-        "expected_twin_generation": { "type": "integer", "minimum": 0 },
-        "patch": { "type": "object" },
+        "device_ref": {
+          "$ref": "../common/schemas.schema.json#/$defs/DeviceRef"
+        },
+        "expected_twin_generation": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "patch": {
+          "type": "object"
+        },
         "field_mask": {
           "type": "array",
           "minItems": 1,
           "uniqueItems": true,
-          "items": { "type": "string", "pattern": "^[A-Za-z][A-Za-z0-9_.-]*$" }
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Za-z][A-Za-z0-9_.-]*$"
+          }
         }
       }
     },
     "PatchDesiredResult": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["twin_generation", "desired_digest", "delivery_state"],
+      "required": [
+        "twin_generation",
+        "desired_digest",
+        "delivery_state"
+      ],
       "properties": {
-        "twin_generation": { "type": "integer", "minimum": 1 },
-        "desired_digest": { "$ref": "../common/schemas.schema.json#/$defs/Sha256Digest" },
-        "delivery_state": { "const": "pending" }
+        "twin_generation": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "desired_digest": {
+          "$ref": "../common/schemas.schema.json#/$defs/Sha256Digest"
+        },
+        "delivery_state": {
+          "const": "pending"
+        }
       }
     },
     "ReportState": {
@@ -41,11 +67,23 @@
         "device_signature"
       ],
       "properties": {
-        "device_ref": { "$ref": "../common/schemas.schema.json#/$defs/DeviceRef" },
-        "report_id": { "$ref": "../common/schemas.schema.json#/$defs/Identifier" },
-        "observed_twin_generation": { "type": "integer", "minimum": 0 },
-        "reported": { "type": "object" },
-        "device_monotonic_time": { "type": "integer", "minimum": 0 },
+        "device_ref": {
+          "$ref": "../common/schemas.schema.json#/$defs/DeviceRef"
+        },
+        "report_id": {
+          "$ref": "../common/schemas.schema.json#/$defs/Identifier"
+        },
+        "observed_twin_generation": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "reported": {
+          "type": "object"
+        },
+        "device_monotonic_time": {
+          "type": "integer",
+          "minimum": 0
+        },
         "device_signature": {
           "$ref": "../common/schemas.schema.json#/$defs/P256RawSignature"
         }
@@ -65,25 +103,61 @@
         "payload"
       ],
       "properties": {
-        "device_ref": { "$ref": "../common/schemas.schema.json#/$defs/DeviceRef" },
-        "operation_id": { "$ref": "../common/schemas.schema.json#/$defs/Identifier" },
-        "operation_type": { "$ref": "../common/schemas.schema.json#/$defs/Identifier" },
-        "target_ref": { "type": "object" },
+        "device_ref": {
+          "$ref": "../common/schemas.schema.json#/$defs/DeviceRef"
+        },
+        "operation_id": {
+          "$ref": "../common/schemas.schema.json#/$defs/Identifier"
+        },
+        "operation_type": {
+          "$ref": "../common/schemas.schema.json#/$defs/Identifier"
+        },
+        "target_ref": {
+          "type": "object"
+        },
         "preconditions": {
           "type": "object",
           "additionalProperties": false,
-          "required": ["claim_generation", "trust_epoch", "target_revision"],
+          "required": [
+            "claim_generation",
+            "trust_epoch",
+            "target_revision"
+          ],
           "properties": {
-            "claim_generation": { "type": "integer", "minimum": 1 },
-            "trust_epoch": { "type": "integer", "minimum": 1 },
+            "claim_generation": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "trust_epoch": {
+              "type": "integer",
+              "minimum": 1
+            },
             "target_revision": {
-              "oneOf": [{ "type": "integer", "minimum": 0 }, { "type": "null" }]
+              "oneOf": [
+                {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                {
+                  "type": "null"
+                }
+              ]
             }
           }
         },
-        "deadline": { "type": "string", "format": "date-time" },
-        "qos": { "enum": ["ack", "result"] },
-        "payload": { "type": "object" }
+        "deadline": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "qos": {
+          "enum": [
+            "ack",
+            "result"
+          ]
+        },
+        "payload": {
+          "type": "object"
+        }
       }
     },
     "AckOperation": {
@@ -99,12 +173,40 @@
         "device_signature"
       ],
       "properties": {
-        "device_ref": { "$ref": "../common/schemas.schema.json#/$defs/DeviceRef" },
-        "operation_id": { "$ref": "../common/schemas.schema.json#/$defs/Identifier" },
-        "ack_sequence": { "type": "integer", "minimum": 0 },
-        "state": { "enum": ["delivered", "running", "succeeded", "failed", "rejected"] },
-        "result_code": { "type": "string", "minLength": 1, "maxLength": 128 },
-        "result": { "oneOf": [{ "type": "object" }, { "type": "null" }] },
+        "device_ref": {
+          "$ref": "../common/schemas.schema.json#/$defs/DeviceRef"
+        },
+        "operation_id": {
+          "$ref": "../common/schemas.schema.json#/$defs/Identifier"
+        },
+        "ack_sequence": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "state": {
+          "enum": [
+            "delivered",
+            "running",
+            "succeeded",
+            "failed",
+            "rejected"
+          ]
+        },
+        "result_code": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "result": {
+          "oneOf": [
+            {
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
         "device_signature": {
           "$ref": "../common/schemas.schema.json#/$defs/P256RawSignature"
         }
@@ -126,7 +228,9 @@
           "maxLength": 128,
           "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
         },
-        "enrollment_request_id": { "$ref": "../common/schemas.schema.json#/$defs/Identifier" },
+        "enrollment_request_id": {
+          "$ref": "../common/schemas.schema.json#/$defs/Identifier"
+        },
         "public_key_spki": {
           "type": "string",
           "minLength": 120,
@@ -141,14 +245,20 @@
     "DeviceLocalErasePayload": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["erase_scopes"],
+      "required": [
+        "erase_scopes"
+      ],
       "properties": {
         "erase_scopes": {
           "type": "array",
           "minItems": 1,
           "uniqueItems": true,
           "items": {
-            "enum": ["owner-credentials", "owner-data", "network-profiles"]
+            "enum": [
+              "owner-credentials",
+              "owner-data",
+              "network-profiles"
+            ]
           }
         }
       }
@@ -166,13 +276,28 @@
         "payload"
       ],
       "properties": {
-        "contract": { "const": "eidolon.device-foundation.device-operation" },
-        "contract_version": { "const": "1.0" },
-        "operation_id": { "$ref": "../common/schemas.schema.json#/$defs/Identifier" },
-        "operation_type": { "const": "device-local.erase" },
-        "device_ref": { "$ref": "../common/schemas.schema.json#/$defs/DeviceRef" },
-        "deadline": { "type": "string", "format": "date-time" },
-        "payload": { "$ref": "#/$defs/DeviceLocalErasePayload" }
+        "contract": {
+          "const": "eidolon.device-foundation.device-operation"
+        },
+        "contract_version": {
+          "const": "1.0"
+        },
+        "operation_id": {
+          "$ref": "../common/schemas.schema.json#/$defs/Identifier"
+        },
+        "operation_type": {
+          "const": "device-local.erase"
+        },
+        "device_ref": {
+          "$ref": "../common/schemas.schema.json#/$defs/DeviceRef"
+        },
+        "deadline": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "payload": {
+          "$ref": "#/$defs/DeviceLocalErasePayload"
+        }
       }
     },
     "DeviceLocalEraseAck": {
@@ -191,15 +316,40 @@
         "device_signature"
       ],
       "properties": {
-        "contract": { "const": "eidolon.device-foundation.device-operation-ack" },
-        "contract_version": { "const": "1.0" },
-        "operation_id": { "$ref": "../common/schemas.schema.json#/$defs/Identifier" },
-        "operation_type": { "const": "device-local.erase" },
-        "device_ref": { "$ref": "../common/schemas.schema.json#/$defs/DeviceRef" },
-        "ack_sequence": { "type": "integer", "minimum": 1 },
-        "result": { "enum": ["erased", "permanent-failure"] },
-        "result_code": { "type": "string", "minLength": 1, "maxLength": 128 },
-        "device_monotonic_time": { "type": "integer", "minimum": 0 },
+        "contract": {
+          "const": "eidolon.device-foundation.device-operation-ack"
+        },
+        "contract_version": {
+          "const": "1.0"
+        },
+        "operation_id": {
+          "$ref": "../common/schemas.schema.json#/$defs/Identifier"
+        },
+        "operation_type": {
+          "const": "device-local.erase"
+        },
+        "device_ref": {
+          "$ref": "../common/schemas.schema.json#/$defs/DeviceRef"
+        },
+        "ack_sequence": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "result": {
+          "enum": [
+            "erased",
+            "permanent-failure"
+          ]
+        },
+        "result_code": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "device_monotonic_time": {
+          "type": "integer",
+          "minimum": 0
+        },
         "device_signature": {
           "$ref": "../common/schemas.schema.json#/$defs/P256RawSignature"
         }
@@ -210,24 +360,72 @@
       "additionalProperties": false,
       "allOf": [
         {
-          "if": { "properties": { "state": { "const": "acknowledged" } } },
-          "then": { "properties": { "terminal_result": { "const": "erased" } } }
-        },
-        {
-          "if": { "properties": { "state": { "const": "expired" } } },
-          "then": { "properties": { "terminal_result": { "const": "deadline-expired" } } }
-        },
-        {
-          "if": { "properties": { "state": { "const": "permanent-failure" } } },
-          "then": { "properties": { "terminal_result": { "const": "permanent-failure" } } }
+          "if": {
+            "properties": {
+              "state": {
+                "const": "acknowledged"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "terminal_result": {
+                "const": "erased"
+              }
+            }
+          }
         },
         {
           "if": {
             "properties": {
-              "state": { "enum": ["accepted", "pending", "delivery-accepted"] }
+              "state": {
+                "const": "expired"
+              }
             }
           },
-          "then": { "properties": { "terminal_result": { "type": "null" } } }
+          "then": {
+            "properties": {
+              "terminal_result": {
+                "const": "deadline-expired"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "state": {
+                "const": "permanent-failure"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "terminal_result": {
+                "const": "permanent-failure"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "state": {
+                "enum": [
+                  "accepted",
+                  "pending",
+                  "delivery-accepted"
+                ]
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "terminal_result": {
+                "type": "null"
+              }
+            }
+          }
         }
       ],
       "required": [
@@ -244,14 +442,32 @@
         "terminal_result"
       ],
       "properties": {
-        "contract": { "const": "eidolon.device-foundation.device-operation-status" },
-        "contract_version": { "const": "1.0" },
-        "operation_id": { "$ref": "../common/schemas.schema.json#/$defs/Identifier" },
-        "operation_type": { "const": "device-local.erase" },
-        "request_fingerprint": { "$ref": "../common/schemas.schema.json#/$defs/Sha256Digest" },
-        "device_ref": { "$ref": "../common/schemas.schema.json#/$defs/DeviceRef" },
-        "created_at": { "type": "string", "format": "date-time" },
-        "deadline": { "type": "string", "format": "date-time" },
+        "contract": {
+          "const": "eidolon.device-foundation.device-operation-status"
+        },
+        "contract_version": {
+          "const": "1.0"
+        },
+        "operation_id": {
+          "$ref": "../common/schemas.schema.json#/$defs/Identifier"
+        },
+        "operation_type": {
+          "const": "device-local.erase"
+        },
+        "request_fingerprint": {
+          "$ref": "../common/schemas.schema.json#/$defs/Sha256Digest"
+        },
+        "device_ref": {
+          "$ref": "../common/schemas.schema.json#/$defs/DeviceRef"
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "deadline": {
+          "type": "string",
+          "format": "date-time"
+        },
         "state": {
           "enum": [
             "accepted",
@@ -262,12 +478,135 @@
             "permanent-failure"
           ]
         },
-        "attempt_count": { "type": "integer", "minimum": 0 },
+        "attempt_count": {
+          "type": "integer",
+          "minimum": 0
+        },
         "terminal_result": {
           "oneOf": [
-            { "enum": ["erased", "permanent-failure", "deadline-expired"] },
-            { "type": "null" }
+            {
+              "enum": [
+                "erased",
+                "permanent-failure",
+                "deadline-expired"
+              ]
+            },
+            {
+              "type": "null"
+            }
           ]
+        }
+      }
+    },
+    "ManifestDocument": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "manifest_id",
+        "revision",
+        "digest",
+        "document"
+      ],
+      "properties": {
+        "manifest_id": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 128
+        },
+        "revision": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "digest": {
+          "$ref": "../common/schemas.schema.json#/$defs/Sha256Digest"
+        },
+        "document": {
+          "type": "object"
+        }
+      }
+    },
+    "AssertDeviceManifest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "contract",
+        "contract_version",
+        "device_ref",
+        "manifest",
+        "nonce",
+        "public_key_spki",
+        "device_signature"
+      ],
+      "properties": {
+        "contract": {
+          "const": "eidolon.device-foundation.manifest-assertion"
+        },
+        "contract_version": {
+          "const": "1.0"
+        },
+        "device_ref": {
+          "$ref": "../common/schemas.schema.json#/$defs/DeviceRef"
+        },
+        "manifest": {
+          "$ref": "#/$defs/ManifestDocument"
+        },
+        "nonce": {
+          "type": "string",
+          "minLength": 16,
+          "maxLength": 128,
+          "pattern": "^[A-Za-z0-9_-]+$"
+        },
+        "public_key_spki": {
+          "type": "string",
+          "minLength": 120,
+          "maxLength": 256,
+          "pattern": "^[A-Za-z0-9_-]+$"
+        },
+        "device_signature": {
+          "$ref": "../common/schemas.schema.json#/$defs/P256RawSignature"
+        }
+      }
+    },
+    "DeviceManifestAcceptance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "contract",
+        "contract_version",
+        "device_ref",
+        "nonce",
+        "accepted",
+        "outcome",
+        "accepted_at"
+      ],
+      "properties": {
+        "contract": {
+          "const": "eidolon.device-foundation.manifest-acceptance"
+        },
+        "contract_version": {
+          "const": "1.0"
+        },
+        "device_ref": {
+          "$ref": "../common/schemas.schema.json#/$defs/DeviceRef"
+        },
+        "nonce": {
+          "type": "string",
+          "minLength": 16,
+          "maxLength": 128,
+          "pattern": "^[A-Za-z0-9_-]+$"
+        },
+        "accepted": {
+          "$ref": "../common/schemas.schema.json#/$defs/ManifestRef"
+        },
+        "outcome": {
+          "enum": [
+            "accepted",
+            "unchanged"
+          ]
+        },
+        "accepted_at": {
+          "type": "string",
+          "format": "date-time"
         }
       }
     }

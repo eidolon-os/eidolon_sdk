@@ -12,6 +12,7 @@ from .lifecycle import (
     ActorRef,
     BusinessOwnerId,
     DeviceRef,
+    ManifestDocument,
     ManifestRef,
     OwnerDomainId,
     _aware_datetime,
@@ -144,13 +145,6 @@ class CommissioningProof(_Model):
     scheme: Literal["protocomm-security2-srp6a-aes256gcm"] = "protocomm-security2-srp6a-aes256gcm"
     proof: str = Field(min_length=16, max_length=4096)
     nonce: str = Field(min_length=16, max_length=256)
-
-
-class ManifestDocument(_Model):
-    manifest_id: str = Field(min_length=3, max_length=128)
-    revision: int = Field(ge=1)
-    digest: str = Field(pattern=r"^sha256:[0-9a-f]{64}$")
-    document: dict[str, Any]
 
 
 class HandoffPublicKey(_Model):

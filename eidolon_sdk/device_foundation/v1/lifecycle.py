@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 from datetime import UTC, datetime
+from collections.abc import Mapping
 from enum import StrEnum
 from typing import Any, Literal
 
@@ -114,6 +115,43 @@ class ManifestRef(_Model):
     manifest_id: str = Field(min_length=3, max_length=128, pattern=_IDENTIFIER)
     revision: int = Field(ge=1)
     digest: str = Field(pattern=r"^sha256:[0-9a-f]{64}$")
+
+
+def manifest_digest(document: Mapping[str, Any]) -> str:
+    """The one definition of what a Manifest's digest is.
+
+    Every producer and every reader of a Manifest was computing this by hand.
+    They agreed, but only because nobody had written a second one down yet.
+    """
+
+    return "sha256:" + hashlib.sha256(rfc8785.dumps(dict(document))).hexdigest()
+
+
+class ManifestDocument(_Model):
+    """A device's own account of what it can do, as of some revision of itself.
+
+    ``revision`` is the *device's* count of how many times its capabilities have
+    changed, not a digest and not an Authority's version. It exists so that a
+    replayed or reordered assertion cannot quietly reinstate an older account of
+    a device that has since been upgraded.
+    """
+
+    manifest_id: str = Field(min_length=3, max_length=128)
+    revision: int = Field(ge=1)
+    digest: str = Field(pattern=r"^sha256:[0-9a-f]{64}$")
+    document: dict[str, Any]
+
+    @model_validator(mode="after")
+    def _digest_describes_this_document(self) -> "ManifestDocument":
+        if self.digest != manifest_digest(self.document):
+            raise ValueError("manifest digest does not describe its document")
+        return self
+
+    @property
+    def ref(self) -> ManifestRef:
+        return ManifestRef(
+            manifest_id=self.manifest_id, revision=self.revision, digest=self.digest
+        )
 
 
 class DeviceRef(_Model):

@@ -19,10 +19,12 @@ from .lifecycle import (
     CommandResult,
     DeviceRef,
     DeviceProblem,
+    ManifestDocument,
     ManifestRef,
     OwnerDomainId,
     OwnerAuthorizationContext,
     RemovalIntent,
+    manifest_digest,
     RevokeClaim,
     RevokeClaimResult,
     revoke_claim_fingerprint,
@@ -58,8 +60,12 @@ from .admission import (
     GrantDeliveryRecord,
     HandoffPublicKey,
     HardwareIdentityEvidence,
-    ManifestDocument,
     OperationalPublicKey,
+)
+from .device_manifest import (
+    MANIFEST_ASSERTION_OPERATION,
+    AssertDeviceManifest,
+    DeviceManifestAcceptance,
 )
 from .events import (
     AdmissionEventSource,
@@ -90,7 +96,9 @@ from .device_erase import (
 from .delivery import DeliverEnvelope, DeliveryAcceptance, DeviceEvidenceEnvelope
 
 __all__ = [
+    "MANIFEST_ASSERTION_OPERATION",
     "AckClaimGrant",
+    "AssertDeviceManifest",
     "AckClaimGrantResult",
     "AdmissionListCursor",
     "AdmissionEventSource",
@@ -109,9 +117,11 @@ __all__ = [
     "BusinessOwnerId",
     "CommandEnvelope",
     "CommandResult",
+    "DeviceManifestAcceptance",
     "DeviceRef",
     "DeviceProblem",
     "ManifestRef",
+    "manifest_digest",
     "OwnerDomainId",
     "ApprovalDecision",
     "CancelEnrollment",
