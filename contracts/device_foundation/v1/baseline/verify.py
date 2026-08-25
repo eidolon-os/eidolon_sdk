@@ -67,13 +67,26 @@ def main() -> int:
     expected_entries = {entry["path"]: entry for entry in manifest["repositories"]}
     expected = set(expected_entries)
     actual = _discover(workspace)
-    if actual != expected:
+    # A repository this capture named and can no longer find is real drift: the
+    # capture's whole purpose is that those repositories and their recorded
+    # facts still exist. A repository that appeared *after* the capture is not
+    # drift — it is the project growing, and this file is a frozen historical
+    # snapshot, not an inventory of what the workspace may contain. Failing on
+    # both meant the first unrelated new repository turned this gate red
+    # permanently, and a gate that is always red stops being read.
+    #
+    # A new repository cannot silently become a participant either: taking part
+    # is declared by an entry in this manifest, and an entry that is not here
+    # is out of scope by construction.
+    added = sorted(actual - expected)
+    missing = sorted(expected - actual)
+    if missing:
         print(
             json.dumps(
                 {
                     "ok": False,
-                    "added_repositories": sorted(actual - expected),
-                    "missing_repositories": sorted(expected - actual),
+                    "added_repositories": added,
+                    "missing_repositories": missing,
                 },
                 sort_keys=True,
             ),
@@ -139,7 +152,12 @@ def main() -> int:
         json.dumps(
             {
                 "ok": True,
-                "repository_count": len(actual),
+                # Reported, not refused: visible drift without a red gate.
+                "repositories_added_since_capture": added,
+                # What this capture covers, which is fixed. Counting what the
+                # workspace happens to hold made a stable fact vary with
+                # unrelated growth — the same mistake one level down.
+                "repository_count": len(expected),
                 "exact": args.exact,
                 "captured_commits": args.captured_commits,
             },

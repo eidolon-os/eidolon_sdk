@@ -171,7 +171,11 @@ def test_baseline_repository_set_matches_workspace() -> None:
         check=False,
     )
     assert result.returncode == 0, result.stderr
-    assert json.loads(result.stdout)["repository_count"] == 16
+    report = json.loads(result.stdout)
+    # The number this capture covers, not the number the workspace happens to
+    # hold: a repository added after the freeze is reported, never refused.
+    assert report["repository_count"] == 16
+    assert isinstance(report["repositories_added_since_capture"], list)
 
 
 def test_p1_release_input_commits_and_tree_digests_are_reproducible() -> None:
@@ -192,12 +196,10 @@ def test_p1_release_input_commits_and_tree_digests_are_reproducible() -> None:
     )
     assert result.returncode == 0, result.stderr
     report = json.loads(result.stdout)
-    assert report == {
-        "captured_commits": True,
-        "exact": False,
-        "ok": True,
-        "repository_count": 16,
-    }
+    assert report["ok"] is True
+    assert report["captured_commits"] is True
+    assert report["exact"] is False
+    assert report["repository_count"] == 16
 
 
 def test_baseline_rejects_repository_set_drift(tmp_path: Path) -> None:
@@ -343,3 +345,63 @@ def test_a_canonical_enum_still_refuses_a_value_it_does_not_define() -> None:
                 "limit": 50,
             }
         )
+
+
+def test_a_repository_the_capture_named_and_cannot_find_is_still_drift(tmp_path) -> None:
+    """The half that must stay red: what the freeze covers has to be there.
+
+    Loosening the added-repository check must not loosen this one — a captured
+    participant that has vanished is exactly the drift the gate exists for.
+    """
+
+    manifest = json.loads(
+        (CONTRACT_ROOT / "baseline" / "cross-repo-heads.v1.json").read_text(encoding="utf-8")
+    )
+    workspace = tmp_path / "workspace"
+    for entry in manifest["repositories"][:-1]:
+        repository = workspace / entry["path"]
+        (repository / ".git").mkdir(parents=True)
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(CONTRACT_ROOT / "baseline" / "verify.py"),
+            "--workspace-root",
+            str(workspace),
+        ],
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+
+    assert result.returncode == 1
+    reported = json.loads(result.stderr)
+    assert reported["ok"] is False
+    assert reported["missing_repositories"] == [manifest["repositories"][-1]["path"]]
+
+
+def test_a_repository_added_after_the_capture_is_reported_not_refused(tmp_path) -> None:
+    manifest = json.loads(
+        (CONTRACT_ROOT / "baseline" / "cross-repo-heads.v1.json").read_text(encoding="utf-8")
+    )
+    workspace = tmp_path / "workspace"
+    for entry in manifest["repositories"]:
+        (workspace / entry["path"] / ".git").mkdir(parents=True)
+    (workspace / "eidolon_something_new" / ".git").mkdir(parents=True)
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(CONTRACT_ROOT / "baseline" / "verify.py"),
+            "--workspace-root",
+            str(workspace),
+        ],
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+
+    assert result.returncode == 0, result.stderr
+    report = json.loads(result.stdout)
+    assert report["repositories_added_since_capture"] == ["eidolon_something_new"]
+    assert report["repository_count"] == len(manifest["repositories"])
