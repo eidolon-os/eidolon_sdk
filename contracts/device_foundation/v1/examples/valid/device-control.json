@@ -13,8 +13,12 @@
           "trust_epoch": 4
         },
         "expected_twin_generation": 3,
-        "patch": { "privacy_mode": true },
-        "field_mask": ["privacy_mode"]
+        "patch": {
+          "privacy_mode": true
+        },
+        "field_mask": [
+          "privacy_mode"
+        ]
       }
     },
     {
@@ -41,7 +45,9 @@
         },
         "report_id": "report_01",
         "observed_twin_generation": 4,
-        "reported": { "privacy_mode": true },
+        "reported": {
+          "privacy_mode": true
+        },
         "device_monotonic_time": 91234,
         "device_signature": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
       }
@@ -60,7 +66,9 @@
         },
         "operation_id": "operation_01",
         "operation_type": "device.restart",
-        "target_ref": { "device_instance_id": "device_01" },
+        "target_ref": {
+          "device_instance_id": "device_01"
+        },
         "preconditions": {
           "claim_generation": 2,
           "trust_epoch": 4,
@@ -87,8 +95,96 @@
         "ack_sequence": 2,
         "state": "succeeded",
         "result_code": "OK",
-        "result": { "restarted": true },
+        "result": {
+          "restarted": true
+        },
         "device_signature": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+      }
+    },
+    {
+      "case_id": "DF-CONTROL-MANIFEST-DOCUMENT-VALID",
+      "schema": "https://contracts.eidolon.live/device-foundation/v1/device-control/schemas.schema.json",
+      "definition": "ManifestDocument",
+      "value": {
+        "manifest_id": "esp-box-3",
+        "revision": 2,
+        "digest": "sha256:c51ad6b586a71e054267495e13b5d04b251a3a84f242d69f1c1eb3cdbeb7b07d",
+        "document": {
+          "schema_version": 1,
+          "media": [
+            {
+              "kind": "audio"
+            },
+            {
+              "kind": "video"
+            }
+          ],
+          "properties": [],
+          "actions": [],
+          "events": []
+        }
+      }
+    },
+    {
+      "case_id": "DF-CONTROL-ASSERT-MANIFEST-VALID",
+      "schema": "https://contracts.eidolon.live/device-foundation/v1/device-control/schemas.schema.json",
+      "definition": "AssertDeviceManifest",
+      "value": {
+        "contract": "eidolon.device-foundation.manifest-assertion",
+        "contract_version": "1.0",
+        "device_ref": {
+          "device_instance_id": "device_01",
+          "owner_domain_id": "owner-domain_01",
+          "owner_domain_generation": 3,
+          "claim_generation": 2,
+          "trust_epoch": 4
+        },
+        "manifest": {
+          "manifest_id": "esp-box-3",
+          "revision": 2,
+          "digest": "sha256:c51ad6b586a71e054267495e13b5d04b251a3a84f242d69f1c1eb3cdbeb7b07d",
+          "document": {
+            "schema_version": 1,
+            "media": [
+              {
+                "kind": "audio"
+              },
+              {
+                "kind": "video"
+              }
+            ],
+            "properties": [],
+            "actions": [],
+            "events": []
+          }
+        },
+        "nonce": "0123456789abcdefghij",
+        "public_key_spki": "MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM",
+        "device_signature": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+      }
+    },
+    {
+      "case_id": "DF-CONTROL-MANIFEST-ACCEPTANCE-VALID",
+      "schema": "https://contracts.eidolon.live/device-foundation/v1/device-control/schemas.schema.json",
+      "definition": "DeviceManifestAcceptance",
+      "value": {
+        "contract": "eidolon.device-foundation.manifest-acceptance",
+        "contract_version": "1.0",
+        "device_ref": {
+          "device_instance_id": "device_01",
+          "owner_domain_id": "owner-domain_01",
+          "owner_domain_generation": 3,
+          "claim_generation": 2,
+          "trust_epoch": 4
+        },
+        "nonce": "0123456789abcdefghij",
+        "accepted": {
+          "manifest_id": "esp-box-3",
+          "revision": 2,
+          "digest": "sha256:c51ad6b586a71e054267495e13b5d04b251a3a84f242d69f1c1eb3cdbeb7b07d"
+        },
+        "outcome": "accepted",
+        "accepted_at": "2026-08-25T10:00:00Z"
       }
     }
   ]

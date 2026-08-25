@@ -49,8 +49,8 @@
     },
     {
       "path": "device-control/schemas.schema.json",
-      "sha256": "d2385695a9ea48344b0e6841a78c08d22dcdd2e7249e4f1740b979d1eb8a8f8a",
-      "size": 9692
+      "sha256": "60942442c622df33f265c0a3f6927481f0322484b8da0cebc8716ca0c5188d38",
+      "size": 14916
     },
     {
       "path": "events/claim-activated-data.schema.json",
@@ -124,8 +124,8 @@
     },
     {
       "path": "examples/valid/device-control.json",
-      "sha256": "8b3f4d2ef3c6b3c88d23da7c3c8126d92caf4a770bd9d7a945b17537e2badea0",
-      "size": 3321
+      "sha256": "64627d61b0707854768183ceea0c7e793f9a658337ab71e153820bb77db350fd",
+      "size": 6383
     },
     {
       "path": "examples/valid/device-erase.json",
@@ -285,5 +285,5 @@
   ],
   "generator": "device-foundation-v1-catalog",
   "generator_version": "1.0",
-  "source_digest": "sha256:ab94574f0babd5a27cf362276ed9b239b716a033d5256385fd9b78c5a1b56a74"
+  "source_digest": "sha256:d6861a814f355eb25208ae51436aa6d1294af7d33ebaa0822862523ed792c2b1"
 }
