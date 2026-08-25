@@ -3,12 +3,14 @@ from __future__ import annotations
 import hashlib
 import json
 from datetime import UTC, datetime, timedelta
+from pathlib import Path
 
 import pytest
 from cryptography import x509
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.asymmetric import ec
 from cryptography.x509.oid import ExtendedKeyUsageOID, NameOID
+from pydantic import ValidationError
 
 from eidolon_sdk.device_foundation.v1 import (
     AuthorityEndpoint,
@@ -19,11 +21,16 @@ from eidolon_sdk.device_foundation.v1 import (
     OwnerDomainTrustAnchor,
     descriptor_key_id,
     sign_descriptor,
+    verify_descriptor,
 )
 
 
 NOW = datetime(2026, 8, 18, 12, tzinfo=UTC)
 OWNER_ID = "owner-domain_01"
+GOLDEN = (
+    Path(__file__).resolve().parents[2]
+    / "contracts/device_foundation/v1/golden/owner-domain-descriptor.json"
+)
 
 
 def _key(scalar: int = 0x123456789ABCDEF) -> ec.EllipticCurvePrivateKey:
@@ -95,6 +102,7 @@ def _descriptor(
     key: ec.EllipticCurvePrivateKey | None = None,
     owner_domain_id: str = OWNER_ID,
     operation_path: str = "/device-control/v1",
+    descriptor_uri: str | None = None,
 ) -> OwnerDomainDescriptor:
     signing_key = key or _key(0x3456789ABCDEF12)
     key_id = descriptor_key_id(_public_pem(signing_key))
@@ -103,6 +111,11 @@ def _descriptor(
         owner_domain_id=owner_domain_id,
         owner_domain_generation=owner_domain_generation,
         directory_revision=revision,
+        descriptor_uri=(
+            f"https://{host}/api/device-onboarding/v1/descriptor"
+            if descriptor_uri is None
+            else descriptor_uri
+        ),
         trust_root_refs=(owner_root_key_id,),
         endpoints=(
             AuthorityEndpoint(
@@ -301,3 +314,49 @@ def test_endpoint_priority_not_array_order_selects_first_route() -> None:
 
     resolved = locator.resolve(OWNER_ID, LogicalAuthority.ADMISSION, now=NOW)
     assert [item.priority for item in resolved] == [10, 20]
+
+
+def test_descriptor_states_its_own_publication_route_under_the_signature() -> None:
+    # A consumer that cannot read this route can only guess a path convention.
+    # The guess that shipped in firmware — admission endpoint + "/descriptor" —
+    # 404s on every Host, so commissioning rolled back at its last step with no
+    # party able to say which fact was missing. The route is therefore a signed
+    # statement of the document, not something a reader derives.
+    anchor = _anchor()
+    descriptor = _descriptor()
+    verify_descriptor(descriptor, anchor)
+
+    assert descriptor.descriptor_uri == (
+        "https://host-a.owner.test/api/device-onboarding/v1/descriptor"
+    )
+    assert b'"descriptor_uri"' in descriptor.canonical_signing_bytes()
+
+    moved = descriptor.model_copy(
+        update={"descriptor_uri": "https://impostor.owner.test/descriptor"}
+    )
+    with pytest.raises(AuthorityLocatorError, match="signature is invalid"):
+        verify_descriptor(moved, anchor)
+
+
+def test_descriptor_route_must_be_an_absolute_https_url() -> None:
+    # The device GETs this string directly. A relative or plaintext value would
+    # be a request built from an unauthenticated fragment of a signed document.
+    for rejected in ("http://host-a.owner.test/descriptor", "/api/descriptor", ""):
+        with pytest.raises(ValidationError):
+            _descriptor(descriptor_uri=rejected)
+
+
+def test_golden_vector_is_the_canonical_signing_bytes_this_model_produces() -> None:
+    # The golden vector is the single authority the C++ and Dart canonicalisers
+    # are tested against. If Python drifts from it, those two are being held to
+    # a document this SDK no longer signs.
+    vector = json.loads(GOLDEN.read_text(encoding="utf-8"))
+    descriptor = OwnerDomainDescriptor.model_validate_json(
+        json.dumps(vector["descriptor"])
+    )
+
+    assert descriptor.canonical_signing_bytes() == vector[
+        "canonical_signing_utf8"
+    ].encode("utf-8")
+    assert descriptor.descriptor_uri.startswith("https://")
+    assert descriptor.descriptor_uri in vector["canonical_signing_utf8"]

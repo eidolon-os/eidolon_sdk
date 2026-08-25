@@ -34,8 +34,8 @@
     },
     {
       "path": "common/schemas.schema.json",
-      "sha256": "7c8d45ce6b79ff97aa2abf60b6da33964cb5ad13e463e0509ccf19674f89f71f",
-      "size": 16981
+      "sha256": "f2159afeabf093559cc443262eafc21bfc3182ba716ac1392fb512c6bd084e9d",
+      "size": 17163
     },
     {
       "path": "conformance/run.py",
@@ -84,8 +84,8 @@
     },
     {
       "path": "examples/invalid/common.json",
-      "sha256": "d43653b69da633aa921533a2e95319c540f1861a50dbe0274d62b1f577460780",
-      "size": 5788
+      "sha256": "0903b8e0f2e85b59e4ab2cce5e4853e944b9f3eea298c8af10f337a23bee3682",
+      "size": 5885
     },
     {
       "path": "examples/invalid/device-erase.json",
@@ -114,8 +114,8 @@
     },
     {
       "path": "examples/valid/common.json",
-      "sha256": "16956a0b7333b9eaf6a726c07a56cdc08dfc949523b988f3f1e5ce9c815bc9dd",
-      "size": 9266
+      "sha256": "b3785b1ead922ff79a8cebe213fe2b93df4013a743495f57e7fc4b7e1c77b002",
+      "size": 9363
     },
     {
       "path": "examples/valid/delivery-and-events.json",
@@ -149,8 +149,8 @@
     },
     {
       "path": "generation/templates/device_foundation_v1.dart",
-      "sha256": "9866911cf4a181a67a3a917b4e22287f74d2c69363fe72c361e354f5158d8b44",
-      "size": 41039
+      "sha256": "e72ca4bbff97c019dc73488f442e95329d4842520d12a2755ed345269fb81241",
+      "size": 41456
     },
     {
       "path": "generation/templates/device_foundation_v1.py",
@@ -159,8 +159,8 @@
     },
     {
       "path": "generation/templates/device_foundation_v1_generated.h",
-      "sha256": "c777db340de6a5713196dc596f1574be9d481346a11fd8bca1c60501990e150d",
-      "size": 13514
+      "sha256": "9bec5d6d406020fed95102c64af3c833e90fd714096064d22fd13ddf236bce5f",
+      "size": 13761
     },
     {
       "path": "golden/admission-event-stream.json",
@@ -209,8 +209,8 @@
     },
     {
       "path": "golden/owner-domain-descriptor.json",
-      "sha256": "d54b81939a804eb2810a1df1ce6406a9f34e64e7ceec4cbd60c78b51e2c8303d",
-      "size": 2127
+      "sha256": "a1601efa5bf3dd10d8e061c0d474696226c1f0c591e493b0d39f2c70594a3cfa",
+      "size": 2299
     },
     {
       "path": "golden/protocomm-security2-framing.json",
@@ -285,5 +285,5 @@
   ],
   "generator": "device-foundation-v1-catalog",
   "generator_version": "1.0",
-  "source_digest": "sha256:d6861a814f355eb25208ae51436aa6d1294af7d33ebaa0822862523ed792c2b1"
+  "source_digest": "sha256:95ac4013b4475f3ca527b0e3a99133e6ce22c513c149dfb6efb5f94389fa04c2"
 }

@@ -50,6 +50,15 @@ class OwnerDomainDescriptor(BaseModel):
     owner_domain_id: str = Field(min_length=1, max_length=128)
     owner_domain_generation: int = Field(ge=1)
     directory_revision: int = Field(ge=1)
+    # Where this very document is published, absolute and directly GETtable.
+    #
+    # Deliberately not an ``endpoints`` entry: those are base addresses of an
+    # Authority's API, and a reader that had to tell base addresses apart from
+    # resource URLs would still be deriving a path. Firmware previously derived
+    # this one by appending "/descriptor" to the Admission base, which 404s on
+    # every Host, so commissioning rolled back at its final step. Carrying the
+    # route as signed content leaves nothing to derive.
+    descriptor_uri: str = Field(pattern=r"^https://", max_length=2048)
     trust_root_refs: tuple[str, ...] = Field(min_length=1)
     endpoints: tuple[AuthorityEndpoint, ...] = Field(min_length=1)
     issued_at: datetime

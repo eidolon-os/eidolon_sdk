@@ -112,6 +112,7 @@
         "owner_domain_id": "owner-domain_01",
         "owner_domain_generation": 3,
         "directory_revision": 7,
+        "descriptor_uri": "https://admission.owner.example/api/device-onboarding/v1/descriptor",
         "trust_root_refs": [
           "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
         ],

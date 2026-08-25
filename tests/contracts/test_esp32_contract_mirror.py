@@ -134,3 +134,20 @@ def test_esp32_canonical_claim_consumer_and_roll_call_handler_match_contract() -
     assert "PlayRollCallFeedback()" in controller
     assert 'AckCommand(command, "completed", "OK", "", "{\\"played\\":true}")' in controller
     assert "esp_err_t PlayRollCallFeedback()" in feedback
+
+
+def test_esp32_validates_the_owner_route_from_the_signed_descriptor_uri() -> None:
+    """The device must re-fetch the directory at the route the document states.
+
+    Firmware once derived that route by appending "/descriptor" to the Admission
+    endpoint base. No Host answers that path, so every commissioning ended in a
+    rollback the Owner saw only as "configuration failed" — and every failure
+    path of this step logged nothing, so no party could name the missing fact.
+    """
+    runtime = _esp32_source("main/eidolon/commissioning_runtime.cc")
+
+    assert "HubHttpRequest(\"GET\", staged.descriptor_uri," in runtime
+    assert 'endpoint.uri + "/descriptor"' not in runtime
+    assert "LogicalAuthority::Admission" not in runtime
+    # Every rejection names itself; a silent `return false` here is the defect.
+    assert runtime.count("Owner route rejected") == 7
