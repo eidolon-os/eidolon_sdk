@@ -3,6 +3,7 @@
 from .persona import (
     PERSONA_GENOME_SCHEMA,
     PERSONA_REALIZER,
+    PersonaAuthoring,
     PersonaAuthoringDraft,
     PersonaEvolutionProposalEvent,
     PersonaGenome,
@@ -18,6 +19,7 @@ from .persona import (
 __all__ = [
     "PERSONA_GENOME_SCHEMA",
     "PERSONA_REALIZER",
+    "PersonaAuthoring",
     "PersonaAuthoringDraft",
     "PersonaEvolutionProposalEvent",
     "PersonaGenome",

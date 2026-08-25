@@ -150,12 +150,27 @@ class PersonaGenome(BaseModel):
         return self
 
 
-class PersonaAuthoringDraft(BaseModel):
-    """Open authoring input used by Admin before a canonical genome exists."""
+class PersonaAuthoring(BaseModel):
+    """What a person can decide about an Eidolon before it has been anything.
+
+    Split from :class:`PersonaAuthoringDraft` so the name is the only difference
+    between them. That split is what lets this be a *wire* shape: when someone
+    asks for another Eidolon they already said what to call it, and a request
+    carrying the name twice is a request that can disagree with itself.
+
+    Every field has the value the template would have used, so this doubles as
+    the starting point a screen shows. A person opening the form sees what their
+    Eidolon would be if they typed nothing, and edits from there — which is a
+    different act from filling in blanks and imagining the result.
+
+    Deliberately open. These are sentences and lists a person writes, not
+    validated policy; the canonical genome is what gets validated, and it is
+    built from this by :func:`build_persona_genome_from_draft` rather than
+    stored as typed.
+    """
 
     model_config = ConfigDict(extra="forbid")
 
-    name: str
     archetype: str = "companion"
     self_concept: str = ""
     character_portrait: str = "一个沉稳、专注、愿意长期理解 owner 的伙伴。"
@@ -173,11 +188,38 @@ class PersonaAuthoringDraft(BaseModel):
     modality_notes: dict[str, str] = Field(default_factory=dict)
     traits: dict[str, PersonaTraitState] = Field(default_factory=dict)
 
+
+class PersonaAuthoringDraft(PersonaAuthoring):
+    """One person's authoring, for one named Eidolon.
+
+    The name is required here and absent from the base on purpose: a genome
+    without an identity is not a genome (see ``PersonaGenome``), while a form
+    someone is still filling in has no business restating a name the request
+    already carries.
+    """
+
+    name: str
+
     @model_validator(mode="after")
     def _ensure_name(self) -> "PersonaAuthoringDraft":
         if not self.name.strip():
             raise ValueError("persona authoring draft name is required")
         return self
+
+    @classmethod
+    def for_companion(
+        cls, authoring: PersonaAuthoring | None, *, name: str
+    ) -> "PersonaAuthoringDraft":
+        """The draft for a Companion called ``name``, authored or not.
+
+        ``None`` means nobody authored anything, and the answer is the template
+        under this name — the same genome the create path has always written
+        when asked for nothing. So a caller does not branch on whether a person
+        filled in the form; it asks for the draft either way.
+        """
+
+        fields = {} if authoring is None else authoring.model_dump()
+        return cls(**fields, name=name)
 
 
 class PersonaObservationEvent(BaseModel):
