@@ -34,13 +34,13 @@
     },
     {
       "path": "common/schemas.schema.json",
-      "sha256": "f2159afeabf093559cc443262eafc21bfc3182ba716ac1392fb512c6bd084e9d",
-      "size": 17163
+      "sha256": "94553e0690884231a70b16b39b947d1ddedefaea7252c3e56071222a3dae3fc6",
+      "size": 18817
     },
     {
       "path": "conformance/run.py",
-      "sha256": "590fd1750f1024f90d0fda6e3aeb91239ce7b5bdfbab47584b9439f32ace4b3c",
-      "size": 43092
+      "sha256": "5270e8bc9df28e7921426ea87096dcc57fa58040076ccfe743ae71461d9a56d9",
+      "size": 48791
     },
     {
       "path": "delivery-port/schemas.schema.json",
@@ -84,8 +84,8 @@
     },
     {
       "path": "examples/invalid/common.json",
-      "sha256": "0903b8e0f2e85b59e4ab2cce5e4853e944b9f3eea298c8af10f337a23bee3682",
-      "size": 5885
+      "sha256": "9b92b2442d7d3fc4853d45b1e7ca7c11cab581fbd90d1268d17b98af70f3f254",
+      "size": 9786
     },
     {
       "path": "examples/invalid/device-erase.json",
@@ -114,8 +114,8 @@
     },
     {
       "path": "examples/valid/common.json",
-      "sha256": "b3785b1ead922ff79a8cebe213fe2b93df4013a743495f57e7fc4b7e1c77b002",
-      "size": 9363
+      "sha256": "9fc1d2c6a436a09d6d468921e3f0e245e3adce419f199b01bac717a6a3686d03",
+      "size": 11158
     },
     {
       "path": "examples/valid/delivery-and-events.json",
@@ -144,23 +144,23 @@
     },
     {
       "path": "generation/generate.py",
-      "sha256": "52670a69ff870a4a5dfbb25b72e2f9abf6cffb3ffb2dda0f82206575e1a017ba",
-      "size": 4505
+      "sha256": "72a7eb7a09f6a96f38525a176e7f096e84ac6b616b60be447dc832f97eaa58e5",
+      "size": 4820
     },
     {
       "path": "generation/templates/device_foundation_v1.dart",
-      "sha256": "e72ca4bbff97c019dc73488f442e95329d4842520d12a2755ed345269fb81241",
-      "size": 41456
+      "sha256": "98c5b459d281739d86e25f1976af84f9426b1ee56bc491a4551164271fdc11d8",
+      "size": 46889
     },
     {
       "path": "generation/templates/device_foundation_v1.py",
-      "sha256": "1a909823d5e3b2b44dcc91d8b5bc3d8e93fc64614542e050b29bd5817192300a",
-      "size": 1262
+      "sha256": "3ca809f40e90a2a4621b01bcc09ca40d550b4869f0f5dc91db50a63d028d786a",
+      "size": 1334
     },
     {
       "path": "generation/templates/device_foundation_v1_generated.h",
-      "sha256": "9bec5d6d406020fed95102c64af3c833e90fd714096064d22fd13ddf236bce5f",
-      "size": 13761
+      "sha256": "52f43293b5f3bf6d918ff5376667e4c3d4cb11e663bab38a9a421adf3abeb72e",
+      "size": 17403
     },
     {
       "path": "golden/admission-event-stream.json",
@@ -189,8 +189,8 @@
     },
     {
       "path": "golden/development-commissioning-identity.json",
-      "sha256": "9cf213966272e28f2b37f2498fb7d2f2c45f488cb5e799740360f4a665e35e59",
-      "size": 2473
+      "sha256": "cf9e43b30f18d6c4ab2839a78abf6f4bde52da65c232b4cb40d0b79954e288bb",
+      "size": 2692
     },
     {
       "path": "golden/device-delivery.json",
@@ -223,6 +223,11 @@
       "size": 1785
     },
     {
+      "path": "golden/setup-descriptor.json",
+      "sha256": "fb8a600f9eda52f489fb49c9bfd37144078fbe8f1498e711b71a77e67559c540",
+      "size": 2525
+    },
+    {
       "path": "lifecycle/schemas.schema.json",
       "sha256": "1559504cb637d67335df9ce83dd5b888dcb3275b5d1ddd1470ed0ee2b8a826b4",
       "size": 4153
@@ -249,8 +254,8 @@
     },
     {
       "path": "requirements/requirements.json",
-      "sha256": "b9e601e691300c1d16ebc60ff45c9a117cd70202ffc7031ea05dd9329a877af5",
-      "size": 44011
+      "sha256": "5353f3d1df67140050273c4c5e5b26dc07b99b07899022cd7eb292ca7f1e69ac",
+      "size": 45293
     },
     {
       "path": "state-vectors/commissioning-runtime.json",
@@ -264,8 +269,8 @@
     },
     {
       "path": "state-vectors/hardware-rejoin.json",
-      "sha256": "860e5db4881f9fe5d63b29d0344f940d3f389c19b4ca238b8d7bd89204677343",
-      "size": 924
+      "sha256": "d79ae247cdd21c8ea15eb7af1d575c385dc55e867d55114a06cc0a97382e0dcc",
+      "size": 1151
     },
     {
       "path": "state-vectors/host-relocation.json",
@@ -285,5 +290,5 @@
   ],
   "generator": "device-foundation-v1-catalog",
   "generator_version": "1.0",
-  "source_digest": "sha256:95ac4013b4475f3ca527b0e3a99133e6ce22c513c149dfb6efb5f94389fa04c2"
+  "source_digest": "sha256:9d698777b8a0bf737ef0ed53a3725f95da458e900e984fef5a9e854e0a8024b3"
 }

@@ -1,6 +1,6 @@
 {
   "vector_id": "DF-PH2-REJOIN-001",
-  "stable_hardware_identity_ref": "hardware-box-3-golden",
+  "stable_hardware_identity_ref": "hardware-6578648226809efedd5c2d0e0b8afe028fb5e1b26e1443a9122832aea0693405",
   "incarnations": [
     {
       "device_instance_id": "device-instance-5cd252fb0ce8932436faf8ccd1040981b89ee4ad6b9fe9e2a2b7e71aacb27cd3",
@@ -15,6 +15,9 @@
   ],
   "invariants": {
     "hardware_identity_ref_changes": false,
+    "hardware_identity_is_derived_from_verified_hardware_lookup": true,
+    "hardware_identity_is_operator_supplied": false,
+    "hardware_identity_states_board_type": false,
     "device_instance_id_changes_after_physical_recovery": true,
     "claim_generation_monotonic_per_owner_and_hardware": true,
     "old_claim_tombstone_retained": true,

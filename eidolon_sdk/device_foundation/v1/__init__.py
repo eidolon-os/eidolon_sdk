@@ -94,6 +94,14 @@ from .device_erase import (
     verify_p256_signature,
 )
 from .delivery import DeliverEnvelope, DeliveryAcceptance, DeviceEvidenceEnvelope
+from .setup_descriptor import (
+    SETUP_DESCRIPTOR_CONTRACT_VERSION,
+    SetupDescriptor,
+    SetupDescriptorTrust,
+    SetupWindowRemainingSeconds,
+    setup_descriptor_from_json,
+    setup_descriptor_to_json,
+)
 
 __all__ = [
     "MANIFEST_ASSERTION_OPERATION",
@@ -180,4 +188,10 @@ __all__ = [
     "DeliverEnvelope",
     "DeliveryAcceptance",
     "DeviceEvidenceEnvelope",
+    "SETUP_DESCRIPTOR_CONTRACT_VERSION",
+    "SetupDescriptor",
+    "SetupDescriptorTrust",
+    "SetupWindowRemainingSeconds",
+    "setup_descriptor_from_json",
+    "setup_descriptor_to_json",
 ]

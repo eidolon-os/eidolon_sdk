@@ -822,6 +822,28 @@
       "status": "covered",
       "waiver_reason": null,
       "waiver_expires_at": null
+    },
+    {
+      "requirement_id": "DF-COMM-016",
+      "normative_text_ref": "10.6 the setup descriptor MUST have one canonical definition both ends are generated from, and an offer with no deadline MUST be unrepresentable as a duration",
+      "owner": "eidolon_sdk+eidolon-client-esp32+eidolon_client_mobile",
+      "schema_ids": ["common/SetupDescriptor", "common/SetupWindowRemainingSeconds"],
+      "producer_tests": [
+        "SDK::test_no_number_may_stand_in_for_no_deadline",
+        "SDK::test_every_binding_language_declares_the_whole_field_table",
+        "ESP32::TheDescriptorBytesAreTheGoldenVectorBytes",
+        "ESP32::AnOfferWithNoDeadlineCarriesNoDurationField"
+      ],
+      "consumer_tests": [
+        "MOBILE::setup_descriptor_golden_test.dart::the golden descriptor parses through the generated binding",
+        "MOBILE::setup_descriptor_golden_test.dart::no number stands in for an offer that does not end"
+      ],
+      "simulator_vectors": ["golden/setup-descriptor.json"],
+      "integration_tests": ["CONFORMANCE::check_setup_descriptor_vector", "GENERATION::generate --check"],
+      "hil_tests": ["P1::box3-factory-device-descriptor-accepted-by-controller"],
+      "status": "covered",
+      "waiver_reason": null,
+      "waiver_expires_at": null
     }
   ]
 }

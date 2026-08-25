@@ -270,6 +270,57 @@ def check_owner_directory_vector() -> int:
     return 1
 
 
+def check_setup_descriptor_vector(
+    schemas: dict[str, dict[str, Any]], registry: Registry
+) -> int:
+    """Hold the setup descriptor golden vector and its schema to each other.
+
+    Both ends of the setup act read this vector: the firmware compares the bytes
+    it serialises against it, and the controller parses it through the generated
+    binding. That only protects them while the vector still says what the schema
+    says. The descriptor is the one DTO in this act that used to be hand-written
+    on both sides, and it drifted where nothing was watching: an unbounded window
+    was encoded as `expires_in_seconds: 0`, which the controller read as a
+    duration no device could honour and refused — every device out of the box.
+    """
+
+    vector = load_json(ROOT / "golden" / "setup-descriptor.json")
+    definition = schemas[
+        "https://contracts.eidolon.live/device-foundation/v1/common/schemas.schema.json"
+    ]["$defs"]["SetupDescriptor"]
+    if vector["required_fields"] != definition["required"]:
+        raise ConformanceError("setup descriptor vector and schema disagree on required fields")
+    declared = sorted(vector["required_fields"] + vector["optional_fields"])
+    if declared != sorted(definition["properties"]):
+        raise ConformanceError("setup descriptor vector does not cover every declared field")
+    if vector["optional_fields"] != ["expires_in_seconds"]:
+        raise ConformanceError("only the setup window duration may be absent from a descriptor")
+    validator = Draft202012Validator(
+        {"$ref": vector["schema"]}, registry=registry, format_checker=FORMAT_CHECKER
+    )
+    for shape in ("bounded_window", "no_deadline"):
+        descriptor = vector[shape]["descriptor"]
+        errors = list(validator.iter_errors(descriptor))
+        if errors:
+            raise ConformanceError(f"setup descriptor {shape} is invalid: {errors[0].message}")
+        canonical = canonical_bytes(descriptor)
+        if canonical.decode("utf-8") != vector[shape]["canonical_utf8"]:
+            raise ConformanceError(f"setup descriptor {shape} canonical bytes mismatch")
+        if "sha256:" + hashlib.sha256(canonical).hexdigest() != vector[shape]["canonical_sha256"]:
+            raise ConformanceError(f"setup descriptor {shape} canonical digest mismatch")
+    if "expires_in_seconds" in vector["no_deadline"]["descriptor"]:
+        raise ConformanceError("an offer with no deadline must name no duration at all")
+    # An absent duration is the only way to say "this offer does not end". Every
+    # number a producer could reach for instead has to stay invalid, or the
+    # sentinel comes back.
+    for encoded in vector["rejected_expires_in_seconds"]:
+        candidate = dict(vector["bounded_window"]["descriptor"])
+        candidate["expires_in_seconds"] = encoded
+        if validator.is_valid(candidate):
+            raise ConformanceError(f"setup descriptor accepted {encoded!r} as a window duration")
+    return 1
+
+
 def _hkdf_extract(salt: bytes, ikm: bytes) -> bytes:
     return hmac.new(salt or bytes(32), ikm, hashlib.sha256).digest()
 
@@ -669,6 +720,7 @@ def check_state_vectors() -> int:
         "device_instance_id_changes_after_physical_recovery",
         "claim_generation_monotonic_per_owner_and_hardware",
         "old_claim_tombstone_retained",
+        "hardware_identity_is_derived_from_verified_hardware_lookup",
     }
     if any(rejoin_invariants[name] is not True for name in rejoin_true):
         raise ConformanceError("hardware rejoin positive invariant drifted")
@@ -678,9 +730,20 @@ def check_state_vectors() -> int:
         "old_operation_can_mutate_new_claim",
         "hardware_identity_from_operational_evidence_digest",
         "mac_is_device_instance_id",
+        # A board type is a firmware declaration carried by the Manifest, which
+        # a device may re-assert. Welding one into the permanent hardware
+        # identity is how a Waveshare AMOLED board became a "box3" for good.
+        "hardware_identity_is_operator_supplied",
+        "hardware_identity_states_board_type",
     }
     if any(rejoin_invariants[name] is not False for name in rejoin_false):
         raise ConformanceError("hardware rejoin fencing invariant drifted")
+    if rejoin["stable_hardware_identity_ref"] != _derived_hardware_identity_ref(
+        load_json(ROOT / "golden" / "development-commissioning-identity.json")[
+            "hardware_lookup_id"
+        ]
+    ):
+        raise ConformanceError("rejoin hardware identity is not the derived identity")
 
     commissioning = load_json(ROOT / "state-vectors" / "commissioning-runtime.json")
     invariants = commissioning["invariants"]
@@ -725,8 +788,43 @@ def check_state_vectors() -> int:
     return 6
 
 
+def _derived_hardware_identity_ref(hardware_lookup_id: str) -> str:
+    """Derive the one permanent hardware identity of a verified lookup id.
+
+    Case and surrounding whitespace fold because a MAC address is hex and a
+    firmware that reformats it must not fork one board into two identity
+    lineages; nothing else about the input survives, so an unverifiable claim
+    (a board type, a vendor, a room) cannot ride along inside the identity.
+    """
+
+    canonical = hardware_lookup_id.strip().casefold()
+    label = "eidolon-hardware-identity-v1"
+    digest = hashlib.sha256((label + "\0" + canonical).encode()).hexdigest()
+    return "hardware-" + digest
+
+
 def check_development_commissioning_identity() -> int:
     vector = load_json(ROOT / "golden" / "development-commissioning-identity.json")
+    # A development registry entry pre-shares a setup secret and states nothing
+    # else. It used to carry a hand-typed hardware_identity_ref, and a
+    # Waveshare ESP32-S3-Touch-AMOLED board was admitted as
+    # "hardware-box3-1cdbd47aef0c": an unverifiable board type welded into an
+    # identity that outlives every Claim of that hardware.
+    if vector["profile_id"] != "eidolon-development-hmac-commissioning-v2":
+        raise ConformanceError("development commissioning registry profile drifted")
+    if vector["registry_entry_fields"] != ["setup_secret"]:
+        raise ConformanceError("development registry entry may only pre-share a secret")
+    derivation_input = vector["hardware_identity_derivation_input_utf8_with_nul_separator"]
+    if derivation_input != "eidolon-hardware-identity-v1\0" + vector[
+        "hardware_lookup_id"
+    ].casefold():
+        raise ConformanceError("hardware identity derivation input drifted")
+    if vector["hardware_identity_ref"] != _derived_hardware_identity_ref(
+        vector["hardware_lookup_id"]
+    ) or vector["hardware_identity_ref"] != "hardware-" + hashlib.sha256(
+        derivation_input.encode()
+    ).hexdigest():
+        raise ConformanceError("hardware identity is not derived from the verified lookup id")
     canonical = canonical_bytes(vector["evidence_document"])
     if canonical.decode() != vector["evidence_canonical_utf8"]:
         raise ConformanceError("development evidence JCS bytes drifted")
@@ -896,6 +994,7 @@ def run() -> dict[str, int]:
         "device_delivery_vectors": check_device_delivery_vector(),
         "claim_revoke_vectors": check_claim_revoke_vector(),
         "owner_directory_vectors": check_owner_directory_vector(),
+        "setup_descriptor_vectors": check_setup_descriptor_vector(schemas, registry),
         "hpke_vectors": check_hpke_vector(),
         "claim_grant_aad_checks": check_claim_grant_aad(),
         "claim_grant_wire_checks": check_claim_grant_wire_envelope(),

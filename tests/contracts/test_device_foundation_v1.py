@@ -3,6 +3,7 @@ from __future__ import annotations
 import importlib.util
 import json
 import re
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -32,6 +33,66 @@ def test_conformance_runner_passes() -> None:
     assert result["development_commissioning_identity"] == 1
     assert result["claim_revoke_vectors"] == 1
     assert result["p1_exit_evidence"] == 1
+
+
+def _rewrite(tmp_path: Path, relative: str, document: dict) -> Path:
+    root = tmp_path / "device-foundation-v1"
+    target = root / relative
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text(json.dumps(document), encoding="utf-8")
+    return root
+
+
+def test_development_identity_rejects_a_hardware_identity_that_was_typed_in(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The registry once let an operator type this value, and one did: a
+    Waveshare ESP32-S3-Touch-AMOLED board was admitted as
+    "hardware-box3-1cdbd47aef0c" and every later generation of that Claim
+    repeated the board type. Nothing verifies a board type, so the contract
+    only accepts an identity derived from the verified hardware lookup id."""
+
+    runner = _load_runner()
+    relative = "golden/development-commissioning-identity.json"
+    vector = runner.load_json(CONTRACT_ROOT / relative)
+    vector["hardware_identity_ref"] = "hardware-box-3-golden"
+    monkeypatch.setattr(runner, "ROOT", _rewrite(tmp_path, relative, vector))
+
+    with pytest.raises(runner.ConformanceError, match="hardware identity"):
+        runner.check_development_commissioning_identity()
+
+
+def test_rejoin_vector_rejects_an_operator_supplied_hardware_identity(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    runner = _load_runner()
+    relative = "state-vectors/hardware-rejoin.json"
+    vector = runner.load_json(CONTRACT_ROOT / relative)
+    vector["invariants"]["hardware_identity_is_operator_supplied"] = True
+    root = tmp_path / "device-foundation-v1"
+    shutil.copytree(CONTRACT_ROOT / "state-vectors", root / "state-vectors")
+    (root / relative).write_text(json.dumps(vector), encoding="utf-8")
+    monkeypatch.setattr(runner, "ROOT", root)
+
+    with pytest.raises(runner.ConformanceError, match="fencing invariant"):
+        runner.check_state_vectors()
+
+
+def test_rejoin_vector_must_carry_the_same_derived_identity_as_the_golden(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    runner = _load_runner()
+    relative = "state-vectors/hardware-rejoin.json"
+    vector = runner.load_json(CONTRACT_ROOT / relative)
+    vector["stable_hardware_identity_ref"] = "hardware-box-3-golden"
+    root = tmp_path / "device-foundation-v1"
+    shutil.copytree(CONTRACT_ROOT / "state-vectors", root / "state-vectors")
+    shutil.copytree(CONTRACT_ROOT / "golden", root / "golden")
+    (root / relative).write_text(json.dumps(vector), encoding="utf-8")
+    monkeypatch.setattr(runner, "ROOT", root)
+
+    with pytest.raises(runner.ConformanceError, match="derived identity"):
+        runner.check_state_vectors()
 
 
 def test_p1_exit_evidence_fails_if_host_move_reenters_commissioning(

@@ -65,6 +65,10 @@ def _binding_definitions() -> set[str]:
     definitions = {
         "OwnerDomainId", "BusinessOwnerId", "DeviceRef", "ManifestRef", "ClaimGrantAAD",
         "CommandEnvelope", "CommandResult", "DeviceProblem", "RevokeClaim", "RevokeClaimResult",
+        # The setup descriptor was hand-written on both ends until a device
+        # encoded an endless window as 0 and every controller refused it. It is
+        # listed here so a field can never again exist in one language only.
+        "SetupDescriptor", "SetupDescriptorTrust", "SetupWindowRemainingSeconds",
     }
     for relative in (
         "admission/schemas.schema.json",

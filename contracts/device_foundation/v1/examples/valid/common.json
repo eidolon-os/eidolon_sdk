@@ -241,6 +241,47 @@
         "setup_generation": 7,
         "observed_state_revision": 5
       }
+    },
+    {
+      "case_id": "DF-COMM-SESSION-ID-VALID",
+      "schema": "https://contracts.eidolon.live/device-foundation/v1/common/schemas.schema.json",
+      "definition": "CommissioningSessionId",
+      "value": "setup_session_01"
+    },
+    {
+      "case_id": "DF-SETUP-WINDOW-REMAINING-VALID",
+      "schema": "https://contracts.eidolon.live/device-foundation/v1/common/schemas.schema.json",
+      "definition": "SetupWindowRemainingSeconds",
+      "value": 600
+    },
+    {
+      "case_id": "DF-SETUP-DESCRIPTOR-BOUNDED-WINDOW-VALID",
+      "schema": "https://contracts.eidolon.live/device-foundation/v1/common/schemas.schema.json",
+      "definition": "SetupDescriptor",
+      "value": {
+        "contract_version": "1",
+        "device_id": "device-instance-591d7c62d0bc738376935f77ff2acd5472bbee64207a765df03af6d6240c07dc",
+        "device_kind": "atk-dnesp32s3",
+        "display_name": "Eidolon atk-dnesp32s3",
+        "identity_fingerprint": "p256:591d7c62d0bc738376935f77ff2acd5472bbee64207a765df03af6d6240c07dc",
+        "session_id": "setup_session_01",
+        "expires_in_seconds": 600,
+        "trust": "manufacturer-bound"
+      }
+    },
+    {
+      "case_id": "DF-SETUP-DESCRIPTOR-NO-DEADLINE-VALID",
+      "schema": "https://contracts.eidolon.live/device-foundation/v1/common/schemas.schema.json",
+      "definition": "SetupDescriptor",
+      "value": {
+        "contract_version": "1",
+        "device_id": "device-instance-591d7c62d0bc738376935f77ff2acd5472bbee64207a765df03af6d6240c07dc",
+        "device_kind": "atk-dnesp32s3",
+        "display_name": "Eidolon atk-dnesp32s3",
+        "identity_fingerprint": "p256:591d7c62d0bc738376935f77ff2acd5472bbee64207a765df03af6d6240c07dc",
+        "session_id": "setup_session_01",
+        "trust": "development-tofu"
+      }
     }
   ]
 }
