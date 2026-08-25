@@ -17,6 +17,28 @@ call chain and was thrown away twice on the way up.
 
 So: **one envelope, emitted by every surface, parsed by every client.**
 
+Where it has actually reached
+-----------------------------
+
+Stated because a contract that claims a reach it does not have is the same kind
+of lie this module was written to remove.
+
+- ``/api/management/v1`` (Admin's LAN surface): **adopted.** Every refusal leaves
+  it in this shape, from one construction point, and both clients are generated
+  from the document that describes it.
+- ``/api/local/v1`` (the same process's setup and Host surface): **not yet.**
+  Around seventy error sites across six modules, consumed by a hand-written
+  client, and most of them sit on first-run paths — commissioning over BLE,
+  joining a network, claiming a Host — where a wrong error path means somebody
+  cannot set up the machine they just bought. It is worth doing and it is not
+  worth doing carelessly: the migration wants a Host and a device to exercise
+  those flows against, not a green unit suite.
+- Hub and bootstrapd: **not yet**, and behind the one above.
+
+A surface that has not adopted this is not broken. It is a surface whose
+refusals a client still has to guess at, which is a cost paid in exactly one
+place — whoever is looking at the screen.
+
 What belongs here and what does not
 -----------------------------------
 
