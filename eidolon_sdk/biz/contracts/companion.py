@@ -68,41 +68,6 @@ COMPANION_LIFECYCLE_TRANSITIONS: dict[str, tuple[str, ...]] = {
     LIFECYCLE_DELETING: (),
 }
 
-def companion_lifecycle_path(current: str, target: str) -> tuple[str, ...]:
-    """The states to ask for, in order, to get from ``current`` to ``target``.
-
-    Empty when it is already there. ``None``-free: an unreachable target raises,
-    because a caller that got an empty answer for "impossible" would read it as
-    "nothing to do".
-
-    This exists so that no consumer writes down "archiving means retiring first".
-    That sentence is already written, once, in the table above — a projection
-    that repeated it would be a second copy of the state machine, and the two
-    would disagree the day a state is added between them. Shortest path, so a
-    graph that grows a shortcut is taken without anyone editing a caller.
-
-    ``deleting`` is reachable in this graph and no product surface offers it;
-    keeping the walk faithful to the table is what lets the surfaces decide that,
-    rather than this function pretending the edge is not there.
-    """
-
-    if current == target:
-        return ()
-    seen = {current}
-    queue: list[tuple[str, tuple[str, ...]]] = [(current, ())]
-    while queue:
-        state, route = queue.pop(0)
-        for nxt in COMPANION_LIFECYCLE_TRANSITIONS.get(state, ()):
-            if nxt in seen:
-                continue
-            walked = (*route, nxt)
-            if nxt == target:
-                return walked
-            seen.add(nxt)
-            queue.append((nxt, walked))
-    raise ValueError(f"no companion lifecycle path from {current!r} to {target!r}")
-
-
 #: Why a lifecycle command was refused, in a word a consumer can act on.
 #:
 #: Same reasoning as ``PersonaConflictCode``: these refusals reach a person
@@ -143,5 +108,4 @@ __all__ = [
     "LIFECYCLE_DELETING",
     "LIFECYCLE_RETIRING",
     "CompanionLifecycleState",
-    "companion_lifecycle_path",
 ]
