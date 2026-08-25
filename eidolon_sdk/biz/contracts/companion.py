@@ -53,8 +53,55 @@ CompanionLifecycleState = Literal["active", "retiring", "archived", "deleting"]
 #: caller that asks.
 DEFAULT_ELIGIBLE_LIFECYCLE_STATES: tuple[str, ...] = (LIFECYCLE_ACTIVE,)
 
+#: Which state a Companion may move to from where. Written down because the
+#: order is the safety property, not a formality: archiving without retiring
+#: first would skip the step where new sessions and Body assignments stop being
+#: accepted, and a Companion can be archived while something is still talking to
+#: it only if that step never ran.
+#:
+#: ``deleting`` is terminal and reachable only from ``archived``: hard deletion is
+#: a separate data-governance workflow, and nothing comes back from it.
+COMPANION_LIFECYCLE_TRANSITIONS: dict[str, tuple[str, ...]] = {
+    LIFECYCLE_ACTIVE: (LIFECYCLE_RETIRING,),
+    LIFECYCLE_RETIRING: (LIFECYCLE_ARCHIVED, LIFECYCLE_ACTIVE),
+    LIFECYCLE_ARCHIVED: (LIFECYCLE_ACTIVE, LIFECYCLE_DELETING),
+    LIFECYCLE_DELETING: (),
+}
+
+#: Why a lifecycle command was refused, in a word a consumer can act on.
+#:
+#: Same reasoning as ``PersonaConflictCode``: these refusals reach a person
+#: through two process boundaries, and they call for different things. "Someone
+#: changed it while you were deciding" is worth a re-read; "this Companion is the
+#: one your Eidolon answers as, name a replacement" is a question for the person;
+#: "it is already archived" is a success for anyone retrying.
+CompanionLifecycleConflictCode = Literal[
+    #: The caller's revision is older than the aggregate's, and the state it
+    #: asked for is not the state it is in.
+    "revision_stale",
+    #: The move is not one this state allows — archiving something that was never
+    #: retired, restoring something that is being deleted.
+    "transition_not_allowed",
+    #: This Companion is the Owner's default and archiving it would leave the
+    #: pointer at something that cannot answer. The caller must name a
+    #: replacement in the same request.
+    "default_replacement_required",
+    #: A replacement was named and cannot take the role: it is not this Owner's,
+    #: not active, is the Companion being retired, or is a kind that never
+    #: answers for an unaddressed request.
+    "default_replacement_ineligible",
+    #: There is nobody else to hand the role to. Archiving the only Companion an
+    #: Owner has would leave them with an Eidolon that cannot answer at all.
+    "last_active_companion",
+    #: The Companion is not this Owner's, or is not there. One code for both, so
+    #: an id cannot be probed for existence.
+    "not_found",
+]
+
 __all__ = [
     "COMPANION_LIFECYCLE_STATES",
+    "COMPANION_LIFECYCLE_TRANSITIONS",
+    "CompanionLifecycleConflictCode",
     "DEFAULT_ELIGIBLE_LIFECYCLE_STATES",
     "LIFECYCLE_ACTIVE",
     "LIFECYCLE_ARCHIVED",
