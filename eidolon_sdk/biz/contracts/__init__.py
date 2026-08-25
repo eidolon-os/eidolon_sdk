@@ -156,8 +156,25 @@ SessionEndReason = Literal[
 # does not stack, so a device that retries after a lost reply is safe.
 SESSION_OPEN_TYPE = "session_open"
 SESSION_CLOSE_TYPE = "session_close"
+SESSION_STARTED_TYPE = "session_started"
+SESSION_CONVERSATION_ID_FIELD = "conversation_id"
+SESSION_CONVERSATION_ID_MAX_LENGTH = 64
 VALID_SESSION_REQUEST_TYPES = frozenset({SESSION_OPEN_TYPE, SESSION_CLOSE_TYPE})
 SessionRequestType = Literal["session_open", "session_close"]
+
+
+def normalize_conversation_id(raw: str | None) -> str | None:
+    """Validate the correlation key for one conversation inside a channel."""
+
+    candidate = (raw or "").strip()
+    if not candidate or len(candidate) > SESSION_CONVERSATION_ID_MAX_LENGTH:
+        return None
+    if not candidate.isascii() or any(
+        char not in "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_.:"
+        for char in candidate
+    ):
+        return None
+    return candidate
 
 # --------------------------------------------------------------------------- #
 # client.audio_state — device → server observe-only signal vocabulary.         #

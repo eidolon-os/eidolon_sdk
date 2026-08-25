@@ -54,8 +54,18 @@ def test_session_request_types_are_stable() -> None:
     """A device asks to be served over the same topic it is told the answer on."""
     assert c.SESSION_OPEN_TYPE == "session_open"
     assert c.SESSION_CLOSE_TYPE == "session_close"
+    assert c.SESSION_STARTED_TYPE == "session_started"
+    assert c.SESSION_CONVERSATION_ID_FIELD == "conversation_id"
+    assert c.SESSION_CONVERSATION_ID_MAX_LENGTH == 64
     assert c.VALID_SESSION_REQUEST_TYPES == {"session_open", "session_close"}
     assert c.SESSION_END_TYPE not in c.VALID_SESSION_REQUEST_TYPES
+
+
+def test_conversation_id_normalization_is_bounded() -> None:
+    assert c.normalize_conversation_id(" conversation-7 ") == "conversation-7"
+    assert c.normalize_conversation_id("") is None
+    assert c.normalize_conversation_id("has space") is None
+    assert c.normalize_conversation_id("x" * 65) is None
 
 
 def test_session_end_reasons_are_stable() -> None:

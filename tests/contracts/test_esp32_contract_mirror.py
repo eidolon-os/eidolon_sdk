@@ -80,6 +80,11 @@ def test_esp32_topics_header_matches_python_wire_contract() -> None:
     # is published successfully and simply never recognised as one.
     assert strings["kSessionOpenType"] == c.SESSION_OPEN_TYPE
     assert strings["kSessionCloseType"] == c.SESSION_CLOSE_TYPE
+    assert strings["kSessionStartedType"] == c.SESSION_STARTED_TYPE
+    assert (
+        strings["kSessionConversationIdField"]
+        == c.SESSION_CONVERSATION_ID_FIELD
+    )
 
     assert strings["kClientAudioStateType"] == c.CLIENT_AUDIO_STATE_TYPE
     assert strings["kInputModeAuto"] == c.INPUT_MODE_AUTO
