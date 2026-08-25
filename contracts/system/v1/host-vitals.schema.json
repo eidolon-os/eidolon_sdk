@@ -1,0 +1,34 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contracts.eidolon.live/system/v1/host-vitals.schema.json",
+  "title": "Eidolon Host Vitals V1",
+  "description": "Raw machine-scoped readings published by eidolond. This contract carries observations and honest absence, never a product health verdict.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["operation", "observed_at", "measurements"],
+  "properties": {
+    "operation": {"const": "system.host-vitals"},
+    "observed_at": {"type": "string", "format": "date-time"},
+    "measurements": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/measurement"}
+    }
+  },
+  "$defs": {
+    "measurement": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "value", "unit", "capacity", "unavailable_reason"],
+      "properties": {
+        "name": {"type": "string", "minLength": 1, "maxLength": 64},
+        "value": {"type": ["number", "null"]},
+        "unit": {"type": "string"},
+        "capacity": {"type": ["number", "null"]},
+        "unavailable_reason": {
+          "type": ["string", "null"],
+          "maxLength": 256
+        }
+      }
+    }
+  }
+}
