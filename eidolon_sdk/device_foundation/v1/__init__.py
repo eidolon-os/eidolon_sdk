@@ -72,6 +72,14 @@ from .admission import (
     HardwareIdentityEvidence,
     OperationalPublicKey,
 )
+from .body_mesh import (
+    AssignmentCondition,
+    AssignmentMode,
+    BodyTargetRef,
+    ReplaceAssignment,
+    ReplaceAssignmentResult,
+    SelectionProvenance,
+)
 from .device_manifest import (
     MANIFEST_ASSERTION_OPERATION,
     AssertDeviceManifest,
@@ -121,6 +129,12 @@ __all__ = [
     "AdmissionListCursor",
     "AdmissionEventSource",
     "AdmissionEventType",
+    "AssignmentCondition",
+    "AssignmentMode",
+    "BodyTargetRef",
+    "ReplaceAssignment",
+    "ReplaceAssignmentResult",
+    "SelectionProvenance",
     "AuthorityEndpoint",
     "AuthorityLocator",
     "AuthorityLocatorError",

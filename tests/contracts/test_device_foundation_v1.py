@@ -405,3 +405,66 @@ def test_a_repository_added_after_the_capture_is_reported_not_refused(tmp_path) 
     report = json.loads(result.stdout)
     assert report["repositories_added_since_capture"] == ["eidolon_something_new"]
     assert report["repository_count"] == len(manifest["repositories"])
+
+
+def test_body_assignment_vocabulary_is_defined_once_and_matches_the_frozen_schema() -> None:
+    """The four ways a Body ends up pointing somewhere, and the one mode V1 has.
+
+    Pinned here rather than left to each authority because more than one process
+    reads these words: the Kernel writes them, the management surface turns them
+    into a sentence, and a phone decides from them whether to say "you cleared
+    this" or "the Eidolon it answered as was put away". Two spellings of the
+    same fact is how those three come to disagree.
+
+    The mode assertion is against the *frozen* schema, not against a list
+    retyped here: ``ReplaceAssignment.mode`` is a ``const`` in the canonical
+    document, and a binding that accepted a second mode would be offering a
+    short-term takeover the contract deliberately does not define.
+    """
+
+    from eidolon_sdk.device_foundation.v1 import (
+        AssignmentMode,
+        ReplaceAssignment,
+        SelectionProvenance,
+    )
+
+    assert [item.value for item in SelectionProvenance] == [
+        "user_selected",
+        "user_cleared",
+        "companion_deleted",
+        "policy_reconciled",
+    ]
+
+    schema = json.loads(
+        (CONTRACT_ROOT / "body-mesh" / "schemas.schema.json").read_text(encoding="utf-8")
+    )
+    frozen_mode = schema["$defs"]["ReplaceAssignment"]["properties"]["mode"]["const"]
+    assert [item.value for item in AssignmentMode] == [frozen_mode]
+
+    with pytest.raises(ValueError):
+        ReplaceAssignment.model_validate(
+            {
+                "body_endpoint_id": "voice-body",
+                "expected_assignment_revision": 0,
+                "companion_ref": "companion_01",
+                "mode": "temporary",
+                "policy_refs": [],
+            }
+        )
+
+
+def test_replacing_an_assignment_needs_no_policy_refs_because_nothing_defines_one() -> None:
+    """Empty is the default, and clearing a Body is a first-class request.
+
+    Both halves are load-bearing. No Host in this product defines or evaluates a
+    resource policy, so a caller obliged to name refs would be inventing them;
+    and ``companion_ref: null`` has to parse, because "nobody answers here" is a
+    state an Owner asks for on purpose rather than an absence.
+    """
+
+    from eidolon_sdk.device_foundation.v1 import ReplaceAssignment
+
+    cleared = ReplaceAssignment(body_endpoint_id="voice-body", expected_assignment_revision=3)
+    assert cleared.companion_ref is None
+    assert cleared.policy_refs == ()
+    assert cleared.model_dump(mode="json")["policy_refs"] == []
