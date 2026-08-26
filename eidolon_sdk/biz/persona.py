@@ -385,6 +385,44 @@ def build_persona_genome_from_draft(
     )
 
 
+def persona_authoring_of(genome: PersonaGenome) -> PersonaAuthoring:
+    """Read a committed genome back as the part a person wrote.
+
+    The inverse of :func:`build_persona_genome_from_draft`, and it exists for one
+    screen: editing who an Eidolon is has to open on **who it currently is**, not
+    on the template and not on blanks. A form that opened on anything else would
+    make every edit a rewrite, because whatever the person did not retype would
+    be lost the moment they saved.
+
+    Only the authored fields come back. A genome also carries things nobody
+    typed — hashes, schema and realizer versions, provenance, evolution policy —
+    and those are how a Companion is *built*, not what somebody decided about
+    it. Round-tripping them through a form would let a screen edit machinery it
+    has no business touching.
+
+    Not lossless in the other direction, and deliberately so: reading, editing
+    and saving replaces only what the form covers, while the genome's own
+    apparatus is rebuilt from the same defaults it always was.
+    """
+
+    return PersonaAuthoring(
+        archetype=genome.constitution.archetype,
+        self_concept=genome.constitution.self_concept,
+        values=list(genome.constitution.values),
+        boundaries=list(genome.constitution.boundaries),
+        character_portrait=genome.character.portrait,
+        traits=dict(genome.character.traits),
+        relationship_narrative=genome.relationship.narrative,
+        commitments=list(genome.relationship.commitments),
+        pinned_facts=list(genome.relationship.pinned_facts),
+        safety_boundaries=list(genome.relationship.safety_boundaries),
+        voice_portrait=genome.expression.voice_portrait,
+        behavior_guidance=list(genome.expression.behavior_guidance),
+        dialogue_examples=list(genome.expression.dialogue_examples),
+        modality_notes=dict(genome.expression.modality_notes),
+    )
+
+
 def normalize_persona_genome(
     genome_json: dict[str, Any] | PersonaGenome | None,
 ) -> PersonaGenome:

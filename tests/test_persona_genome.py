@@ -10,6 +10,7 @@ from eidolon_sdk.biz.persona import (
     PersonaTraitState,
     build_default_persona_genome,
     build_persona_genome_from_draft,
+    persona_authoring_of,
     persona_genome_hash,
     persona_genome_to_json,
 )
@@ -146,3 +147,80 @@ def test_authoring_says_so_in_the_provenance() -> None:
         origin="owner_authored",
     )
     assert authored.provenance.origin == "owner_authored"
+
+
+def test_what_somebody_wrote_reads_back_as_what_they_wrote() -> None:
+    """Every sentence a form can hold survives the trip out of a genome.
+
+    Editing has to open on who the Eidolon *currently is*. A field dropped here
+    would be blank in the form and therefore blank after saving — an edit to one
+    sentence would quietly erase another.
+    """
+
+    written = PersonaAuthoring(
+        self_concept="我是一个会记得你说过的话的伙伴",
+        character_portrait="安静，话不多",
+        relationship_narrative="从一次深夜对话开始",
+        voice_portrait="短句，不用感叹号",
+        values=["诚实"],
+        boundaries=["不替他做决定"],
+        commitments=["每周问一次"],
+        pinned_facts=["他有一只猫"],
+        safety_boundaries=["不提他父亲"],
+        behavior_guidance=["先问再答"],
+        dialogue_examples=["「今天怎么样？」"],
+        modality_notes={"voice": "慢一点"},
+    )
+
+    back = persona_authoring_of(
+        build_persona_genome_from_draft(
+            PersonaAuthoringDraft.for_companion(written, name="小南")
+        )
+    )
+
+    assert back.model_dump(exclude={"traits"}) == written.model_dump(
+        exclude={"traits"}
+    )
+
+
+def test_reading_and_saving_without_changing_anything_changes_nothing() -> None:
+    """The property an edit screen actually rests on: it is a fixed point.
+
+    Somebody opens the form, changes one sentence, saves. Everything they did
+    not touch has to come out the far side as it went in — including the parts
+    the form does not show, like traits, which arrive seeded by the template and
+    would be wiped by a round trip that treated "not on the form" as "empty".
+    """
+
+    genome = build_persona_genome_from_draft(
+        PersonaAuthoringDraft.for_companion(
+            PersonaAuthoring(self_concept="我记得"), name="小南"
+        )
+    )
+    once = persona_authoring_of(genome)
+    twice = persona_authoring_of(
+        build_persona_genome_from_draft(
+            PersonaAuthoringDraft.for_companion(once, name="小南")
+        )
+    )
+
+    assert twice == once
+    assert once.traits, "the traits the template seeded are still there"
+
+
+def test_reading_a_genome_back_leaves_its_machinery_where_it_is() -> None:
+    """A form edits what somebody decided, not how the Companion is built.
+
+    Hashes, schema and realizer versions, provenance and the evolution policy
+    are apparatus. Round-tripping them through a screen would let the screen
+    change things nobody typed — and would put a genome's own bookkeeping into
+    a request body a client can rewrite.
+    """
+
+    authoring = persona_authoring_of(
+        build_default_persona_genome(name="小南", origin="template")
+    )
+
+    for machinery in ("provenance", "evolution_policy", "memory_policy", "name"):
+        assert machinery not in PersonaAuthoring.model_fields, machinery
+    assert authoring.character_portrait, "but what a person wrote does come back"
