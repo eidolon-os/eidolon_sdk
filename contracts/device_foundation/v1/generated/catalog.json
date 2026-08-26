@@ -149,8 +149,8 @@
     },
     {
       "path": "generation/templates/device_foundation_v1.dart",
-      "sha256": "a2b17643404007cb2fd36b4b87b877f687617c0311b7cd39c3f6327c6d66fd1a",
-      "size": 47606
+      "sha256": "bf91973224119790dd4a5f7eaf966e05172653598e765f3aaae0c14ca9425732",
+      "size": 47837
     },
     {
       "path": "generation/templates/device_foundation_v1.py",
@@ -295,5 +295,5 @@
   ],
   "generator": "device-foundation-v1-catalog",
   "generator_version": "1.0",
-  "source_digest": "sha256:c9cd12b7c5e17f864c7ce6a5a9b5475cc82f7e2a06bf78e79d4705bf00d49bd9"
+  "source_digest": "sha256:7831a232025655513f0d9daed75868742cfa78b57b403435a39546070f634224"
 }
