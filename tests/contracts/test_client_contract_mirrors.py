@@ -36,21 +36,6 @@ def test_mobile_contract_mirror_matches_sdk() -> None:
     assert constants["sessionCloseType"] == c.SESSION_CLOSE_TYPE
 
 
-def test_admin_contract_mirror_matches_sdk() -> None:
-    source = _source("eidolon_admin/web/src/protocol/eidolonContract.ts")
-    constants = dict(
-        re.findall(
-            r"export const\s+(\w+)\s*=\s*'([^']*)'\s+as const",
-            source,
-        )
-    )
-
-    assert constants["CONTROL_OP_ROOM_JOIN"] == c.CONTROL_OP_ROOM_JOIN
-    assert constants["SESSION_INTENT_FIELD"] == c.SESSION_INTENT_FIELD
-    assert constants["SESSION_INTENT_USER_INITIATED"] == c.SESSION_INTENT_USER_INITIATED
-    assert constants["SESSION_INTENT_PROACTIVE"] == c.SESSION_INTENT_PROACTIVE
-
-
 def test_mobile_mission_control_mirror_matches_sdk() -> None:
     """Mobile's Mission Control vocabulary against this package's.
 

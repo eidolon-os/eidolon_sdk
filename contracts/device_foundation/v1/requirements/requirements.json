@@ -420,7 +420,7 @@
       "normative_text_ref": "16.1 DF-COMM-007 power loss during trust/network staging MUST resume or rollback without a second Claim or silent open window",
       "owner": "eidolon-client-esp32",
       "schema_ids": ["common/CommissioningStatusEvidence"],
-      "producer_tests": ["ESP32::commissioning-journal-power-loss-matrix"],
+      "producer_tests": ["ESP32::tests/commissioning_transaction_test.cc"],
       "consumer_tests": [],
       "simulator_vectors": ["DF-COMMISSIONING-RUNTIME-001"],
       "integration_tests": [],

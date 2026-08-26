@@ -259,7 +259,7 @@
     },
     {
       "path": "requirements/requirements.json",
-      "sha256": "5353f3d1df67140050273c4c5e5b26dc07b99b07899022cd7eb292ca7f1e69ac",
+      "sha256": "a072b4c82c3be8e764249a19bc6654f4f83fb4f9bea73fbae6ef35ed3deb2e85",
       "size": 45293
     },
     {
@@ -295,5 +295,5 @@
   ],
   "generator": "device-foundation-v1-catalog",
   "generator_version": "1.0",
-  "source_digest": "sha256:99de92382a96838598259439ba9781e396738da5a45920fe2518d2c0f16320ba"
+  "source_digest": "sha256:10a2b1e14daaf2c02ae88e76ef32b58c65a44e75ff9f86b0dc70394318698183"
 }
