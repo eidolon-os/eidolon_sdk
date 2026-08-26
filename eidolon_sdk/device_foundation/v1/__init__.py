@@ -29,6 +29,13 @@ from .lifecycle import (
     RevokeClaimResult,
     revoke_claim_fingerprint,
 )
+from .admission_credential import (
+    ADMISSION_AUDIENCE,
+    AdmissionCredential,
+    AdmissionCredentialError,
+    issue_admission_credential,
+    read_admission_credential,
+)
 from .admission import (
     AckClaimGrant,
     AckClaimGrantResult,
@@ -152,7 +159,12 @@ __all__ = [
     "CollectClaimGrant",
     "CollectClaimGrantResult",
     "CommissioningProof",
+    "ADMISSION_AUDIENCE",
+    "AdmissionCredential",
+    "AdmissionCredentialError",
     "ControllerActorRef",
+    "issue_admission_credential",
+    "read_admission_credential",
     "CreateEnrollment",
     "CreateEnrollmentResult",
     "DecideEnrollment",
