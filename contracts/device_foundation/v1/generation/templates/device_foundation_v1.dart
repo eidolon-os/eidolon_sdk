@@ -15,6 +15,25 @@ final class OwnerDomainIdV1 {
   }
 }
 
+final class DeviceInstanceIdV1 {
+  const DeviceInstanceIdV1._(this.value);
+  final String value;
+
+  /// A device instance identity is a statement about the device's own
+  /// operational key, not a name a client may choose. An invented id — this
+  /// app once derived `mobile-android-<hash>` from ANDROID_ID — is refused
+  /// here rather than compared unequal forever against Hub's records.
+  factory DeviceInstanceIdV1.parse(Object? raw) {
+    final value = _text(raw, 80);
+    if (!RegExp(r'^device-instance-[0-9a-f]{64}$').hasMatch(value)) {
+      throw const FormatException(
+        'Device instance ID is not derived from an operational key',
+      );
+    }
+    return DeviceInstanceIdV1._(value);
+  }
+}
+
 final class BusinessOwnerIdV1 {
   const BusinessOwnerIdV1._(this.value);
   final String value;

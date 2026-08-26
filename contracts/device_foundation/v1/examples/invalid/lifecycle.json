@@ -18,7 +18,7 @@
         "scopes": ["device.claim.revoke"],
         "intent_id": "removal_intent_01",
         "target_device_ref": {
-          "device_instance_id": "device_01",
+          "device_instance_id": "device-instance-3164c593258209d757654dbd421d2bd9732fe088bce70d8c90be15dd98b587ba",
           "owner_domain_id": "owner-domain_01",
           "owner_domain_generation": 3,
           "claim_generation": 2,
@@ -38,7 +38,7 @@
         "command_id": "revoke_claim_01",
         "correlation_id": "removal_intent_01",
         "device_ref": {
-          "device_instance_id": "device_01",
+          "device_instance_id": "device-instance-3164c593258209d757654dbd421d2bd9732fe088bce70d8c90be15dd98b587ba",
           "owner_domain_id": "owner-domain_01",
           "trust_epoch": 4
         },
@@ -55,7 +55,7 @@
         "command_id": "revoke_claim_01",
         "correlation_id": "removal_intent_01",
         "device_ref": {
-          "device_instance_id": "device_01",
+          "device_instance_id": "device-instance-3164c593258209d757654dbd421d2bd9732fe088bce70d8c90be15dd98b587ba",
           "owner_domain_id": "owner-domain_01",
           "owner_domain_generation": 3,
           "claim_generation": 2
@@ -82,7 +82,7 @@
         "scopes": ["device.read"],
         "intent_id": "removal_intent_01",
         "target_device_ref": {
-          "device_instance_id": "device_01",
+          "device_instance_id": "device-instance-3164c593258209d757654dbd421d2bd9732fe088bce70d8c90be15dd98b587ba",
           "owner_domain_id": "owner-domain_01",
           "owner_domain_generation": 3,
           "claim_generation": 2,
@@ -101,7 +101,7 @@
         "intent_id": "removal_intent_01",
         "ingress_request_id": "01A0B1C2-D3E4-4F50-8123-456789ABCDEF",
         "device_ref": {
-          "device_instance_id": "10:51:db:7e:24:44",
+          "device_instance_id": "device-instance-69aa70893d053e3866eb4bcf2a4aee7e6d23168660b09083de32e2402253774b",
           "owner_domain_id": "owner-domain_01",
           "owner_domain_generation": 3,
           "claim_generation": 2,

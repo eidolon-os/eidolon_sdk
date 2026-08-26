@@ -18,7 +18,7 @@
       "definition": "ClaimActivatedData",
       "value": {
         "device_ref": {
-          "device_instance_id": "device_01",
+          "device_instance_id": "device-instance-3164c593258209d757654dbd421d2bd9732fe088bce70d8c90be15dd98b587ba",
           "owner_domain_id": "owner-domain_01",
           "owner_domain_generation": 3,
           "claim_generation": 2,
@@ -43,7 +43,7 @@
         "message_id": "erase_operation_01",
         "kind": "operation",
         "device_ref": {
-          "device_instance_id": "device_erase_01",
+          "device_instance_id": "device-instance-591d7c62d0bc738376935f77ff2acd5472bbee64207a765df03af6d6240c07dc",
           "owner_domain_id": "owner-domain_01",
           "owner_domain_generation": 3,
           "claim_generation": 7,
@@ -56,7 +56,7 @@
           "contract_version": "1.0",
           "deadline": "2026-08-30T00:00:00Z",
           "device_ref": {
-            "device_instance_id": "device_erase_01",
+            "device_instance_id": "device-instance-591d7c62d0bc738376935f77ff2acd5472bbee64207a765df03af6d6240c07dc",
             "owner_domain_id": "owner-domain_01",
             "owner_domain_generation": 3,
             "claim_generation": 7,
@@ -89,7 +89,7 @@
         "message_id": "erase_operation_01",
         "kind": "operation_ack",
         "device_ref": {
-          "device_instance_id": "device_erase_01",
+          "device_instance_id": "device-instance-591d7c62d0bc738376935f77ff2acd5472bbee64207a765df03af6d6240c07dc",
           "owner_domain_id": "owner-domain_01",
           "owner_domain_generation": 3,
           "claim_generation": 7,
@@ -102,7 +102,7 @@
           "contract_version": "1.0",
           "device_monotonic_time": 1234,
           "device_ref": {
-            "device_instance_id": "device_erase_01",
+            "device_instance_id": "device-instance-591d7c62d0bc738376935f77ff2acd5472bbee64207a765df03af6d6240c07dc",
             "owner_domain_id": "owner-domain_01",
             "owner_domain_generation": 3,
             "claim_generation": 7,
@@ -125,7 +125,7 @@
         "id": "event_01",
         "source": "urn:eidolon:authority:admission",
         "type": "live.eidolon.device.claim-activated.v1",
-        "subject": "device-instances/device_01",
+        "subject": "device-instances/device-instance-3164c593258209d757654dbd421d2bd9732fe088bce70d8c90be15dd98b587ba",
         "time": "2026-08-18T00:05:00Z",
         "datacontenttype": "application/json",
         "dataschema": "https://contracts.eidolon.live/device-foundation/v1/events/claim-activated-data.schema.json",
@@ -136,7 +136,7 @@
         "causationid": "command_01",
         "data": {
           "device_ref": {
-            "device_instance_id": "device_01",
+            "device_instance_id": "device-instance-3164c593258209d757654dbd421d2bd9732fe088bce70d8c90be15dd98b587ba",
             "owner_domain_id": "owner-domain_01",
             "owner_domain_generation": 3,
             "claim_generation": 2,
@@ -159,7 +159,7 @@
       "definition": "ClaimRevokedData",
       "value": {
         "device_ref": {
-          "device_instance_id": "device_01",
+          "device_instance_id": "device-instance-3164c593258209d757654dbd421d2bd9732fe088bce70d8c90be15dd98b587ba",
           "owner_domain_id": "owner-domain_01",
           "owner_domain_generation": 3,
           "claim_generation": 2,
@@ -178,7 +178,7 @@
         "id": "claim_event_01",
         "source": "urn:eidolon:authority:admission",
         "type": "live.eidolon.device.claim-revoked.v1",
-        "subject": "device-instances/device_01",
+        "subject": "device-instances/device-instance-3164c593258209d757654dbd421d2bd9732fe088bce70d8c90be15dd98b587ba",
         "time": "2026-08-23T10:00:01Z",
         "datacontenttype": "application/json",
         "dataschema": "https://contracts.eidolon.live/device-foundation/v1/events/claim-revoked-data.schema.json",
@@ -189,7 +189,7 @@
         "causationid": "revoke_claim_01",
         "data": {
           "device_ref": {
-            "device_instance_id": "device_01",
+            "device_instance_id": "device-instance-3164c593258209d757654dbd421d2bd9732fe088bce70d8c90be15dd98b587ba",
             "owner_domain_id": "owner-domain_01",
             "owner_domain_generation": 3,
             "claim_generation": 2,

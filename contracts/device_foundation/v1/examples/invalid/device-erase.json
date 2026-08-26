@@ -11,7 +11,7 @@
         "operation_id": "erase_operation_01",
         "operation_type": "device-local.erase",
         "device_ref": {
-          "device_instance_id": "device_erase_01",
+          "device_instance_id": "device-instance-591d7c62d0bc738376935f77ff2acd5472bbee64207a765df03af6d6240c07dc",
           "owner_domain_id": "owner-domain_01",
           "trust_epoch": 4
         },
@@ -30,7 +30,7 @@
         "operation_id": "erase_operation_01",
         "operation_type": "device-local.erase",
         "device_ref": {
-          "device_instance_id": "device_erase_01",
+          "device_instance_id": "device-instance-591d7c62d0bc738376935f77ff2acd5472bbee64207a765df03af6d6240c07dc",
           "owner_domain_id": "owner-domain_01",
           "owner_domain_generation": 3,
           "claim_generation": 7,
@@ -54,7 +54,7 @@
         "operation_type": "device-local.erase",
         "request_fingerprint": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
         "device_ref": {
-          "device_instance_id": "device_erase_01",
+          "device_instance_id": "device-instance-591d7c62d0bc738376935f77ff2acd5472bbee64207a765df03af6d6240c07dc",
           "owner_domain_id": "owner-domain_01",
           "owner_domain_generation": 3,
           "claim_generation": 7,
@@ -78,7 +78,7 @@
         "operation_type": "device-local.erase",
         "request_fingerprint": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
         "device_ref": {
-          "device_instance_id": "device_erase_01",
+          "device_instance_id": "device-instance-591d7c62d0bc738376935f77ff2acd5472bbee64207a765df03af6d6240c07dc",
           "owner_domain_id": "owner-domain_01",
           "owner_domain_generation": 3,
           "claim_generation": 7,

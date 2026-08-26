@@ -216,8 +216,33 @@ def check_device_delivery_vector() -> int:
         digest = "sha256:" + hashlib.sha256(canonical).hexdigest()
         if digest != vector[f"{name}_sha256"]:
             raise ConformanceError(f"device delivery {name} digest drifted")
-    if "device_signature" not in vector["evidence"]["payload"]:
+    # The acknowledgement this vector delivers is the one the erase vector
+    # signs, so it is compared against that document and its signature is
+    # verified — not merely counted. Asserting the field's presence let a
+    # second, unverifiable signature over the same document live here unnoticed.
+    erase = load_json(ROOT / "golden" / "device-local-erase.json")
+    acknowledged = dict(vector["evidence"]["payload"])
+    signature = acknowledged.pop("device_signature", None)
+    if signature is None:
         raise ConformanceError("device delivery evidence dropped the device signature")
+    if acknowledged != erase["ack_signing_document"]:
+        raise ConformanceError(
+            "device delivery evidence acknowledges a different document than the erase vector signs"
+        )
+    raw = _b64url_decode(signature)
+    if len(raw) != 64:
+        raise ConformanceError("device delivery evidence signature is not 64-byte R||S")
+    key = serialization.load_der_public_key(_b64url_decode(erase["public_key_spki"]))
+    try:
+        key.verify(
+            encode_dss_signature(
+                int.from_bytes(raw[:32], "big"), int.from_bytes(raw[32:], "big")
+            ),
+            canonical_bytes(acknowledged),
+            ec.ECDSA(hashes.SHA256()),
+        )
+    except InvalidSignature as exc:
+        raise ConformanceError("device delivery evidence signature is invalid") from exc
     if "terminal_result" in vector["acceptance"]:
         raise ConformanceError("delivery acceptance claims an operation terminal result")
     return 1

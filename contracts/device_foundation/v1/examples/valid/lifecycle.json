@@ -18,7 +18,7 @@
         "scopes": ["device.claim.revoke"],
         "intent_id": "removal_intent_01",
         "target_device_ref": {
-          "device_instance_id": "device_01",
+          "device_instance_id": "device-instance-3164c593258209d757654dbd421d2bd9732fe088bce70d8c90be15dd98b587ba",
           "owner_domain_id": "owner-domain_01",
           "owner_domain_generation": 3,
           "claim_generation": 2,
@@ -36,7 +36,7 @@
         "intent_id": "removal_intent_01",
         "ingress_request_id": "mobile_removal_01",
         "device_ref": {
-          "device_instance_id": "device_01",
+          "device_instance_id": "device-instance-3164c593258209d757654dbd421d2bd9732fe088bce70d8c90be15dd98b587ba",
           "owner_domain_id": "owner-domain_01",
           "owner_domain_generation": 3,
           "claim_generation": 2,
@@ -65,7 +65,7 @@
         "command_id": "revoke_claim_01",
         "correlation_id": "removal_intent_01",
         "device_ref": {
-          "device_instance_id": "device_01",
+          "device_instance_id": "device-instance-3164c593258209d757654dbd421d2bd9732fe088bce70d8c90be15dd98b587ba",
           "owner_domain_id": "owner-domain_01",
           "owner_domain_generation": 3,
           "claim_generation": 2,
@@ -83,7 +83,7 @@
         "command_id": "revoke_claim_01",
         "outcome": "committed",
         "device_ref": {
-          "device_instance_id": "device_01",
+          "device_instance_id": "device-instance-3164c593258209d757654dbd421d2bd9732fe088bce70d8c90be15dd98b587ba",
           "owner_domain_id": "owner-domain_01",
           "owner_domain_generation": 3,
           "claim_generation": 2,

@@ -69,6 +69,12 @@ def _binding_definitions() -> set[str]:
         # encoded an endless window as 0 and every controller refused it. It is
         # listed here so a field can never again exist in one language only.
         "SetupDescriptor", "SetupDescriptorTrust", "SetupWindowRemainingSeconds",
+        # A device instance id is a statement about the device's own key. The
+        # rule lived in Hub's code, in the firmware by hand, and nowhere in the
+        # contract — so a client that invented one compared unequal forever
+        # instead of being refused. Listed here so every language has to be
+        # able to say it, and to refuse what is not one.
+        "DeviceInstanceId",
     }
     for relative in (
         "admission/schemas.schema.json",

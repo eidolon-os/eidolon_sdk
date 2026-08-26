@@ -6,7 +6,7 @@
       "definition": "DeviceRef",
       "error_contains": "Additional properties",
       "value": {
-        "device_instance_id": "device_01",
+        "device_instance_id": "device-instance-3164c593258209d757654dbd421d2bd9732fe088bce70d8c90be15dd98b587ba",
         "owner_domain_id": "owner-domain_01",
         "owner_domain_generation": 3,
         "claim_generation": 2,
@@ -20,8 +20,11 @@
       "definition": "DeviceRef",
       "error_contains": "Additional properties",
       "value": {
-        "device_instance_id": "device_01", "owner_domain_id": "owner-domain_01",
-        "owner_domain_generation": 3, "claim_generation": 2, "trust_epoch": 3,
+        "device_instance_id": "device-instance-3164c593258209d757654dbd421d2bd9732fe088bce70d8c90be15dd98b587ba",
+        "owner_domain_id": "owner-domain_01",
+        "owner_domain_generation": 3,
+        "claim_generation": 2,
+        "trust_epoch": 3,
         "accepted_manifest_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
       }
     },
@@ -31,8 +34,11 @@
       "definition": "DeviceRef",
       "error_contains": "does not match",
       "value": {
-        "device_instance_id": "device_01", "owner_domain_id": "owner_01",
-        "owner_domain_generation": 3, "claim_generation": 2, "trust_epoch": 3
+        "device_instance_id": "device-instance-3164c593258209d757654dbd421d2bd9732fe088bce70d8c90be15dd98b587ba",
+        "owner_domain_id": "owner_01",
+        "owner_domain_generation": 3,
+        "claim_generation": 2,
+        "trust_epoch": 3
       }
     },
     {
@@ -140,18 +146,30 @@
       "value": {
         "profile_id": "security0",
         "schema_version": "1.0",
-        "eid_pair_versions": ["1.0"],
-        "methods": ["softap"],
-        "network_bearers": ["wifi"],
-        "physical_presence": ["button"],
-        "attestation_schemes": ["manufacturer-p256"],
+        "eid_pair_versions": [
+          "1.0"
+        ],
+        "methods": [
+          "softap"
+        ],
+        "network_bearers": [
+          "wifi"
+        ],
+        "physical_presence": [
+          "button"
+        ],
+        "attestation_schemes": [
+          "manufacturer-p256"
+        ],
         "secure_storage_level": "secure-element",
         "monotonic_counter": true,
         "candidate_network": true,
         "rollback_guarantee": "crash-safe",
         "max_message_size": 16384,
         "trusted_clock": false,
-        "reset_modes": ["factory"]
+        "reset_modes": [
+          "factory"
+        ]
       }
     },
     {
@@ -240,6 +258,34 @@
       "definition": "SetupWindowRemainingSeconds",
       "error_contains": "minimum",
       "value": 0
+    },
+    {
+      "case_id": "DF-COMMON-DEVICE-INSTANCE-ID-REJECTS-MAC-ADDRESS",
+      "schema": "https://contracts.eidolon.live/device-foundation/v1/common/schemas.schema.json",
+      "definition": "DeviceInstanceId",
+      "error_contains": "does not match '^device-instance-[0-9a-f]{64}$'",
+      "value": "10:51:db:7e:24:44"
+    },
+    {
+      "case_id": "DF-COMMON-DEVICE-INSTANCE-ID-REJECTS-CHOSEN-NAME",
+      "schema": "https://contracts.eidolon.live/device-foundation/v1/common/schemas.schema.json",
+      "definition": "DeviceInstanceId",
+      "error_contains": "does not match '^device-instance-[0-9a-f]{64}$'",
+      "value": "device_01"
+    },
+    {
+      "case_id": "DF-COMMON-DEVICE-INSTANCE-ID-REJECTS-UPPERCASE-DIGEST",
+      "schema": "https://contracts.eidolon.live/device-foundation/v1/common/schemas.schema.json",
+      "definition": "DeviceInstanceId",
+      "error_contains": "does not match '^device-instance-[0-9a-f]{64}$'",
+      "value": "device-instance-3164C593258209D757654DBD421D2BD9732FE088BCE70D8C90BE15DD98B587BA"
+    },
+    {
+      "case_id": "DF-COMMON-DEVICE-INSTANCE-ID-REJECTS-TRUNCATED-DIGEST",
+      "schema": "https://contracts.eidolon.live/device-foundation/v1/common/schemas.schema.json",
+      "definition": "DeviceInstanceId",
+      "error_contains": "does not match '^device-instance-[0-9a-f]{64}$'",
+      "value": "device-instance-3164c593"
     }
   ]
 }

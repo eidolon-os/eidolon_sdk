@@ -4,7 +4,7 @@
     "command_id": "revoke_claim_01",
     "correlation_id": "removal_intent_01",
     "device_ref": {
-      "device_instance_id": "10:51:db:7e:24:44",
+      "device_instance_id": "device-instance-69aa70893d053e3866eb4bcf2a4aee7e6d23168660b09083de32e2402253774b",
       "owner_domain_id": "owner-domain_01",
       "owner_domain_generation": 3,
       "claim_generation": 2,
@@ -17,7 +17,7 @@
     "owner_domain_id": "owner-domain_01",
     "payload": {
       "device_ref": {
-        "device_instance_id": "10:51:db:7e:24:44",
+        "device_instance_id": "device-instance-69aa70893d053e3866eb4bcf2a4aee7e6d23168660b09083de32e2402253774b",
         "owner_domain_id": "owner-domain_01",
         "owner_domain_generation": 3,
         "claim_generation": 2,
@@ -26,8 +26,8 @@
       "reason": "owner-removed"
     }
   },
-  "canonical_fingerprint_utf8": "{\"command_type\":\"device.claim.revoke\",\"owner_domain_id\":\"owner-domain_01\",\"payload\":{\"device_ref\":{\"claim_generation\":2,\"device_instance_id\":\"10:51:db:7e:24:44\",\"owner_domain_generation\":3,\"owner_domain_id\":\"owner-domain_01\",\"trust_epoch\":4},\"reason\":\"owner-removed\"}}",
-  "fingerprint": "sha256:dd37bcbee1b1165542d8154cba566b6a448e5a9f2baee25007f70bf6caee6e2c",
+  "canonical_fingerprint_utf8": "{\"command_type\":\"device.claim.revoke\",\"owner_domain_id\":\"owner-domain_01\",\"payload\":{\"device_ref\":{\"claim_generation\":2,\"device_instance_id\":\"device-instance-69aa70893d053e3866eb4bcf2a4aee7e6d23168660b09083de32e2402253774b\",\"owner_domain_generation\":3,\"owner_domain_id\":\"owner-domain_01\",\"trust_epoch\":4},\"reason\":\"owner-removed\"}}",
+  "fingerprint": "sha256:2b0fbe64c3f8b65b19653e01a2aac6a22a6740095b441c2d227794ef0737c12a",
   "excluded_from_fingerprint": [
     "command_id",
     "correlation_id"

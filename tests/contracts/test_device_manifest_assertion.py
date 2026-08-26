@@ -29,6 +29,7 @@ from eidolon_sdk.device_foundation.v1 import (
     ManifestRef,
     OwnerDomainId,
     manifest_digest,
+    derive_device_instance_id,
 )
 from eidolon_sdk.device_foundation.v1.device_erase import (
     DeviceEraseContractError,
@@ -40,9 +41,12 @@ def _b64(value: bytes) -> str:
     return base64.urlsafe_b64encode(value).decode().rstrip("=")
 
 
+_DEVICE = derive_device_instance_id("p256-spki:MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE")
+
+
 def _device_ref() -> DeviceRef:
     return DeviceRef(
-        device_instance_id="box3-lab-1",
+        device_instance_id=_DEVICE,
         owner_domain_id=OwnerDomainId("owner-domain-1"),
         owner_domain_generation=1,
         claim_generation=2,

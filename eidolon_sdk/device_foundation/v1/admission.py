@@ -8,6 +8,7 @@ from typing import Any, Literal
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from .lifecycle import (
+    DeviceInstanceId,
     WireEnum,
     ActorRef,
     BusinessOwnerId,
@@ -49,7 +50,7 @@ class EnrollmentProposal(_Model):
     enrollment_id: str = Field(min_length=3, max_length=128)
     proposal_revision: int = Field(ge=1)
     state: EnrollmentProposalState
-    device_instance_candidate_id: str = Field(min_length=3, max_length=128)
+    device_instance_candidate_id: DeviceInstanceId
     requested_owner_domain_id: OwnerDomainId
     hardware_evidence_digest: str = Field(pattern=r"^sha256:[0-9a-f]{64}$")
     manifest_ref: ManifestRef
@@ -159,7 +160,7 @@ class OperationalPublicKey(_Model):
 
 class CreateEnrollment(_Model):
     profile_id: Literal["eidolon-trust-p256-hpke-v1"] = "eidolon-trust-p256-hpke-v1"
-    device_instance_candidate_id: str = Field(min_length=3, max_length=128)
+    device_instance_candidate_id: DeviceInstanceId
     requested_owner_domain_id: OwnerDomainId
     hardware_identity_evidence: HardwareIdentityEvidence
     commissioning_proof: CommissioningProof
@@ -245,7 +246,7 @@ class ClaimGrantAAD(_Model):
     profile_id: Literal["eidolon-trust-p256-hpke-v1"] = "eidolon-trust-p256-hpke-v1"
     enrollment_id: str = Field(min_length=3, max_length=128)
     proposal_revision: int = Field(ge=1)
-    device_instance_id: str = Field(min_length=3, max_length=128)
+    device_instance_id: DeviceInstanceId
     hardware_evidence_digest: str = Field(pattern=r"^sha256:[0-9a-f]{64}$")
     manifest_ref: ManifestRef
     owner_domain_id: OwnerDomainId

@@ -13,7 +13,7 @@
       "schema": "https://contracts.eidolon.live/device-foundation/v1/device-control/schemas.schema.json",
       "definition": "DeviceOperationKeyProof",
       "value": {
-        "device_instance_id": "device_erase_01",
+        "device_instance_id": "device-instance-591d7c62d0bc738376935f77ff2acd5472bbee64207a765df03af6d6240c07dc",
         "enrollment_request_id": "enrollment_request_01",
         "public_key_spki": "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEaxfR8uEsQkf4vOblY6RA8ncDfYEt6zOg9KE5RdiYwpZP40Li_hp_m47n60p8D54WK84zV2sxXs7LtkBoN79R9Q",
         "possession_signature": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
@@ -29,7 +29,7 @@
         "operation_id": "erase_operation_01",
         "operation_type": "device-local.erase",
         "device_ref": {
-          "device_instance_id": "device_erase_01",
+          "device_instance_id": "device-instance-591d7c62d0bc738376935f77ff2acd5472bbee64207a765df03af6d6240c07dc",
           "owner_domain_id": "owner-domain_01",
           "owner_domain_generation": 3,
           "claim_generation": 7,
@@ -51,7 +51,7 @@
         "operation_id": "erase_operation_01",
         "operation_type": "device-local.erase",
         "device_ref": {
-          "device_instance_id": "device_erase_01",
+          "device_instance_id": "device-instance-591d7c62d0bc738376935f77ff2acd5472bbee64207a765df03af6d6240c07dc",
           "owner_domain_id": "owner-domain_01",
           "owner_domain_generation": 3,
           "claim_generation": 7,
@@ -75,7 +75,7 @@
         "operation_type": "device-local.erase",
         "request_fingerprint": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
         "device_ref": {
-          "device_instance_id": "device_erase_01",
+          "device_instance_id": "device-instance-591d7c62d0bc738376935f77ff2acd5472bbee64207a765df03af6d6240c07dc",
           "owner_domain_id": "owner-domain_01",
           "owner_domain_generation": 3,
           "claim_generation": 7,

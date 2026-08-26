@@ -4,8 +4,8 @@
   "files": [
     {
       "path": "admission/schemas.schema.json",
-      "sha256": "7d336f03c733f7f0cc97f4a33efcb3a21a39bda00c286b077c238e77137dc9e1",
-      "size": 19091
+      "sha256": "21030d1431efcc6e0a0a901fa83b21429ab157457f7d52d48b9e54483ca14936",
+      "size": 19103
     },
     {
       "path": "baseline/cross-repo-heads.v1.json",
@@ -34,13 +34,13 @@
     },
     {
       "path": "common/schemas.schema.json",
-      "sha256": "94553e0690884231a70b16b39b947d1ddedefaea7252c3e56071222a3dae3fc6",
-      "size": 18817
+      "sha256": "e8b95780d9b4176de32edfe3dd54dc661fb8068d9c6d3316504f236fe8a67f25",
+      "size": 24231
     },
     {
       "path": "conformance/run.py",
-      "sha256": "5270e8bc9df28e7921426ea87096dcc57fa58040076ccfe743ae71461d9a56d9",
-      "size": 48791
+      "sha256": "aee089be273e8614addc0b2c5ac0d95f0e001d62ddf4cc13f104242c69290a89",
+      "size": 50047
     },
     {
       "path": "delivery-port/schemas.schema.json",
@@ -49,8 +49,8 @@
     },
     {
       "path": "device-control/schemas.schema.json",
-      "sha256": "60942442c622df33f265c0a3f6927481f0322484b8da0cebc8716ca0c5188d38",
-      "size": 14916
+      "sha256": "a0c0c80d01a52b5a23d60500ba69aa5f26f91e4321bde7271ddb689581caa276",
+      "size": 14855
     },
     {
       "path": "events/claim-activated-data.schema.json",
@@ -74,68 +74,68 @@
     },
     {
       "path": "examples/invalid/admission-consumer-surface.json",
-      "sha256": "67e6875fd319105fbc445ee1bd3f0de454d5cdd4610d06e8c7f42765d3fee882",
-      "size": 5407
+      "sha256": "f7fbf51aad98b083044369428368a1e31e7f2d627b5cbb1ffe8608097bb8f8f1",
+      "size": 5904
     },
     {
       "path": "examples/invalid/authority.json",
-      "sha256": "dcd8672338eb44be2b68a1b44fb3771269fbace628a96c34b169463fbb205f94",
-      "size": 9210
+      "sha256": "8627cc160b5a2e999778cd9e4353a6f0ea80081269b843f9f61995572cb4b5a7",
+      "size": 9762
     },
     {
       "path": "examples/invalid/common.json",
-      "sha256": "9b92b2442d7d3fc4853d45b1e7ca7c11cab581fbd90d1268d17b98af70f3f254",
-      "size": 9786
+      "sha256": "8e470b2e9ae96834d46cbf0420999515e35f063fbec3a2e06fa56c9db4f54cf7",
+      "size": 11559
     },
     {
       "path": "examples/invalid/device-erase.json",
-      "sha256": "3db5f5e08f8f6948344ebd12918b5493a8dd3f82219f36ac90afb99893626dbb",
-      "size": 3572
+      "sha256": "34d2af4fa98460fbcf87f63bf3af0f08d21dbad81628a0432314f4c9d90c4920",
+      "size": 3832
     },
     {
       "path": "examples/invalid/lifecycle.json",
-      "sha256": "6c2b8bc796ef83e3e699805902e7f6504c6d4c906a7d701c9faacf3dd8eb0b4d",
-      "size": 4722
+      "sha256": "30f1e148d303fb719e895b00ff8db4da685d916e92160a1ac3f4bbd87c295fe6",
+      "size": 5069
     },
     {
       "path": "examples/valid/admission-consumer-surface.json",
-      "sha256": "6076fd411f1e11ccf8f0af51cbae3255c3e598cc9245a879be3beff3f6697c7c",
-      "size": 7535
+      "sha256": "d436d7f81441817845618983ffb35bffd06c8a6d23166614089f19f6d87fbaaa",
+      "size": 7819
     },
     {
       "path": "examples/valid/admission.json",
-      "sha256": "2dc79d638b9ec8d185bfaf8be6870c0b3a556f9fea77f454c5333f7d5eb80f61",
-      "size": 10915
+      "sha256": "8b1b47ca48f34467180213e0bf8086c714fc4a1db0c5b83b74fe78962fdeda2b",
+      "size": 11402
     },
     {
       "path": "examples/valid/body-mesh.json",
-      "sha256": "398a591201c625399187e88b1e14b9c2da7232140653963e8c12fa1c394e7a6f",
-      "size": 2893
+      "sha256": "722473ae8bfe0ea5436a19af8dfca23b7719cf53e6c6578ead71128b2c3e6915",
+      "size": 3035
     },
     {
       "path": "examples/valid/common.json",
-      "sha256": "9fc1d2c6a436a09d6d468921e3f0e245e3adce419f199b01bac717a6a3686d03",
-      "size": 11158
+      "sha256": "121899a693236e3c894e01c0c01eceed711020b06619e01a3daa876ff8be56db",
+      "size": 11874
     },
     {
       "path": "examples/valid/delivery-and-events.json",
-      "sha256": "3b2521cd93b9b43aa73a582117cd5f5ba0b1108d60503fe88210a96cbb3e9ae9",
-      "size": 7790
+      "sha256": "32c676ce952b47bc3396ecd4946a35ff3f73a5eee3e47d88c875d20cb00a42ce",
+      "size": 8476
     },
     {
       "path": "examples/valid/device-control.json",
-      "sha256": "64627d61b0707854768183ceea0c7e793f9a658337ab71e153820bb77db350fd",
-      "size": 6383
+      "sha256": "ee717e15eba90731ccb655e17ac26ca3ff82c2622bbe6e4de042dedc93599e36",
+      "size": 6880
     },
     {
       "path": "examples/valid/device-erase.json",
-      "sha256": "011b1b0f1c77e879100c9b9756107248029a0212c05455b7dc9ad25f13f99d73",
-      "size": 3627
+      "sha256": "fd8972df692a0d82ff74dfc0abe379594e985d1261c7513baae77b29119a568e",
+      "size": 3887
     },
     {
       "path": "examples/valid/lifecycle.json",
-      "sha256": "cd814f8ac7fb35ad7a835cc835271795ea544d914240034f4409d9ae8c30d935",
-      "size": 3504
+      "sha256": "5d07ec194fe24c68af31b0bed9ad68d143538759557720650decf2c9857c9a90",
+      "size": 3788
     },
     {
       "path": "generation/config.json",
@@ -144,23 +144,23 @@
     },
     {
       "path": "generation/generate.py",
-      "sha256": "72a7eb7a09f6a96f38525a176e7f096e84ac6b616b60be447dc832f97eaa58e5",
-      "size": 4820
+      "sha256": "ac6b899a7b14e589cbc868c6a308eba82469fb835ac87c94db68af0738389909",
+      "size": 5217
     },
     {
       "path": "generation/templates/device_foundation_v1.dart",
-      "sha256": "98c5b459d281739d86e25f1976af84f9426b1ee56bc491a4551164271fdc11d8",
-      "size": 46889
+      "sha256": "a2b17643404007cb2fd36b4b87b877f687617c0311b7cd39c3f6327c6d66fd1a",
+      "size": 47606
     },
     {
       "path": "generation/templates/device_foundation_v1.py",
-      "sha256": "3ca809f40e90a2a4621b01bcc09ca40d550b4869f0f5dc91db50a63d028d786a",
-      "size": 1334
+      "sha256": "1ed4c9d374123fb926e997939ce0c2cf4fef369d9054b2370a115467b5065ac5",
+      "size": 1356
     },
     {
       "path": "generation/templates/device_foundation_v1_generated.h",
-      "sha256": "52f43293b5f3bf6d918ff5376667e4c3d4cb11e663bab38a9a421adf3abeb72e",
-      "size": 17403
+      "sha256": "92884e38056e4889bc67afdca00961f49fae80ed1d9c161485a7f5c0cccb4c27",
+      "size": 18703
     },
     {
       "path": "golden/admission-credential.json",
@@ -169,8 +169,8 @@
     },
     {
       "path": "golden/admission-event-stream.json",
-      "sha256": "abc820333d80c7a06bc33e6c28b9cf566b9516ba24a8da10b6de4ae770df3668",
-      "size": 1664
+      "sha256": "31e9821d2160536ecdd51506c71492db0e8cc180b0a0a702068b6b88ab729104",
+      "size": 1806
     },
     {
       "path": "golden/canonical-vectors.json",
@@ -179,18 +179,18 @@
     },
     {
       "path": "golden/claim-grant-aad.json",
-      "sha256": "c4f5af27e1b0c286be3da07a568d7e4329a14dbc2057ed0d980c3489f8abe67b",
-      "size": 1396
+      "sha256": "b7b17253f549c7bd0a39852b42de403c41974dafeb842bfa5f71e46540a6407e",
+      "size": 1467
     },
     {
       "path": "golden/claim-grant-wire-envelope.json",
-      "sha256": "b109748c5d8338f194257ddd95ab58ae54a472dad4e70f940a65c5d28dbaa891",
-      "size": 2136
+      "sha256": "431afb7f831e3f58616bdcdf11b349cb68929e920eaee993e3174999a6c58772",
+      "size": 2278
     },
     {
       "path": "golden/claim-revoke.json",
-      "sha256": "bd8b0fbaff3d1479d720fc21d3e6ea5df5584405ce9d127c96711a4ad0b0fe78",
-      "size": 1283
+      "sha256": "3d61a75d3056e4fb8cfb13d5ae77c824918c14872170765ef34c88f65e59bdc9",
+      "size": 1472
     },
     {
       "path": "golden/development-commissioning-identity.json",
@@ -199,13 +199,13 @@
     },
     {
       "path": "golden/device-delivery.json",
-      "sha256": "983e2236c0b40d8ab1c5e77138a04b6f020cb11182338a5c628d73b365e37500",
-      "size": 4825
+      "sha256": "34247f84bb77af03783bfcadff7073ffc9248fd9a729e4a448d3fe0d94537633",
+      "size": 5345
     },
     {
       "path": "golden/device-local-erase.json",
-      "sha256": "15dd168af610eb7731c49411b2593198a63c8d2eac633fd5d9121040dfe947b5",
-      "size": 2987
+      "sha256": "1ad4b1a53f0e30e555f090d9a259f46b3f143158ad3306fd5a15dfb758ccef51",
+      "size": 3312
     },
     {
       "path": "golden/es256-vectors.json",
@@ -279,8 +279,8 @@
     },
     {
       "path": "state-vectors/host-relocation.json",
-      "sha256": "717a07d69f9e1e7720e1ad56120140213401b13d99bec80e6817e5d079cab92a",
-      "size": 1014
+      "sha256": "5330bd5c42a426f3959a4560e46369c11824c08e296d274b2811f389afec548e",
+      "size": 1085
     },
     {
       "path": "state-vectors/idempotency.json",
@@ -295,5 +295,5 @@
   ],
   "generator": "device-foundation-v1-catalog",
   "generator_version": "1.0",
-  "source_digest": "sha256:2657899b41a4b0e6383aadb06f5dd37906b0724601229e91f8072a2b7d52e02a"
+  "source_digest": "sha256:c9cd12b7c5e17f864c7ce6a5a9b5475cc82f7e2a06bf78e79d4705bf00d49bd9"
 }

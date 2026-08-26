@@ -16,13 +16,18 @@ from eidolon_sdk.device_foundation.v1 import (
     RevokeClaim,
     ClaimEventCursor,
     ClaimEventPage,
+    derive_device_instance_id,
     revoke_claim_fingerprint,
 )
+
+# Derived, not typed out: a device instance id is a statement about a key,
+# so a test that invents one is testing a shape no device can present.
+_DEVICE = derive_device_instance_id("p256-spki:MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE")
 
 
 def _ref(*, owner: str = "owner-domain_01", generation: int = 2) -> DeviceRef:
     return DeviceRef(
-        device_instance_id="device_01",
+        device_instance_id=_DEVICE,
         owner_domain_id=owner,
         owner_domain_generation=3,
         claim_generation=generation,
@@ -30,16 +35,29 @@ def _ref(*, owner: str = "owner-domain_01", generation: int = 2) -> DeviceRef:
     )
 
 
-def test_device_ref_accepts_deployed_mac_style_instance_id() -> None:
-    ref = DeviceRef(
-        device_instance_id="10:51:db:7e:24:44",
-        owner_domain_id="owner-domain_01",
-        owner_domain_generation=3,
-        claim_generation=2,
-        trust_epoch=4,
-    )
+def test_device_ref_refuses_a_mac_style_instance_id_and_keeps_the_derived_one() -> None:
+    """A device's identity is its operational key, never its hardware address.
 
-    assert ref.device_instance_id == "10:51:db:7e:24:44"
+    This test used to assert the opposite — that a DeviceRef accepts
+    ``10:51:db:7e:24:44`` — and the contract's own vectors said the same, so a
+    MAC address was a valid device identity everywhere except in Hub, which
+    derived the id from the key and would have refused it. A hardware address
+    is transferable, spoofable and reused across Owners; an id derived from the
+    key cannot be claimed by anything that does not hold that key.
+    """
+
+    with pytest.raises(ValidationError):
+        DeviceRef(
+            device_instance_id="10:51:db:7e:24:44",
+            owner_domain_id="owner-domain_01",
+            owner_domain_generation=3,
+            claim_generation=2,
+            trust_epoch=4,
+        )
+
+    ref = _ref()
+
+    assert ref.device_instance_id == _DEVICE
     assert set(ref.model_dump(mode="json")) == {
         "device_instance_id", "owner_domain_id", "owner_domain_generation",
         "claim_generation", "trust_epoch",
@@ -52,7 +70,7 @@ def test_owner_domain_business_owner_and_actor_are_nominally_distinct() -> None:
     assert type(domain) is not type(owner)
     with pytest.raises(ValidationError):
         DeviceRef(
-            device_instance_id="device_01", owner_domain_id=owner,
+            device_instance_id=_DEVICE, owner_domain_id=owner,
             owner_domain_generation=3, claim_generation=2, trust_epoch=4,
         )
     manifest = ManifestRef(

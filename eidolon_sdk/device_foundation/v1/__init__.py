@@ -13,6 +13,9 @@ from .authority_locator import (
     verify_descriptor,
 )
 from .lifecycle import (
+    DeviceInstanceId,
+    derive_device_instance_id,
+    operational_public_key_bytes,
     ActorRef,
     BusinessOwnerId,
     CommandEnvelope,
@@ -163,6 +166,9 @@ __all__ = [
     "AdmissionCredential",
     "AdmissionCredentialError",
     "ControllerActorRef",
+    "DeviceInstanceId",
+    "derive_device_instance_id",
+    "operational_public_key_bytes",
     "issue_admission_credential",
     "read_admission_credential",
     "CreateEnrollment",

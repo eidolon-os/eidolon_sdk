@@ -20,6 +20,7 @@ from eidolon_sdk.device_foundation.v1 import (
     operation_fingerprint,
     verify_device_erase_ack,
     verify_operation_key_proof,
+    derive_device_instance_id,
 )
 
 
@@ -33,9 +34,12 @@ def _raw_sign(key: ec.EllipticCurvePrivateKey, document: dict[str, object]) -> s
     return _b64(r.to_bytes(32, "big") + s.to_bytes(32, "big"))
 
 
+_DEVICE = derive_device_instance_id("p256-spki:MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE")
+
+
 def _ref(*, generation: int = 7) -> DeviceRef:
     return DeviceRef(
-        device_instance_id="device_erase_01",
+        device_instance_id=_DEVICE,
         owner_domain_id="owner-domain_01",
         owner_domain_generation=3,
         claim_generation=generation,
@@ -72,7 +76,7 @@ def test_key_proof_and_ack_require_the_bound_device_private_key() -> None:
         )
     )
     proof_values = {
-        "device_instance_id": "device_erase_01",
+        "device_instance_id": _DEVICE,
         "enrollment_request_id": "enrollment_request_01",
         "public_key_spki": spki,
     }

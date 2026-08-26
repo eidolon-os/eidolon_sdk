@@ -4,7 +4,7 @@
     "owner_domain_id": "owner-domain_01",
     "owner_root": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
     "device_ref": {
-      "device_instance_id": "device_01",
+      "device_instance_id": "device-instance-3164c593258209d757654dbd421d2bd9732fe088bce70d8c90be15dd98b587ba",
       "owner_domain_id": "owner-domain_01",
       "owner_domain_generation": 3,
       "claim_generation": 2,

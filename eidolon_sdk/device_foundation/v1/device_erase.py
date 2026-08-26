@@ -14,7 +14,7 @@ from cryptography.hazmat.primitives.asymmetric import ec
 from cryptography.hazmat.primitives.asymmetric.utils import encode_dss_signature
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
-from .lifecycle import DeviceRef
+from .lifecycle import DeviceInstanceId, DeviceRef
 
 
 class DeviceEraseContractError(ValueError):
@@ -54,7 +54,7 @@ def canonical_bytes(value: BaseModel | dict[str, object]) -> bytes:
 
 
 class DeviceOperationKeyProof(_Model):
-    device_instance_id: str = Field(min_length=3, max_length=128)
+    device_instance_id: DeviceInstanceId
     enrollment_request_id: str = Field(min_length=3, max_length=128)
     public_key_spki: str = Field(min_length=120, max_length=256, pattern=r"^[A-Za-z0-9_-]+$")
     possession_signature: str = Field(min_length=86, max_length=86, pattern=r"^[A-Za-z0-9_-]+$")

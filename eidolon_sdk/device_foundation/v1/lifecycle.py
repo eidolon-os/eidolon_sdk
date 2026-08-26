@@ -3,10 +3,12 @@
 from __future__ import annotations
 
 import hashlib
+from base64 import urlsafe_b64decode
+from binascii import Error as BinasciiError
 from datetime import UTC, datetime
 from collections.abc import Mapping
 from enum import StrEnum
-from typing import Any, Literal
+from typing import Annotated, Any, Literal
 
 import rfc8785
 from pydantic import (
@@ -76,6 +78,7 @@ def _aware_datetime(value: object) -> datetime:
     return value.astimezone(UTC)
 
 
+_DEVICE_INSTANCE_ID_PATTERN = r"^device-instance-[0-9a-f]{64}$"
 _IDENTIFIER = r"^[A-Za-z0-9][A-Za-z0-9._:-]*$"
 
 
@@ -109,6 +112,72 @@ class BusinessOwnerId(RootModel[str]):
 
     def __str__(self) -> str:
         return self.root
+
+
+#: How a device's instance identity is derived from its own operational key.
+#:
+#: The rule existed in four places and was written down in none: Hub enforced it
+#: in one local expression and answered 422 to anything else, the firmware built
+#: the same string by hand and happened to agree, a phone invented
+#: ``mobile-android-<hash>`` and compared unequal forever instead of being
+#: refused, and the contract typed the field as a loose Identifier so no client
+#: could have known. It lives here now, once, and the schema names the shape so
+#: an invented id fails at the boundary rather than at Hub.
+_DEVICE_INSTANCE_NAMESPACE = "device-instance-"
+
+
+#: How an operational public key declares itself on the wire. Stripped here
+#: rather than by each caller, because "which bytes get hashed" is the whole
+#: content of the rule below: a caller that strips it itself and a caller that
+#: forgets to would derive two different identities for one key.
+SPKI_SCHEME = "p256-spki:"
+
+
+def operational_public_key_bytes(operational_public_key: str) -> bytes:
+    """The bytes a wire public key stands for, whether or not it names its scheme.
+
+    Both spellings occur in the contract — enrollment carries
+    ``p256-spki:<base64url>`` while the erase vectors carry the bare base64url
+    SPKI — and they must mean the same key, so one function reads both. Anything
+    else is refused rather than hashed as-is.
+    """
+
+    encoded = operational_public_key.removeprefix(SPKI_SCHEME)
+    try:
+        raw = urlsafe_b64decode(encoded + "=" * (-len(encoded) % 4))
+    except (BinasciiError, ValueError) as exc:
+        raise ValueError("operational public key is not base64url SPKI") from exc
+    if not raw:
+        raise ValueError("operational public key is empty")
+    return raw
+
+
+def derive_device_instance_id(operational_public_key: str) -> str:
+    """The device instance id that key, and only that key, may claim.
+
+    Takes the key as it appears on the wire, not a pre-hashed digest: a caller
+    that hashes it itself is a second implementation of the same rule. There
+    were three — Hub built the string from its own ``key_id``, the firmware
+    concatenated its own hex, and the contract said only "some identifier", so
+    the vectors said a device's identity was its MAC address.
+    """
+
+    return _DEVICE_INSTANCE_NAMESPACE + hashlib.sha256(
+        operational_public_key_bytes(operational_public_key)
+    ).hexdigest()
+
+
+#: A device instance identity, which is a statement about a key rather than a
+#: name anything may choose.
+#:
+#: Deliberately a constrained ``str`` and not a wrapper type: this value is
+#: compared against strings from the wire, from SQL rows and from LiveKit room
+#: names in well over a hundred places, and a wrapper would have turned every
+#: one of those comparisons silently false instead of loudly wrong.
+DeviceInstanceId = Annotated[
+    str,
+    Field(min_length=80, max_length=80, pattern=_DEVICE_INSTANCE_ID_PATTERN),
+]
 
 
 class ManifestRef(_Model):
@@ -155,9 +224,7 @@ class ManifestDocument(_Model):
 
 
 class DeviceRef(_Model):
-    device_instance_id: str = Field(
-        min_length=3, max_length=128, pattern=r"^[A-Za-z0-9][A-Za-z0-9._:-]*$"
-    )
+    device_instance_id: DeviceInstanceId
     owner_domain_id: OwnerDomainId
     owner_domain_generation: int = Field(ge=1)
     claim_generation: int = Field(ge=1)

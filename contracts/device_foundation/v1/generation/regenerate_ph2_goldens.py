@@ -87,6 +87,20 @@ def main() -> None:
     envelope["aad_sha256"] = "sha256:" + hashlib.sha256(encoded).hexdigest()
     save("claim-grant-wire-envelope.json", envelope)
 
+    # The delivery vector carries the very acknowledgement the erase vector
+    # signs. It used to carry its own copy with its own signature over the same
+    # document — two signatures for one fact, and the delivery one verified
+    # against nothing, because conformance only asserted the field was present.
+    delivery = load("device-delivery.json")
+    acknowledgement = dict(erase["ack_signing_document"])
+    acknowledgement["device_signature"] = erase["ack_signature"]
+    delivery["evidence"]["payload"] = acknowledgement
+    for name in ("deliver", "acceptance", "evidence"):
+        encoded = rfc8785.dumps(delivery[name])
+        delivery[f"{name}_canonical_utf8"] = encoded.decode()
+        delivery[f"{name}_sha256"] = "sha256:" + hashlib.sha256(encoded).hexdigest()
+    save("device-delivery.json", delivery)
+
     stream = load("admission-event-stream.json")
     stream["business_event_sha256"] = "sha256:" + hashlib.sha256(
         rfc8785.dumps(stream["event"])
