@@ -658,7 +658,7 @@ class SetupDescriptorV1 {
       throw const FormatException('Unknown setup descriptor trust level');
     }
     return SetupDescriptorV1(
-      deviceId: _identifier(value['device_id']),
+      deviceId: DeviceInstanceIdV1.parse(value['device_id']).value,
       deviceKind: _identifier(value['device_kind']),
       displayName: _text(value['display_name'], 128),
       identityFingerprint: fingerprint,

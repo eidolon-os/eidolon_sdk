@@ -34,8 +34,8 @@
     },
     {
       "path": "common/schemas.schema.json",
-      "sha256": "e8b95780d9b4176de32edfe3dd54dc661fb8068d9c6d3316504f236fe8a67f25",
-      "size": 24231
+      "sha256": "fe9af35a6cba5318c9d6b208721688ae06c18a31450a8885794f8dd6db12af38",
+      "size": 24237
     },
     {
       "path": "conformance/run.py",
@@ -149,8 +149,8 @@
     },
     {
       "path": "generation/templates/device_foundation_v1.dart",
-      "sha256": "bf91973224119790dd4a5f7eaf966e05172653598e765f3aaae0c14ca9425732",
-      "size": 47837
+      "sha256": "a81df9e87461d9cf065d7025b361013e5570998809e6edd9f794c6c072e336a8",
+      "size": 47856
     },
     {
       "path": "generation/templates/device_foundation_v1.py",
@@ -295,5 +295,5 @@
   ],
   "generator": "device-foundation-v1-catalog",
   "generator_version": "1.0",
-  "source_digest": "sha256:7831a232025655513f0d9daed75868742cfa78b57b403435a39546070f634224"
+  "source_digest": "sha256:99de92382a96838598259439ba9781e396738da5a45920fe2518d2c0f16320ba"
 }

@@ -21,7 +21,7 @@ from typing import Annotated, Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_serializer
 
-from .lifecycle import WireEnum
+from .lifecycle import DeviceInstanceId, WireEnum
 
 SETUP_DESCRIPTOR_CONTRACT_VERSION = "1"
 
@@ -52,7 +52,7 @@ class SetupDescriptor(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True, strict=True)
 
     contract_version: Literal["1"] = SETUP_DESCRIPTOR_CONTRACT_VERSION
-    device_id: str = Field(min_length=3, max_length=128, pattern=r"^[A-Za-z0-9][A-Za-z0-9._:-]*$")
+    device_id: DeviceInstanceId
     device_kind: str = Field(min_length=3, max_length=128, pattern=r"^[A-Za-z0-9][A-Za-z0-9._:-]*$")
     display_name: str = Field(min_length=1, max_length=128)
     identity_fingerprint: str = Field(pattern=r"^p256:[0-9a-f]{64}$")
