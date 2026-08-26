@@ -163,6 +163,11 @@
       "size": 17403
     },
     {
+      "path": "golden/admission-credential.json",
+      "sha256": "299e51b22d10b96354ed144b547e25ef9e108c3a9e9a87be3d93bc8e4fce637b",
+      "size": 1747
+    },
+    {
       "path": "golden/admission-event-stream.json",
       "sha256": "abc820333d80c7a06bc33e6c28b9cf566b9516ba24a8da10b6de4ae770df3668",
       "size": 1664
@@ -290,5 +295,5 @@
   ],
   "generator": "device-foundation-v1-catalog",
   "generator_version": "1.0",
-  "source_digest": "sha256:9d698777b8a0bf737ef0ed53a3725f95da458e900e984fef5a9e854e0a8024b3"
+  "source_digest": "sha256:2657899b41a4b0e6383aadb06f5dd37906b0724601229e91f8072a2b7d52e02a"
 }
