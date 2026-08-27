@@ -210,10 +210,11 @@
                   "source": {
                     "enum": [
                       "runtime_blackboard",
+                      "channel",
                       "hub",
                       "none"
                     ],
-                    "description": "Which authority answered. The Data authority is never one of them: a lifecycle status is not a presence."
+                    "description": "Which authority answered, in precedence order. The Data authority is never one of them: a lifecycle status is not a presence. `channel` means this body's own participant is on its channel right now — connected, which is narrower than powered on."
                   },
                   "observed_at": {
                     "type": [

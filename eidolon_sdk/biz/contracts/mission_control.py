@@ -45,14 +45,29 @@ PRESENCE_STATES = frozenset(
 )
 
 # Ordered by precedence. The lease-aware owner-scoped blackboard entry wins;
-# Hub is the per-device authority when there is none; the Data authority proves
-# inventory and ownership only, and must never turn a lifecycle status such as
-# ``active`` into an online state.
+# the channel answers for the bodies on it; Hub is the per-device authority when
+# there is neither; the Data authority proves inventory and ownership only, and
+# must never turn a lifecycle status such as ``active`` into an online state.
+#
+# ``channel`` is what a Host can actually observe today, and it is narrower than
+# the word "online" suggests: it means *this body is on its channel* — its own
+# participant is in its room — which is exactly what someone means when they say
+# their speaker is connected, and is not a claim that a body sitting idle with
+# no channel is switched off. The two above it are currently silent: the
+# blackboard's reader was withdrawn, and Hub publishes existence and lifecycle
+# and refuses liveness by contract test. They keep their precedence anyway,
+# because precedence is about standing rather than about who happens to answer.
 PRESENCE_SOURCE_BLACKBOARD = "runtime_blackboard"
+PRESENCE_SOURCE_CHANNEL = "channel"
 PRESENCE_SOURCE_HUB = "hub"
 PRESENCE_SOURCE_NONE = "none"
 PRESENCE_SOURCES = frozenset(
-    {PRESENCE_SOURCE_BLACKBOARD, PRESENCE_SOURCE_HUB, PRESENCE_SOURCE_NONE}
+    {
+        PRESENCE_SOURCE_BLACKBOARD,
+        PRESENCE_SOURCE_CHANNEL,
+        PRESENCE_SOURCE_HUB,
+        PRESENCE_SOURCE_NONE,
+    }
 )
 
 # ── companions ─────────────────────────────────────────────────────────────
