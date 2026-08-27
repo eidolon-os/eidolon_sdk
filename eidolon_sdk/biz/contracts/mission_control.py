@@ -92,6 +92,22 @@ COMPANION_LIFECYCLE_STATES = frozenset(_COMPANION_LIFECYCLE_STATES)
 ROLE_KINDS = frozenset({"guard", "persona", "unbound"})
 
 # ── activities ─────────────────────────────────────────────────────────────
+# An **activity** is one thing that happened to this Owner's household, at the
+# grain a person would recount it: a whole exchange, not a step inside one. A
+# turn is one activity even though it passed through six stages; a background
+# job is one; a body arriving or leaving is one.
+#
+# Two consequences worth stating, because both have been got wrong here:
+#
+# * a stage is not an activity. Stages live *inside* an activity, as its route;
+# * how many a reading carries is a **display bound**, never a total. A Host
+#   trims the list per Companion so one talkative body cannot evict everyone
+#   else, and says so through the lane's ``truncated``. A consumer that prints
+#   that count beside the word 活动 is claiming a history it was not given.
+#
+# Not every kind has a producer yet. ``device_event`` is where a body arriving
+# or leaving belongs, and nothing publishes those today — the vocabulary is
+# ready for it, which is different from it being fed.
 ACTIVITY_KINDS = frozenset(
     {
         "voice_turn",
