@@ -502,6 +502,38 @@
                   "maxLength": 64
                 }
               },
+              "breakdown": {
+                "type": "array",
+                "maxItems": 12,
+                "description": "Where this turn's time went, in order. The name is the Agent's own (`LatencyBreakdown`), and it is separate from `stages` on purpose: a stage is a place on the map that something points at, which is why its vocabulary is controlled; a breakdown is a measurement read as a list, so its key is only an identity and nothing aims at one. A null latency was not measured — the turn did not get that far — which is a different fact from zero.",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "key",
+                    "label"
+                  ],
+                  "properties": {
+                    "key": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 32
+                    },
+                    "label": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 32
+                    },
+                    "latency_ms": {
+                      "type": [
+                        "number",
+                        "null"
+                      ],
+                      "minimum": 0
+                    }
+                  }
+                }
+              },
               "stages": {
                 "type": "array",
                 "maxItems": 16,
