@@ -183,6 +183,16 @@ def test_schema_enums_match_the_exported_vocabulary() -> None:
     assert snapshot["properties"]["contract_version"]["const"] == mc.CONTRACT_VERSION
     assert snapshot["properties"]["coverage"]["const"] == mc.SNAPSHOT_COVERAGE
 
+    memory = defs["memoryLane"]["properties"]["value"]["properties"]
+    assert "runners_online" not in memory
+    assert "runners_total" not in memory
+    assert set(memory["materialization_state"]["enum"]) == {
+        "ready",
+        "materializing",
+        "degraded",
+        "unavailable",
+    }
+
 
 def test_event_vocabulary_is_the_audit_envelope_s() -> None:
     envelope = _load(_AUDIT)["properties"]
