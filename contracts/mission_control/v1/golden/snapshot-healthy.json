@@ -184,8 +184,12 @@
     "value": {
       "realms_total": 2,
       "active_realm_id": "realm-yanzhou",
-      "runners_online": 3,
-      "runners_total": 4,
+      "audience_scope": "companion:companion-yanzhou",
+      "data_readable": true,
+      "materialization_state": "ready",
+      "projection_pending": 0,
+      "last_materialized_at": "2026-08-24T05:16:17Z",
+      "degraded_reason": "",
       "last_write_disposition": "摘要写回"
     }
   },
