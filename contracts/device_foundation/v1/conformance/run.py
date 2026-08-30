@@ -55,6 +55,62 @@ def canonical_bytes(value: Any) -> bytes:
         raise ConformanceError(f"value is not RFC 8785/I-JSON: {exc}") from exc
 
 
+def _field_paths(value: Any, prefix: str = "") -> Any:
+    """Every field position a golden vector actually contains, at any depth."""
+
+    if isinstance(value, dict):
+        for key, item in value.items():
+            path = f"{prefix}.{key}" if prefix else str(key)
+            yield path
+            yield from _field_paths(item, path)
+    elif isinstance(value, list):
+        for index, item in enumerate(value):
+            if isinstance(item, (dict, list)):
+                path = f"{prefix}[{index}]"
+                yield path
+                yield from _field_paths(item, path)
+
+
+def require_field_inventory(
+    vector: Any,
+    *,
+    golden: str,
+    validated: set[str],
+    descriptive: set[str],
+) -> None:
+    """Hold a golden to its own field set, and say which fields carry weight.
+
+    Without this a field could be added to a vector and nothing anywhere would
+    notice. Measured rather than assumed: deleting any one of 79 of the 379
+    field positions across these goldens left the whole suite green, so a
+    reader had no way to tell a load-bearing field from a caption. Two of them
+    were `commissioning_nonce` and `owner_domain_id` — inputs to the
+    commissioning HMAC.
+
+    The split is the point. `validated` means some assertion below fails if the
+    value changes; `descriptive` means the field is documentation and is
+    declared as such on purpose. Anything in neither set is refused, so a new
+    field cannot enter a contract vector without somebody deciding which it is.
+    """
+
+    overlap = validated & descriptive
+    if overlap:
+        raise ConformanceError(
+            f"{golden}: field is declared both validated and descriptive: {sorted(overlap)}"
+        )
+    actual = set(_field_paths(vector))
+    undeclared = actual - validated - descriptive
+    if undeclared:
+        raise ConformanceError(
+            f"{golden}: golden vector has undeclared fields: {sorted(undeclared)}"
+        )
+    absent = (validated | descriptive) - actual
+    if absent:
+        raise ConformanceError(
+            f"{golden}: declared fields are absent from the vector: {sorted(absent)}"
+        )
+
+
 def _b64url_decode(value: str) -> bytes:
     return base64.urlsafe_b64decode(value + "=" * (-len(value) % 4))
 
@@ -427,13 +483,44 @@ def check_hpke_vector() -> int:
         if actual.hex() != vector[name]:
             raise ConformanceError(f"RFC 9180 {name} mismatch")
     encryption = vector["encryption"]
+    # The per-message nonce is derived, not read. RFC 9180 seals with
+    # `base_nonce XOR seq`, and taking `nonce` as given left both it and
+    # `sequence_number` unchecked — the vector could have named any sequence
+    # number and still passed, so the one rule that ties a message to its
+    # position in the stream was stated in the vector and enforced nowhere.
+    sequence_number = encryption["sequence_number"]
+    derived_nonce = (
+        int.from_bytes(nonce, "big") ^ sequence_number
+    ).to_bytes(len(nonce), "big")
+    if derived_nonce.hex() != encryption["nonce"]:
+        raise ConformanceError(
+            "RFC 9180 message nonce is not base_nonce XOR the sequence number"
+        )
     ciphertext = AESGCM(key).encrypt(
-        bytes.fromhex(encryption["nonce"]),
+        derived_nonce,
         bytes.fromhex(encryption["plaintext"]),
         bytes.fromhex(encryption["aad"]),
     )
     if ciphertext.hex() != encryption["ciphertext"]:
         raise ConformanceError("RFC 9180 AES-128-GCM ciphertext mismatch")
+    require_field_inventory(
+        vector,
+        golden="rfc9180-p256-base",
+        validated={
+            "mode", "kem_id", "kdf_id", "aead_id",
+            "ikmE", "ikmR", "skEm", "skRm", "pkEm", "pkRm",
+            "enc", "shared_secret", "info",
+            "key_schedule_context", "secret", "key", "base_nonce",
+            "exporter_secret",
+            "encryption",
+            "encryption.sequence_number",
+            "encryption.nonce",
+            "encryption.plaintext",
+            "encryption.aad",
+            "encryption.ciphertext",
+        },
+        descriptive={"vector_id", "source"},
+    )
     return 1
 
 
@@ -442,6 +529,18 @@ def check_claim_grant_aad() -> int:
     aad = canonical_bytes(vector["aad"])
     if hashlib.sha256(aad).hexdigest() != vector["canonical_aad_sha256"]:
         raise ConformanceError("ClaimGrant AAD canonical digest mismatch")
+    # The AEAD is named by the vector and decrypted with AES-GCM below. Left
+    # unread, a vector could name any other AEAD and still be decrypted with
+    # this one — the suite would report agreement on a cipher nobody used.
+    if vector["test_aead"] != "AES-128-GCM":
+        raise ConformanceError("ClaimGrant AAD vector names an AEAD this check does not use")
+    # Every AAD field must appear in the negative matrix, derived from the AAD
+    # rather than restated: a field added to the AAD and forgotten here would
+    # be a field whose mutation nobody proves is rejected.
+    if set(vector["mutate_each_field_must_fail"]) != set(vector["aad"]):
+        raise ConformanceError(
+            "ClaimGrant AAD negative matrix does not cover exactly the AAD's own fields"
+        )
     key = bytes.fromhex(vector["test_key"])
     nonce = bytes.fromhex(vector["test_nonce"])
     plaintext = bytes.fromhex(vector["plaintext"])
@@ -462,6 +561,23 @@ def check_claim_grant_aad() -> int:
         except InvalidTag:
             continue
         raise ConformanceError(f"ClaimGrant AAD mutation did not fail: {field}")
+    require_field_inventory(
+        vector,
+        golden="claim-grant-aad",
+        validated={
+            "aad",
+            "aad.contract", "aad.profile_id", "aad.enrollment_id",
+            "aad.proposal_revision", "aad.device_instance_id",
+            "aad.hardware_evidence_digest", "aad.manifest_ref",
+            "aad.manifest_ref.manifest_id", "aad.manifest_ref.revision",
+            "aad.manifest_ref.digest", "aad.owner_domain_id",
+            "aad.owner_domain_generation", "aad.claim_generation",
+            "aad.trust_epoch", "aad.grant_id",
+            "canonical_aad_sha256", "test_aead", "test_key", "test_nonce",
+            "plaintext", "ciphertext", "mutate_each_field_must_fail",
+        },
+        descriptive={"vector_id"},
+    )
     return 1 + len(vector["mutate_each_field_must_fail"])
 
 
@@ -472,12 +588,63 @@ def check_claim_grant_wire_envelope() -> int:
         raise ConformanceError("ClaimGrant wire-envelope AAD canonical bytes drifted")
     if "sha256:" + hashlib.sha256(encoded).hexdigest() != vector["aad_sha256"]:
         raise ConformanceError("ClaimGrant wire-envelope AAD digest drifted")
-    expected = {
-        "profile_id", "kem", "kdf", "aead", "recipient_handoff_key_id",
-        "encapsulated_key", "ciphertext", "aad",
-    }
+    envelope = vector["envelope"]
+    # The suite the envelope declares, held to the frozen profile. These five
+    # were readable and unread: every one of them could be deleted with this
+    # suite still green, so an envelope could have announced another KEM, KDF
+    # or AEAD and nothing here would have disagreed.
+    declared_suite = (
+        envelope["contract"],
+        envelope["profile_id"],
+        envelope["kem"],
+        envelope["kdf"],
+        envelope["aead"],
+    )
+    if declared_suite != (
+        "eidolon.device-foundation.claim-grant-envelope",
+        "eidolon-trust-p256-hpke-v1",
+        "DHKEM-P256-HKDF-SHA256",
+        "HKDF-SHA256",
+        "AES-128-GCM",
+    ):
+        raise ConformanceError("ClaimGrant wire envelope does not declare the frozen suite")
+    if not re.fullmatch(r"sha256:[0-9a-f]{64}", envelope["recipient_handoff_key_id"]):
+        raise ConformanceError("ClaimGrant recipient handoff key id is not a sha256 digest")
+    for name in ("encapsulated_key", "ciphertext"):
+        if not _b64url_decode(envelope[name]):
+            raise ConformanceError(f"ClaimGrant wire envelope {name} is empty")
+    # Derived from the envelope rather than restated beside it. The set used to
+    # be written out here by hand, which made it a second statement of the
+    # envelope's shape: a field added to the envelope would not have been
+    # required to appear in the pre-open negative matrix.
+    expected = set(envelope) - {"contract"}
     if set(vector["pre_open_mutations_must_fail"]) != expected:
         raise ConformanceError("ClaimGrant pre-open negative matrix is incomplete")
+    require_field_inventory(
+        vector,
+        golden="claim-grant-wire-envelope",
+        validated={
+            "envelope",
+            "envelope.contract", "envelope.profile_id", "envelope.kem",
+            "envelope.kdf", "envelope.aead",
+            "envelope.recipient_handoff_key_id", "envelope.encapsulated_key",
+            "envelope.ciphertext", "envelope.aad",
+            "envelope.aad.contract", "envelope.aad.profile_id",
+            "envelope.aad.enrollment_id", "envelope.aad.proposal_revision",
+            "envelope.aad.device_instance_id",
+            "envelope.aad.hardware_evidence_digest",
+            "envelope.aad.manifest_ref",
+            "envelope.aad.manifest_ref.manifest_id",
+            "envelope.aad.manifest_ref.revision",
+            "envelope.aad.manifest_ref.digest",
+            "envelope.aad.owner_domain_id",
+            "envelope.aad.owner_domain_generation",
+            "envelope.aad.claim_generation", "envelope.aad.trust_epoch",
+            "envelope.aad.grant_id",
+            "aad_canonical_utf8", "aad_sha256", "pre_open_mutations_must_fail",
+        },
+        descriptive={"vector_id"},
+    )
     return 1 + len(expected)
 
 
@@ -882,6 +1049,34 @@ def check_development_commissioning_identity() -> int:
         )
     except InvalidSignature as exc:
         raise ConformanceError("development evidence signature is invalid") from exc
+    if vector["evidence_signature_encoding"] != (
+        "ES256 raw r||s, 64 bytes, base64url without padding"
+    ):
+        raise ConformanceError(
+            "development evidence signature encoding is not the one verified above"
+        )
+    # The HMAC input is composed here rather than taken as given.
+    #
+    # It used to be read straight out of the vector, so the four parts the
+    # vector says it is built from were held to nothing: `commissioning_nonce`
+    # and `owner_domain_id` could each say one thing while the string encoded
+    # another, and both could be deleted outright with this suite still green.
+    # Hub composes this from its own parts, so a vector that disagrees would
+    # have sent whoever debugged it after Hub rather than after the vector —
+    # and the symptom is `401 commissioning proof is invalid`, with neither
+    # side's intermediate value visible.
+    composed_hmac_input = "\0".join(
+        [
+            vector["hardware_lookup_id"],
+            vector["device_instance_id"],
+            vector["owner_domain_id"],
+            vector["commissioning_nonce"],
+        ]
+    )
+    if vector["hmac_input_utf8_with_nul_separators"] != composed_hmac_input:
+        raise ConformanceError(
+            "commissioning HMAC input is not composed of the parts the vector names"
+        )
     setup_secret = _b64url_decode(vector["setup_secret_base64url"])
     expected_proof = base64.urlsafe_b64encode(
         hmac.new(
@@ -892,6 +1087,35 @@ def check_development_commissioning_identity() -> int:
     ).rstrip(b"=").decode()
     if not hmac.compare_digest(expected_proof, vector["commissioning_proof"]):
         raise ConformanceError("development commissioning HMAC vector drifted")
+    require_field_inventory(
+        vector,
+        golden="development-commissioning-identity",
+        validated={
+            "profile_id",
+            "hardware_lookup_id",
+            "hardware_identity_derivation_input_utf8_with_nul_separator",
+            "hardware_identity_ref",
+            "operational_public_key",
+            "operational_spki_sha256",
+            "device_instance_id",
+            "evidence_document",
+            "evidence_document.device_instance_id",
+            "evidence_document.hardware_lookup_id",
+            "evidence_document.operational_public_key",
+            "evidence_document.profile_id",
+            "evidence_canonical_utf8",
+            "evidence_signature_encoding",
+            "evidence_signature",
+            "wire_evidence",
+            "commissioning_nonce",
+            "owner_domain_id",
+            "hmac_input_utf8_with_nul_separators",
+            "setup_secret_base64url",
+            "commissioning_proof",
+            "registry_entry_fields",
+        },
+        descriptive={"vector_id"},
+    )
     return 1
 
 
