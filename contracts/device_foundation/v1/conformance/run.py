@@ -55,20 +55,31 @@ def canonical_bytes(value: Any) -> bytes:
         raise ConformanceError(f"value is not RFC 8785/I-JSON: {exc}") from exc
 
 
-def _field_paths(value: Any, prefix: str = "") -> Any:
-    """Every field position a golden vector actually contains, at any depth."""
+def _field_paths(value: Any, prefix: str = "", opaque: frozenset[str] = frozenset()) -> Any:
+    """Every field position a golden vector actually contains, at any depth.
+
+    Except under an `opaque` path. Some fields carry a *document* rather than a
+    field set — the input side of a canonicalisation vector is the clearest
+    case: its whole purpose is that arbitrary JSON canonicalises the same way,
+    so a key added inside it is a new test input, not a new contract field.
+    Enumerating into it would demand a declaration for every leaf of every
+    payload and teach the reader to add names without thinking, which is the
+    habit this whole mechanism exists to prevent.
+    """
 
     if isinstance(value, dict):
         for key, item in value.items():
             path = f"{prefix}.{key}" if prefix else str(key)
             yield path
-            yield from _field_paths(item, path)
+            if path not in opaque:
+                yield from _field_paths(item, path, opaque)
     elif isinstance(value, list):
         for index, item in enumerate(value):
+            path = f"{prefix}[{index}]"
             if isinstance(item, (dict, list)):
-                path = f"{prefix}[{index}]"
                 yield path
-                yield from _field_paths(item, path)
+                if path not in opaque:
+                    yield from _field_paths(item, path, opaque)
 
 
 def require_field_inventory(
@@ -77,6 +88,7 @@ def require_field_inventory(
     golden: str,
     validated: set[str],
     descriptive: set[str],
+    opaque: set[str] = frozenset(),
 ) -> None:
     """Hold a golden to its own field set, and say which fields carry weight.
 
@@ -98,7 +110,12 @@ def require_field_inventory(
         raise ConformanceError(
             f"{golden}: field is declared both validated and descriptive: {sorted(overlap)}"
         )
-    actual = set(_field_paths(vector))
+    unknown_opaque = opaque - validated - descriptive
+    if unknown_opaque:
+        raise ConformanceError(
+            f"{golden}: opaque field is not declared at all: {sorted(unknown_opaque)}"
+        )
+    actual = set(_field_paths(vector, opaque=frozenset(opaque)))
     undeclared = actual - validated - descriptive
     if undeclared:
         raise ConformanceError(
@@ -168,7 +185,14 @@ def check_fixtures(schemas: dict[str, dict[str, Any]], registry: Registry) -> in
 
 
 def check_canonical_vectors() -> int:
-    vectors = load_json(ROOT / "golden" / "canonical-vectors.json")["vectors"]
+    document = load_json(ROOT / "golden" / "canonical-vectors.json")
+    # The canonicalisation these vectors are vectors *of*. `canonical_bytes`
+    # below is RFC 8785; left unread, this file could have named another
+    # standard and still been checked with JCS — agreement on a canonical form
+    # nobody used.
+    if document["standard"] != "RFC 8785":
+        raise ConformanceError("canonical vectors name a standard this check does not apply")
+    vectors = document["vectors"]
     for vector in vectors:
         actual = canonical_bytes(vector["value"])
         expected = vector["canonical_utf8"].encode("utf-8")
@@ -179,6 +203,28 @@ def check_canonical_vectors() -> int:
         expected_hash = vector.get("sha256")
         if expected_hash and hashlib.sha256(actual).hexdigest() != expected_hash:
             raise ConformanceError(f"{vector['vector_id']}: canonical SHA-256 mismatch")
+    for index, vector in enumerate(vectors):
+        require_field_inventory(
+            vector,
+            golden=f"canonical-vectors[{index}]",
+            validated={"value", "canonical_utf8"} | ({"sha256"} if "sha256" in vector else set()),
+            descriptive={"vector_id", "source"},
+            # The document being canonicalised. Its shape is the test input.
+            opaque={"value"},
+        )
+    require_field_inventory(
+        document,
+        golden="canonical-vectors",
+        opaque={f"vectors[{index}].value" for index in range(len(vectors))},
+        validated={"standard", "vectors"}
+        | {f"vectors[{index}]" for index in range(len(vectors))}
+        | {
+            f"vectors[{index}].{field}"
+            for index, vector in enumerate(vectors)
+            for field in vector
+        },
+        descriptive=set(),
+    )
     return len(vectors)
 
 
@@ -198,7 +244,22 @@ def _apply_mutation(value: Any, mutation: dict[str, Any]) -> Any:
 
 
 def check_es256_vectors() -> int:
-    vectors = load_json(ROOT / "golden" / "es256-vectors.json")["vectors"]
+    document = load_json(ROOT / "golden" / "es256-vectors.json")
+    # The algorithm and encoding are asserted below by construction — 64 raw
+    # bytes split into r and s, base64url without padding. Naming them and not
+    # reading them let the file declare one thing while this check did another.
+    declared = (
+        document["profile_id"],
+        document["signature_algorithm"],
+        document["signature_encoding"],
+    )
+    if declared != (
+        "eidolon-trust-p256-hpke-v1",
+        "ES256",
+        "64-byte-r-concat-s-base64url-no-padding",
+    ):
+        raise ConformanceError("ES256 vectors declare a profile or encoding this check does not use")
+    vectors = document["vectors"]
     for vector in vectors:
         canonical = _canonical_vector(vector["canonical_vector_id"])
         value = canonical["value"]
@@ -227,6 +288,40 @@ def check_es256_vectors() -> int:
             verified = False
         if verified is not vector["valid"]:
             raise ConformanceError(f"{vector['vector_id']}: signature verdict mismatch")
+    for index, vector in enumerate(vectors):
+        require_field_inventory(
+            vector,
+            golden=f"es256-vectors[{index}]",
+            validated={
+                "canonical_vector_id",
+                "key_id",
+                "public_key_spki_base64url",
+                "signature",
+                "valid",
+            }
+            | ({"mutation", "mutation.path", "mutation.value"} if "mutation" in vector else set()),
+            descriptive={"vector_id"},
+        )
+    require_field_inventory(
+        document,
+        golden="es256-vectors",
+        validated={
+            "profile_id", "signature_algorithm", "signature_encoding", "vectors",
+        }
+        | {f"vectors[{index}]" for index in range(len(vectors))}
+        | {
+            f"vectors[{index}].{field}"
+            for index, vector in enumerate(vectors)
+            for field in vector
+        }
+        | {
+            f"vectors[{index}].mutation.{field}"
+            for index, vector in enumerate(vectors)
+            if "mutation" in vector
+            for field in vector["mutation"]
+        },
+        descriptive=set(),
+    )
     return len(vectors)
 
 
@@ -321,6 +416,61 @@ def check_claim_revoke_vector() -> int:
         for field in vector["excluded_from_fingerprint"]
     ):
         raise ConformanceError("Claim revoke fingerprint document contains excluded fields")
+    # What the fingerprint is actually taken over, derived from the command
+    # rather than trusted beside it. The command and the document were two
+    # independent objects here: the whole `device_ref` subtree could be deleted
+    # from the command with this suite still green, so a vector could fingerprint
+    # a document that was not the command it sits next to.
+    command = vector["command"]
+    excluded = set(vector["excluded_from_fingerprint"])
+    expected_payload = {
+        key: value
+        for key, value in command.items()
+        if key not in excluded and key != "operation"
+    }
+    if vector["fingerprint_document"]["payload"] != expected_payload:
+        raise ConformanceError(
+            "Claim revoke fingerprint payload is not the command minus its excluded fields"
+        )
+    if vector["fingerprint_document"]["owner_domain_id"] != command["device_ref"]["owner_domain_id"]:
+        raise ConformanceError("Claim revoke fingerprint is scoped to another Owner Domain")
+    # Two names for one operation, and nothing derives either from the other:
+    # the wire command says `operation`, the fingerprint document says
+    # `command_type`. Both are pinned so that changing one without the other is
+    # red rather than a silent divergence between what is sent and what is
+    # fingerprinted.
+    if (command["operation"], vector["fingerprint_document"]["command_type"]) != (
+        "device.claim-revocation",
+        "device.claim.revoke",
+    ):
+        raise ConformanceError("Claim revoke operation naming drifted")
+    require_field_inventory(
+        vector,
+        golden="claim-revoke",
+        validated={
+            "command",
+            "command.command_id", "command.correlation_id", "command.operation",
+            "command.reason", "command.device_ref",
+            "command.device_ref.device_instance_id",
+            "command.device_ref.owner_domain_id",
+            "command.device_ref.owner_domain_generation",
+            "command.device_ref.claim_generation",
+            "command.device_ref.trust_epoch",
+            "fingerprint_document",
+            "fingerprint_document.command_type",
+            "fingerprint_document.owner_domain_id",
+            "fingerprint_document.payload",
+            "fingerprint_document.payload.device_ref",
+            "fingerprint_document.payload.device_ref.device_instance_id",
+            "fingerprint_document.payload.device_ref.owner_domain_id",
+            "fingerprint_document.payload.device_ref.owner_domain_generation",
+            "fingerprint_document.payload.device_ref.claim_generation",
+            "fingerprint_document.payload.device_ref.trust_epoch",
+            "fingerprint_document.payload.reason",
+            "canonical_fingerprint_utf8", "fingerprint", "excluded_from_fingerprint",
+        },
+        descriptive=set(),
+    )
     return 1
 
 
@@ -348,6 +498,25 @@ def check_owner_directory_vector() -> int:
         key.verify(der, message, ec.ECDSA(hashes.SHA256()))
     except InvalidSignature as exc:
         raise ConformanceError("Owner directory signature is invalid") from exc
+    if vector["profile_id"] != "eidolon-trust-p256-hpke-v1":
+        raise ConformanceError("Owner directory vector declares another trust profile")
+    require_field_inventory(
+        vector,
+        golden="owner-domain-descriptor",
+        validated={
+            "profile_id", "authority_signing_spki_pem", "canonical_signing_utf8",
+            "descriptor",
+            "descriptor.descriptor_uri", "descriptor.directory_revision",
+            "descriptor.endpoints", "descriptor.expires_at", "descriptor.issued_at",
+            "descriptor.owner_domain_generation", "descriptor.owner_domain_id",
+            "descriptor.signature", "descriptor.signing_key_id",
+            "descriptor.trust_root_refs",
+        },
+        descriptive={"vector_id"},
+        # Every endpoint is inside the signed canonical bytes above, so a field
+        # added to one is already held by the signature rather than by a name.
+        opaque={"descriptor.endpoints"},
+    )
     return 1
 
 
@@ -399,6 +568,36 @@ def check_setup_descriptor_vector(
         candidate["expires_in_seconds"] = encoded
         if validator.is_valid(candidate):
             raise ConformanceError(f"setup descriptor accepted {encoded!r} as a window duration")
+    # The trust values a descriptor may carry, held to the schema rather than
+    # listed beside it. Unread, this was a second statement of the enum: a value
+    # could be added to the schema and never appear here, or listed here and
+    # never be accepted.
+    if vector["trust_values"] != definition["properties"]["trust"]["enum"]:
+        raise ConformanceError("setup descriptor trust values and schema disagree")
+    for shape in ("bounded_window", "no_deadline"):
+        descriptor = vector[shape]["descriptor"]
+        if descriptor["trust"] not in vector["trust_values"]:
+            raise ConformanceError(f"setup descriptor {shape} carries an undeclared trust value")
+        if descriptor["contract_version"] != vector["contract_version"]:
+            raise ConformanceError(
+                f"setup descriptor {shape} is not the contract version this vector declares"
+            )
+    require_field_inventory(
+        vector,
+        golden="setup-descriptor",
+        validated={
+            "contract_version", "schema", "required_fields", "optional_fields",
+            "trust_values", "rejected_expires_in_seconds",
+            "bounded_window", "bounded_window.descriptor",
+            "bounded_window.canonical_utf8", "bounded_window.canonical_sha256",
+            "no_deadline", "no_deadline.descriptor",
+            "no_deadline.canonical_utf8", "no_deadline.canonical_sha256",
+        },
+        descriptive={"vector_id"},
+        # Each descriptor is validated against the schema and pinned by its own
+        # canonical digest above, so a field added to one is already held.
+        opaque={"bounded_window.descriptor", "no_deadline.descriptor"},
+    )
     return 1
 
 
@@ -662,6 +861,32 @@ def check_admission_event_stream() -> int:
         raise ConformanceError("transport recovery fields entered event business equality")
     if set(vector["semantics"]) != {"duplicate", "gap", "restart", "replay"}:
         raise ConformanceError("Claim stream recovery semantics are incomplete")
+    # The stream items are supposed to be the *same* business event delivered
+    # twice. Nothing said so: `event_ref` was never read, so the vector could
+    # have carried positions for an event it does not contain, which is exactly
+    # the claim it exists to make.
+    if {item["event_ref"] for item in vector["stream_items"]} != {vector["event"]["id"]}:
+        raise ConformanceError("Claim stream items do not all reference this vector's event")
+    require_field_inventory(
+        vector,
+        golden="admission-event-stream",
+        validated={
+            "event", "business_event_sha256", "semantics", "stream_items",
+            "transport_fields_excluded_from_event_equality",
+        }
+        # Asserted as an exact set just above, so each key carries weight.
+        | {f"semantics.{name}" for name in vector["semantics"]}
+        | {f"stream_items[{index}]" for index in range(len(vector["stream_items"]))}
+        | {
+            f"stream_items[{index}].{field}"
+            for index in range(len(vector["stream_items"]))
+            for field in ("event_ref", "stream_position")
+        },
+        descriptive={"vector_id"},
+        # Every field of the event is inside `business_event_sha256`, so one
+        # added there is already held by the digest rather than by a name.
+        opaque={"event"},
+    )
     return 1
 
 
@@ -682,6 +907,47 @@ def check_protocomm_framing() -> int:
     }
     if set(vector["session_owned_resources"]) != required_resources:
         raise ConformanceError("Protocomm session resource ownership is incomplete")
+    # The profile these framing rules belong to. All three were readable and
+    # unread, so this vector could have described another transport's framing
+    # and still passed as this one's.
+    if (vector["profile_id"], vector["protocol"], vector["security"]) != (
+        "eidolon-trust-p256-hpke-v1",
+        "ESP-IDF-Protocomm-Security2",
+        "SRP6a-AES-256-GCM",
+    ):
+        raise ConformanceError("Protocomm vector describes another profile or transport")
+    if vector["minimum_lifetime"] != "StartingTransport-through-Stopped":
+        raise ConformanceError("Protocomm session lifetime boundary drifted")
+    # The negative cases — the part of a framing contract that says what must be
+    # refused. They were the least validated fields in any golden here: the
+    # whole list could be deleted and nothing noticed, so a profile could stop
+    # rejecting a zero-length semantic request without a single test changing.
+    if {(case["case"], case["stable_error"]) for case in vector["invalid_cases"]} != {
+        ("zero-length-semantic-request", "INVALID_ARGUMENT"),
+        ("unknown-profile", "CONTRACT_UNSUPPORTED"),
+    }:
+        raise ConformanceError("Protocomm negative framing cases or their stable errors drifted")
+    require_field_inventory(
+        vector,
+        golden="protocomm-security2-framing",
+        validated={
+            "profile_id", "protocol", "security", "minimum_lifetime",
+            "session_owned_resources", "semantic_empty_request",
+            "semantic_empty_request.json",
+            "semantic_empty_request.canonical_utf8_hex",
+            "semantic_empty_request.zero_length_ciphertext_payload_allowed",
+            "invalid_cases",
+        }
+        | {f"invalid_cases[{index}]" for index in range(len(vector["invalid_cases"]))}
+        | {
+            f"invalid_cases[{index}].{field}"
+            for index in range(len(vector["invalid_cases"]))
+            for field in ("case", "stable_error")
+        },
+        descriptive={"vector_id"},
+        # The request document whose canonical bytes are asserted above.
+        opaque={"semantic_empty_request.json"},
+    )
     return 1
 
 
