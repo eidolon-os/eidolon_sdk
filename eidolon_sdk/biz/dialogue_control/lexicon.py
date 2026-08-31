@@ -335,10 +335,17 @@ REPEATED_NOISE_CHARS = "啊嗯哈咳哎哦唉"
 INTERRUPT_TEXT_TRAILING_CHARS = "。.!？?！,， "
 
 ASR_EXACT_CANONICALIZATIONS: dict[str, str] = {
-    # Bailian/FunASR can briefly emit the homophone "亭" before resolving the
-    # hard-stop phrase "停一下". Exact-only keeps ordinary words like "亭子"
-    # out of the fast cancel path.
+    # Streaming recognizers can briefly emit the homophone "亭" before
+    # resolving the hard-stop phrase "停一下". Exact-only keeps ordinary
+    # words like "亭子" out of the fast cancel path.
     "亭": "停",
 }
 
-ASR_PREFIX_CANONICALIZATIONS: tuple[tuple[str, str], ...] = ()
+ASR_PREFIX_CANONICALIZATIONS: tuple[tuple[str, str], ...] = (
+    # Preserve raw transcripts for chat/logging and normalize only the shared
+    # dialogue-control view.  Both are common streaming-ASR homophones for the
+    # productive redirect prefix "换个话..."; a longer continuation still has
+    # to match the normal topic-switch policy after canonicalization.
+    ("换个画", "换个话"),
+    ("换个花", "换个话"),
+)
