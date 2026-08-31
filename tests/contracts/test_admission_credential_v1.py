@@ -81,7 +81,13 @@ def test_the_golden_names_every_claim_this_credential_carries() -> None:
     # Names for everything, values only for what does not depend on when it was
     # minted. Pinning a timestamp makes a test pass or fail by the wall clock,
     # which says nothing about the code.
-    assert set(claims) == set(golden["required_claims"]) | set(golden["optional_claims"])
+    # Required must all be present; optional may be absent. This was an
+    # equality, which is only true when every optional claim happens to be
+    # minted — so the golden could omit an optional claim the implementation
+    # can emit (`target_device_ref` did) and this fixture, which never mints
+    # one, would keep agreeing with it.
+    declared = set(golden["required_claims"]) | set(golden["optional_claims"])
+    assert set(golden["required_claims"]) <= set(claims) <= declared
     assert {key: claims[key] for key in golden["stable_claims"]} == golden["stable_claims"]
 
 

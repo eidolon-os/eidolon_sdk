@@ -15,6 +15,7 @@ import sys
 from pathlib import Path
 from typing import Any
 
+import jwt
 import rfc8785
 from cryptography.exceptions import InvalidSignature, InvalidTag
 from cryptography.hazmat.primitives import hashes, serialization
@@ -55,7 +56,20 @@ def canonical_bytes(value: Any) -> bytes:
         raise ConformanceError(f"value is not RFC 8785/I-JSON: {exc}") from exc
 
 
-from eidolon_sdk.device_foundation.v1 import derive_device_instance_id  # noqa: E402
+from eidolon_sdk.device_foundation.v1 import (  # noqa: E402
+    ADMISSION_AUDIENCE,
+    AdmissionCredential,
+    AdmissionCredentialError,
+    BusinessOwnerId,
+    ControllerActorRef,
+    DeviceRef,
+    OwnerDomainId,
+    derive_device_instance_id,
+    issue_admission_credential,
+    read_admission_credential,
+)
+
+_ALGORITHM_NAME = "HS256"
 
 
 def _field_paths(value: Any, prefix: str = "", opaque: frozenset[str] = frozenset()) -> Any:
@@ -1388,6 +1402,128 @@ def check_development_commissioning_identity() -> int:
     return 1
 
 
+def check_admission_credential() -> int:
+    """Hold the shared credential implementation to the incident this file records.
+
+    Admin mints and Hub reads through one SDK function, so the two cannot spell
+    a claim differently any more. What that shared function cannot do is notice
+    that it has stopped matching *this* file — and this file is the written
+    record of a real outage: the removal path presented another Hub surface's
+    vocabulary (``actor_ref`` as a bare string, ``owner_id``, ``roles``) and
+    every device removal was refused with a 401 that never mentioned a
+    credential, for months.
+
+    Nothing read this file until now, and it had already drifted: the
+    implementation emits an optional ``target_device_ref`` claim that the file
+    did not list. That is what a vector with no reader does — it becomes a
+    description of what the code used to do.
+    """
+
+    vector = load_json(ROOT / "golden" / "admission-credential.json")
+    if (vector["header_scheme"], vector["algorithm"], vector["audience"]) != (
+        "Bearer",
+        "HS256",
+        ADMISSION_AUDIENCE,
+    ):
+        raise ConformanceError("Admission credential vector names another scheme or audience")
+
+    secret = b"conformance-admission-credential-secret-32+"
+    stable = vector["stable_claims"]
+    header = issue_admission_credential(
+        AdmissionCredential(
+            subject=stable["sub"],
+            actor=ControllerActorRef.model_validate(stable["actor"]),
+            owner_domain_id=OwnerDomainId(stable["owner_domain_id"]),
+            business_owner_id=BusinessOwnerId(stable["business_owner_id"]),
+            scopes=tuple(stable["scopes"]),
+            intent_id=stable["intent_id"],
+        ),
+        secret=secret,
+        ttl_seconds=300,
+    )
+    scheme, _, token = header.partition(" ")
+    if scheme != vector["header_scheme"]:
+        raise ConformanceError("minted Admission credential does not use the declared scheme")
+    minted = jwt.decode(
+        token, secret, algorithms=[vector["algorithm"]], audience=vector["audience"]
+    )
+    # The claim names actually put on the wire, held to the two lists this file
+    # publishes. Drift in either direction is refused: a claim minted and not
+    # listed, and a claim listed and not minted.
+    # Required must all be minted; optional may be absent; nothing undeclared
+    # may appear. Not an equality — that only holds when every optional claim
+    # happens to be present, and would let this file omit an optional claim the
+    # implementation can emit.
+    declared = set(vector["required_claims"]) | set(vector["optional_claims"])
+    if undeclared := set(minted) - declared:
+        raise ConformanceError(
+            f"Admission credential mints claims this vector does not name: {sorted(undeclared)}"
+        )
+    if missing := set(vector["required_claims"]) - set(minted):
+        raise ConformanceError(
+            f"Admission credential omits required claims: {sorted(missing)}"
+        )
+    # Every claim whose value does not depend on when it was minted has to have
+    # a stated value here. Iterating whatever `stable_claims` happened to hold
+    # meant a claim could be dropped from this file and nothing would ask for
+    # it: `presenter` and `aud` were both deletable, and `presenter` is the one
+    # that binds a credential to the party presenting it.
+    timing = {"iat", "exp"}
+    pinned = set(vector["required_claims"]) - timing
+    if not pinned <= set(stable):
+        raise ConformanceError(
+            f"Admission vector states no value for {sorted(pinned - set(stable))}"
+        )
+    for name, expected in stable.items():
+        if minted[name] != expected:
+            raise ConformanceError(f"minted Admission claim {name} is not the stable value")
+
+    reread = read_admission_credential(header, secret=secret)
+    if (
+        reread.subject != stable["sub"]
+        or str(reread.owner_domain_id) != stable["owner_domain_id"]
+        or str(reread.business_owner_id) != stable["business_owner_id"]
+        or list(reread.scopes) != stable["scopes"]
+    ):
+        raise ConformanceError("Admission credential does not survive its own round trip")
+
+    # The outage, replayed. This shape decoded as a JWT perfectly well; what
+    # failed was the vocabulary, and it has to keep failing.
+    # The exact vocabulary that failed, pinned name by name. Refusal alone does
+    # not hold these: the shape is refused for several reasons at once, so any
+    # single claim could be deleted from the record and it would still be
+    # refused — and the record is the only place the wrong vocabulary is
+    # written down.
+    if set(vector["rejected_shape"]["claims"]) != {
+        "sub", "presenter", "aud", "actor_ref", "owner_id", "roles", "scopes", "exp"
+    }:
+        raise ConformanceError("the recorded vocabulary of the 401 outage changed")
+    rejected = jwt.encode(vector["rejected_shape"]["claims"], secret, algorithm=_ALGORITHM_NAME)
+    try:
+        read_admission_credential("Bearer " + rejected, secret=secret)
+    except AdmissionCredentialError:
+        pass
+    else:
+        raise ConformanceError(
+            "the credential shape that refused every device removal is accepted again"
+        )
+
+    require_field_inventory(
+        vector,
+        golden="admission-credential",
+        validated={
+            "header_scheme", "algorithm", "audience", "required_claims",
+            "optional_claims", "stable_claims",
+            "rejected_shape", "rejected_shape.claims",
+        }
+        | {f"stable_claims.{name}" for name in stable}
+        | {f"stable_claims.actor.{name}" for name in stable["actor"]}
+        | {f"rejected_shape.claims.{name}" for name in vector["rejected_shape"]["claims"]},
+        descriptive={"contract", "purpose", "rejected_shape.why"},
+    )
+    return 1 + len(vector["required_claims"])
+
+
 def check_device_instance_derivation() -> int:
     """What a device instance id is derived from, and what may never derive one.
 
@@ -1598,6 +1734,7 @@ def run() -> dict[str, int]:
         "host_independent_sources": check_host_independence(),
         "requirements": check_traceability(schemas),
         "state_vectors": check_state_vectors(),
+        "admission_credential": check_admission_credential(),
         "device_instance_derivation": check_device_instance_derivation(),
         "p1_exit_evidence": check_p1_exit_evidence(),
     }

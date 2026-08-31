@@ -39,8 +39,8 @@
     },
     {
       "path": "conformance/run.py",
-      "sha256": "2d74f734698334522a33340193e5b7ad6b6f566d8f016b32eace56a7f01b0e3d",
-      "size": 76912
+      "sha256": "70977b09be1871b574c202c53e0ea71da574551d7199d518fb4ef2d6bf57edbf",
+      "size": 83124
     },
     {
       "path": "delivery-port/schemas.schema.json",
@@ -164,8 +164,8 @@
     },
     {
       "path": "golden/admission-credential.json",
-      "sha256": "299e51b22d10b96354ed144b547e25ef9e108c3a9e9a87be3d93bc8e4fce637b",
-      "size": 1747
+      "sha256": "f5c9c671b168926439abdd03d821b67d2ccab809454608d45154f4fd6f7d149a",
+      "size": 1772
     },
     {
       "path": "golden/admission-event-stream.json",
@@ -300,5 +300,5 @@
   ],
   "generator": "device-foundation-v1-catalog",
   "generator_version": "1.0",
-  "source_digest": "sha256:1031f075b040838f199bf471d5a300358c6f0a4decef0bcc4123e5bec9844602"
+  "source_digest": "sha256:7f3f781821d091aa7aba96e27f4a2f1848e319a9b669ba04d550f9247b83b8a7"
 }
