@@ -64,6 +64,14 @@ class SetupDescriptor(BaseModel):
     #
     # ``None`` is the offer that does not end, and it is not serialised at all.
     expires_in_seconds: SetupWindowRemainingSeconds | None = None
+    # The base identity this device already holds, if any. ``None`` is a device
+    # that has never been commissioned — or one whose storage was erased, which
+    # is now the same statement. Forwarded to the Host and never believed on the
+    # device's word: only Hub knows what it issued.
+    device_base_id: str | None = Field(
+        default=None,
+        pattern=r"^(device-base-[0-9a-f]{64}|software-body-[0-9a-f]{40})$",
+    )
     trust: SetupDescriptorTrust
 
     @field_validator("expires_in_seconds", mode="before")

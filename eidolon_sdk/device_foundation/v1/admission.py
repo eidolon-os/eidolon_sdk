@@ -137,13 +137,31 @@ class ClaimRecord(_Model):
 
 
 class HardwareIdentityEvidence(_Model):
-    scheme: Literal["manufacturer-p256", "dev-self-signed-p256"]
+    """Possession of the operational key that one issued base identity is bound to.
+
+    ``hub-issued-base-p256`` is the whole of V1: the device carries no factory
+    material, so what it can prove is that it holds the key the Hub bound to the
+    base identity it was issued. ``manufacturer-attestation-p256`` answers a
+    different question — which physical board this is — and is never a
+    substitute for the first.
+    """
+
+    scheme: Literal["hub-issued-base-p256", "manufacturer-attestation-p256"]
     evidence: str = Field(min_length=16, max_length=65536)
     evidence_digest: str = Field(pattern=r"^sha256:[0-9a-f]{64}$")
 
 
 class CommissioningProof(_Model):
-    scheme: Literal["protocomm-security2-srp6a-aes256gcm"] = "protocomm-security2-srp6a-aes256gcm"
+    """Standing to ask, which is not the same question as approval.
+
+    ``hub-issued-commissioning-voucher-v1`` carries the one-shot voucher the Hub
+    signed during a Controller-witnessed commissioning; ``nonce`` is that
+    voucher's ``jti``. ``enrolled-base-key-v1`` carries a signature by the
+    already recorded operational key and continues one Claim lifecycle — it is
+    not a way back into the queue for a Revoked or Rejected base identity.
+    """
+
+    scheme: Literal["hub-issued-commissioning-voucher-v1", "enrolled-base-key-v1"]
     proof: str = Field(min_length=16, max_length=4096)
     nonce: str = Field(min_length=16, max_length=256)
 

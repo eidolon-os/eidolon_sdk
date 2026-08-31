@@ -22,6 +22,7 @@ from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import ec
 from cryptography.hazmat.primitives.asymmetric.utils import encode_dss_signature
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+from cryptography.hazmat.primitives.kdf.hkdf import HKDF
 from jsonschema import Draft202012Validator, FormatChecker
 from referencing import Registry, Resource
 
@@ -560,8 +561,17 @@ def check_setup_descriptor_vector(
     declared = sorted(vector["required_fields"] + vector["optional_fields"])
     if declared != sorted(definition["properties"]):
         raise ConformanceError("setup descriptor vector does not cover every declared field")
-    if vector["optional_fields"] != ["expires_in_seconds"]:
-        raise ConformanceError("only the setup window duration may be absent from a descriptor")
+    # Two fields may be absent, and each absence says something specific: no
+    # duration means an offer that does not end, and no base identity means a
+    # device that has never been commissioned — or one whose storage was erased,
+    # which is now the same statement. Anything else missing is a producer that
+    # failed to say who it is.
+    if vector["optional_fields"] != ["device_base_id", "expires_in_seconds"]:
+        raise ConformanceError("a descriptor may omit only its window duration and its base identity")
+    if "device_base_id" in vector["no_deadline"]["descriptor"]:
+        raise ConformanceError(
+            "the no-deadline shape must show a device that has never been commissioned"
+        )
     validator = Draft202012Validator(
         {"$ref": vector["schema"]}, registry=registry, format_checker=FORMAT_CHECKER
     )
@@ -1193,9 +1203,16 @@ def check_state_vectors() -> int:
         raise ConformanceError("hardware rejoin Claim generation is not monotonic")
     rejoin_true = {
         "device_instance_id_changes_after_physical_recovery",
-        "claim_generation_monotonic_per_owner_and_hardware",
+        "claim_generation_monotonic_per_owner_and_base_identity",
         "old_claim_tombstone_retained",
-        "hardware_identity_is_derived_from_verified_hardware_lookup",
+        "hardware_identity_is_derived_from_issued_base_identity",
+        # Erasing local storage ends the lineage rather than continuing it.
+        # The factory secret that used to survive an erase is gone, so a wiped
+        # device cannot prove it is the same board — and a platform that
+        # correlated it anyway would be inheriting ownership from an
+        # unauthenticated MAC.
+        "local_erase_destroys_the_base_identity",
+        "erased_device_rejoins_as_a_new_base_identity",
     }
     if any(rejoin_invariants[name] is not True for name in rejoin_true):
         raise ConformanceError("hardware rejoin positive invariant drifted")
@@ -1210,13 +1227,14 @@ def check_state_vectors() -> int:
         # identity is how a Waveshare AMOLED board became a "box3" for good.
         "hardware_identity_is_operator_supplied",
         "hardware_identity_states_board_type",
+        "device_may_report_its_own_base_identity",
+        "revoked_base_identity_may_re_enter_without_a_fresh_voucher",
+        "platform_auto_correlates_by_unauthenticated_mac",
     }
     if any(rejoin_invariants[name] is not False for name in rejoin_false):
         raise ConformanceError("hardware rejoin fencing invariant drifted")
     if rejoin["stable_hardware_identity_ref"] != _derived_hardware_identity_ref(
-        load_json(ROOT / "golden" / "development-commissioning-identity.json")[
-            "hardware_lookup_id"
-        ]
+        load_json(ROOT / "golden" / "commissioning-voucher.json")["device_base_id"]
     ):
         raise ConformanceError("rejoin hardware identity is not the derived identity")
 
@@ -1263,64 +1281,96 @@ def check_state_vectors() -> int:
     return 6
 
 
-def _derived_hardware_identity_ref(hardware_lookup_id: str) -> str:
-    """Derive the one permanent hardware identity of a verified lookup id.
+def _derived_hardware_identity_ref(device_base_id: str) -> str:
+    """Derive the one permanent identity ref of an issued base identity.
 
-    Case and surrounding whitespace fold because a MAC address is hex and a
-    firmware that reformats it must not fork one board into two identity
+    Case and surrounding whitespace fold because the input is hex and a
+    producer that reformats it must not fork one Body into two identity
     lineages; nothing else about the input survives, so an unverifiable claim
-    (a board type, a vendor, a room) cannot ride along inside the identity.
+    (a board type, a vendor, a room) cannot ride along inside the identity. The
+    input is always a base identity the Hub itself issued: a value the device
+    chose could otherwise become permanent history simply by being well shaped.
     """
 
-    canonical = hardware_lookup_id.strip().casefold()
+    canonical = device_base_id.strip().casefold()
     label = "eidolon-hardware-identity-v1"
     digest = hashlib.sha256((label + "\0" + canonical).encode()).hexdigest()
     return "hardware-" + digest
 
 
-def check_development_commissioning_identity() -> int:
-    vector = load_json(ROOT / "golden" / "development-commissioning-identity.json")
-    # A development registry entry pre-shares a setup secret and states nothing
-    # else. It used to carry a hand-typed hardware_identity_ref, and a
-    # Waveshare ESP32-S3-Touch-AMOLED board was admitted as
-    # "hardware-box3-1cdbd47aef0c": an unverifiable board type welded into an
-    # identity that outlives every Claim of that hardware.
-    if vector["profile_id"] != "eidolon-development-hmac-commissioning-v2":
-        raise ConformanceError("development commissioning registry profile drifted")
-    if vector["registry_entry_fields"] != ["setup_secret"]:
-        raise ConformanceError("development registry entry may only pre-share a secret")
-    derivation_input = vector["hardware_identity_derivation_input_utf8_with_nul_separator"]
-    if derivation_input != "eidolon-hardware-identity-v1\0" + vector[
-        "hardware_lookup_id"
-    ].casefold():
-        raise ConformanceError("hardware identity derivation input drifted")
-    if vector["hardware_identity_ref"] != _derived_hardware_identity_ref(
-        vector["hardware_lookup_id"]
-    ) or vector["hardware_identity_ref"] != "hardware-" + hashlib.sha256(
-        derivation_input.encode()
-    ).hexdigest():
-        raise ConformanceError("hardware identity is not derived from the verified lookup id")
-    canonical = canonical_bytes(vector["evidence_document"])
-    if canonical.decode() != vector["evidence_canonical_utf8"]:
-        raise ConformanceError("development evidence JCS bytes drifted")
-    if vector["wire_evidence"] != (
-        vector["evidence_canonical_utf8"] + "." + vector["evidence_signature"]
-    ):
-        raise ConformanceError("development evidence wire framing drifted")
+def check_commissioning_voucher() -> int:
+    """Hold the issued-base-identity vector to its own arithmetic.
+
+    The vector this replaced described a per-device factory secret that a
+    firmware image and a Hub-side registry file both had to carry, byte for
+    byte. Two ledgers for one fact drifted the way two ledgers do: a v1 registry
+    entry welded an unverifiable board type into a permanent identity, and a
+    rollback across that file's format left the Hub crash-looping 110 times.
+    Neither failure has a carrier any more — the device carries nothing, and
+    the Hub keeps no per-device file. What must not drift now is the binding:
+    an issued base identity, one operational key, and a voucher that is worth
+    nothing to anyone holding a different key.
+    """
+
+    vector = load_json(ROOT / "golden" / "commissioning-voucher.json")
+    if vector["evidence_scheme"] != "hub-issued-base-p256":
+        raise ConformanceError("base identity evidence scheme drifted")
+    if vector["base_identity_provenance"] != "minted":
+        raise ConformanceError("hardware base identity must be minted, never derived from the device")
+
     spki_der = _b64url_decode(vector["operational_public_key"].removeprefix("p256-spki:"))
     digest = hashlib.sha256(spki_der).hexdigest()
     if vector["operational_spki_sha256"] != "sha256:" + digest:
         raise ConformanceError("operational SPKI fingerprint drifted")
     if vector["device_instance_id"] != "device-instance-" + digest:
         raise ConformanceError("device instance id is not the operational SPKI fingerprint")
+
+    # The device may not choose this value, so the vector must show it being
+    # derived from the issued base identity and from nothing else.
+    for base_id, input_field, ref_field in (
+        (
+            vector["device_base_id"],
+            "hardware_identity_derivation_input_utf8_with_nul_separator",
+            "hardware_identity_ref",
+        ),
+        (
+            vector["software_body_device_base_id"],
+            "software_body_hardware_identity_derivation_input_utf8_with_nul_separator",
+            "software_body_hardware_identity_ref",
+        ),
+    ):
+        derivation_input = vector[input_field]
+        if derivation_input != "eidolon-hardware-identity-v1\0" + base_id.casefold():
+            raise ConformanceError("base identity derivation input drifted")
+        if vector[ref_field] != _derived_hardware_identity_ref(
+            base_id
+        ) or vector[ref_field] != "hardware-" + hashlib.sha256(
+            derivation_input.encode()
+        ).hexdigest():
+            raise ConformanceError("identity ref is not derived from the issued base identity")
+
+    document = vector["evidence_document"]
+    if document["device_base_id"] != vector["device_base_id"]:
+        raise ConformanceError("evidence document states a different base identity")
+    canonical = canonical_bytes(document)
+    if canonical.decode() != vector["evidence_canonical_utf8"]:
+        raise ConformanceError("base identity evidence JCS bytes drifted")
+    if vector["wire_evidence"] != (
+        vector["evidence_canonical_utf8"] + "." + vector["evidence_signature"]
+    ):
+        raise ConformanceError("base identity evidence wire framing drifted")
+    if vector["evidence_digest"] != "sha256:" + hashlib.sha256(
+        vector["wire_evidence"].encode()
+    ).hexdigest():
+        raise ConformanceError("evidence digest is not the digest of the wire evidence")
     raw_signature = _b64url_decode(vector["evidence_signature"])
     if len(raw_signature) != 64:
-        raise ConformanceError("development evidence signature is not raw ES256 r||s")
+        raise ConformanceError("base identity evidence signature is not raw ES256 r||s")
     public_key = serialization.load_der_public_key(spki_der)
     if not isinstance(public_key, ec.EllipticCurvePublicKey) or not isinstance(
         public_key.curve, ec.SECP256R1
     ):
-        raise ConformanceError("development evidence operational key is not P-256")
+        raise ConformanceError("base identity evidence operational key is not P-256")
     try:
         public_key.verify(
             encode_dss_signature(
@@ -1331,73 +1381,167 @@ def check_development_commissioning_identity() -> int:
             ec.ECDSA(hashes.SHA256()),
         )
     except InvalidSignature as exc:
-        raise ConformanceError("development evidence signature is invalid") from exc
+        raise ConformanceError("base identity evidence signature is invalid") from exc
     if vector["evidence_signature_encoding"] != (
         "ES256 raw r||s, 64 bytes, base64url without padding"
     ):
         raise ConformanceError(
-            "development evidence signature encoding is not the one verified above"
+            "base identity evidence signature encoding is not the one verified above"
         )
-    # The HMAC input is composed here rather than taken as given.
-    #
-    # It used to be read straight out of the vector, so the four parts the
-    # vector says it is built from were held to nothing: `commissioning_nonce`
-    # and `owner_domain_id` could each say one thing while the string encoded
-    # another, and both could be deleted outright with this suite still green.
-    # Hub composes this from its own parts, so a vector that disagrees would
-    # have sent whoever debugged it after Hub rather than after the vector —
-    # and the symptom is `401 commissioning proof is invalid`, with neither
+
+    # The voucher is recomputed from the two constants the vector names, not
+    # read back from itself. A vector that merely restated its own token would
+    # let the signing-key derivation change while the suite stayed green, and
+    # the symptom of that is a 401 on every first commissioning with neither
     # side's intermediate value visible.
-    composed_hmac_input = "\0".join(
-        [
-            vector["hardware_lookup_id"],
-            vector["device_instance_id"],
-            vector["owner_domain_id"],
-            vector["commissioning_nonce"],
-        ]
+    voucher = vector["voucher"]
+    if voucher["scheme"] != "hub-issued-commissioning-voucher-v1":
+        raise ConformanceError("commissioning proof scheme drifted")
+    claims = voucher["claims"]
+    if claims["operational_spki_sha256"] != vector["operational_spki_sha256"]:
+        raise ConformanceError("voucher is not bound to this operational key")
+    if claims["device_base_id"] != vector["device_base_id"]:
+        raise ConformanceError("voucher states a different base identity")
+    if claims["jti"] != voucher["jti"] or claims["exp"] != voucher["expires_at_unix"]:
+        raise ConformanceError("voucher claims disagree with the vector's own fields")
+    signing_key = HKDF(
+        algorithm=hashes.SHA256(),
+        length=32,
+        salt=None,
+        info=b"eidolon-commissioning-voucher-v1",
+    ).derive(bytes.fromhex(voucher["host_management_secret_hex"]))
+    if signing_key.hex() != voucher["signing_key_hex"]:
+        raise ConformanceError("voucher signing key derivation drifted")
+    header_canonical = canonical_bytes(voucher["header"])
+    claims_canonical = canonical_bytes(claims)
+    if header_canonical.decode() != voucher["header_canonical_utf8"]:
+        raise ConformanceError("voucher header JCS bytes drifted")
+    if claims_canonical.decode() != voucher["claims_canonical_utf8"]:
+        raise ConformanceError("voucher claims JCS bytes drifted")
+    signing_input = "{}.{}".format(
+        base64.urlsafe_b64encode(header_canonical).rstrip(b"=").decode(),
+        base64.urlsafe_b64encode(claims_canonical).rstrip(b"=").decode(),
     )
-    if vector["hmac_input_utf8_with_nul_separators"] != composed_hmac_input:
-        raise ConformanceError(
-            "commissioning HMAC input is not composed of the parts the vector names"
-        )
-    setup_secret = _b64url_decode(vector["setup_secret_base64url"])
-    expected_proof = base64.urlsafe_b64encode(
-        hmac.new(
-            setup_secret,
-            vector["hmac_input_utf8_with_nul_separators"].encode(),
-            hashlib.sha256,
-        ).digest()
+    if signing_input != voucher["signing_input"]:
+        raise ConformanceError("voucher signing input framing drifted")
+    signature = base64.urlsafe_b64encode(
+        hmac.new(signing_key, signing_input.encode(), hashlib.sha256).digest()
     ).rstrip(b"=").decode()
-    if not hmac.compare_digest(expected_proof, vector["commissioning_proof"]):
-        raise ConformanceError("development commissioning HMAC vector drifted")
+    if voucher["compact"] != f"{signing_input}.{signature}":
+        raise ConformanceError("voucher signature drifted")
+    if voucher["nonce_rule"] != "commissioning_proof.nonce MUST equal the voucher jti":
+        raise ConformanceError("voucher nonce rule drifted")
+
+    base_key = vector["enrolled_base_key"]
+    if base_key["scheme"] != "enrolled-base-key-v1":
+        raise ConformanceError("continuation proof scheme drifted")
+    base_document = base_key["signing_document"]
+    if base_document["nonce"] != base_key["nonce"]:
+        raise ConformanceError("continuation proof nonce disagrees with its own document")
+    base_canonical = canonical_bytes(base_document)
+    if base_canonical.decode() != base_key["canonical_utf8"]:
+        raise ConformanceError("continuation proof JCS bytes drifted")
+    base_signature = _b64url_decode(base_key["proof"])
+    if len(base_signature) != 64:
+        raise ConformanceError("continuation proof is not raw ES256 r||s")
+    try:
+        public_key.verify(
+            encode_dss_signature(
+                int.from_bytes(base_signature[:32], "big"),
+                int.from_bytes(base_signature[32:], "big"),
+            ),
+            base_canonical,
+            ec.ECDSA(hashes.SHA256()),
+        )
+    except InvalidSignature as exc:
+        raise ConformanceError("continuation proof signature is invalid") from exc
+
+    refusals = [entry["case"] for entry in vector["must_be_refused"]]
+    if refusals != [
+        "voucher bound to another operational key",
+        "voucher replayed after its jti was consumed",
+        "device reports a device_base_id the Hub never issued",
+        "second base identity offered for an already bound operational key",
+        "enrolled-base-key-v1 presented by a Revoked or Rejected base identity",
+    ]:
+        raise ConformanceError("the refusals this vector exists to name drifted")
+
+    refusal_fields = {"must_be_refused"}
+    for index in range(len(vector["must_be_refused"])):
+        refusal_fields |= {
+            f"must_be_refused[{index}]",
+            f"must_be_refused[{index}].case",
+            f"must_be_refused[{index}].why",
+        }
     require_field_inventory(
         vector,
-        golden="development-commissioning-identity",
+        golden="commissioning-voucher",
         validated={
-            "profile_id",
-            "hardware_lookup_id",
+            "device_base_id",
+            "base_identity_provenance",
             "hardware_identity_derivation_input_utf8_with_nul_separator",
             "hardware_identity_ref",
+            "software_body_device_base_id",
+            "software_body_hardware_identity_derivation_input_utf8_with_nul_separator",
+            "software_body_hardware_identity_ref",
             "operational_public_key",
             "operational_spki_sha256",
             "device_instance_id",
+            "evidence_scheme",
             "evidence_document",
+            "evidence_document.device_base_id",
             "evidence_document.device_instance_id",
-            "evidence_document.hardware_lookup_id",
             "evidence_document.operational_public_key",
             "evidence_document.profile_id",
             "evidence_canonical_utf8",
             "evidence_signature_encoding",
             "evidence_signature",
             "wire_evidence",
-            "commissioning_nonce",
+            "evidence_digest",
             "owner_domain_id",
-            "hmac_input_utf8_with_nul_separators",
-            "setup_secret_base64url",
-            "commissioning_proof",
-            "registry_entry_fields",
+            "voucher",
+            "voucher.scheme",
+            "voucher.host_management_secret_hex",
+            "voucher.signing_key_hex",
+            "voucher.header",
+            "voucher.header.alg",
+            "voucher.header.typ",
+            "voucher.header_canonical_utf8",
+            "voucher.claims",
+            "voucher.claims.base_identity_provenance",
+            "voucher.claims.device_base_id",
+            "voucher.claims.exp",
+            "voucher.claims.jti",
+            "voucher.claims.operational_spki_sha256",
+            "voucher.claims.owner_domain_id",
+            "voucher.claims.purpose",
+            "voucher.claims_canonical_utf8",
+            "voucher.signing_input",
+            "voucher.compact",
+            "voucher.jti",
+            "voucher.expires_at_unix",
+            "voucher.nonce_rule",
+            "enrolled_base_key",
+            "enrolled_base_key.scheme",
+            "enrolled_base_key.signing_document",
+            "enrolled_base_key.signing_document.contract",
+            "enrolled_base_key.signing_document.device_base_id",
+            "enrolled_base_key.signing_document.device_instance_id",
+            "enrolled_base_key.signing_document.nonce",
+            "enrolled_base_key.signing_document.owner_domain_id",
+            "enrolled_base_key.canonical_utf8",
+            "enrolled_base_key.proof",
+            "enrolled_base_key.nonce",
+        }
+        | refusal_fields,
+        descriptive={
+            "vector_id",
+            "supersedes",
+            "why",
+            "device_operational_scalar_hex",
+            "voucher.signing_key_derivation",
+            "enrolled_base_key.when",
         },
-        descriptive={"vector_id"},
     )
     return 1
 
@@ -1729,7 +1873,7 @@ def run() -> dict[str, int]:
         "claim_grant_wire_checks": check_claim_grant_wire_envelope(),
         "claim_event_stream_vectors": check_admission_event_stream(),
         "protocomm_vectors": check_protocomm_framing(),
-        "development_commissioning_identity": check_development_commissioning_identity(),
+        "commissioning_voucher": check_commissioning_voucher(),
         "profiles": check_profile(),
         "host_independent_sources": check_host_independence(),
         "requirements": check_traceability(schemas),
