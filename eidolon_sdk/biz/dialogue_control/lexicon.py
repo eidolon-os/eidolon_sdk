@@ -348,4 +348,5 @@ ASR_PREFIX_CANONICALIZATIONS: tuple[tuple[str, str], ...] = (
     # to match the normal topic-switch policy after canonicalization.
     ("换个画", "换个话"),
     ("换个花", "换个话"),
+    ("换个华", "换个话"),
 )

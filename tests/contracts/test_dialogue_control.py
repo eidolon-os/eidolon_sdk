@@ -56,6 +56,7 @@ class TestHardStopIntent:
             ("换个画", "换个话"),
             ("换个画题", "换个话题"),
             ("换个花题。", "换个话题"),
+            ("换个华", "换个话"),
         ],
     )
     def test_asr_topic_switch_prefix_canonicalization(
@@ -130,7 +131,7 @@ class TestLexiconInterruptClassifier:
         assert conservative.classify(text, **kw).intent is InterruptIntent.UNCERTAIN
         assert fast.classify(text, **kw).intent is InterruptIntent.TOPIC_SWITCH
 
-    @pytest.mark.parametrize("text", ["换个画题", "换个花题"])
+    @pytest.mark.parametrize("text", ["换个画题", "换个花题", "换个华题"])
     def test_fast_topic_switch_uses_canonical_policy_text(self, text: str) -> None:
         result = LexiconInterruptClassifier(fast_intents=True).classify(
             text,
