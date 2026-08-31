@@ -16,13 +16,13 @@ from eidolon_sdk.device_foundation.v1 import (
     RevokeClaim,
     ClaimEventCursor,
     ClaimEventPage,
-    derive_device_instance_id,
     revoke_claim_fingerprint,
 )
+from eidolon_sdk.device_foundation.v1.testing import named_device_instance_id
 
 # Derived, not typed out: a device instance id is a statement about a key,
 # so a test that invents one is testing a shape no device can present.
-_DEVICE = derive_device_instance_id("p256-spki:MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE")
+_DEVICE = named_device_instance_id("device-under-test")
 
 
 def _ref(*, owner: str = "owner-domain_01", generation: int = 2) -> DeviceRef:

@@ -20,8 +20,8 @@ from eidolon_sdk.device_foundation.v1 import (
     operation_fingerprint,
     verify_device_erase_ack,
     verify_operation_key_proof,
-    derive_device_instance_id,
 )
+from eidolon_sdk.device_foundation.v1.testing import named_device_instance_id
 
 
 def _b64(value: bytes) -> str:
@@ -34,7 +34,7 @@ def _raw_sign(key: ec.EllipticCurvePrivateKey, document: dict[str, object]) -> s
     return _b64(r.to_bytes(32, "big") + s.to_bytes(32, "big"))
 
 
-_DEVICE = derive_device_instance_id("p256-spki:MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE")
+_DEVICE = named_device_instance_id("device-under-test")
 
 
 def _ref(*, generation: int = 7) -> DeviceRef:

@@ -39,8 +39,8 @@
     },
     {
       "path": "conformance/run.py",
-      "sha256": "3c73ed192cb5cf3a34be1200d1ebef6926ae3f64d967c20b340e312d52e3f71a",
-      "size": 72848
+      "sha256": "2d74f734698334522a33340193e5b7ad6b6f566d8f016b32eace56a7f01b0e3d",
+      "size": 76912
     },
     {
       "path": "delivery-port/schemas.schema.json",
@@ -203,6 +203,11 @@
       "size": 5345
     },
     {
+      "path": "golden/device-instance-derivation.json",
+      "sha256": "40fe62d4c0cfc5de8d55c2881caca88d5baec4aec183912a3b673d0664ca3b8a",
+      "size": 2318
+    },
+    {
       "path": "golden/device-local-erase.json",
       "sha256": "1ad4b1a53f0e30e555f090d9a259f46b3f143158ad3306fd5a15dfb758ccef51",
       "size": 3312
@@ -295,5 +300,5 @@
   ],
   "generator": "device-foundation-v1-catalog",
   "generator_version": "1.0",
-  "source_digest": "sha256:053910d9edef8d319844c2f1d6cd4c972559941e3b3c7761d4144f22d15df792"
+  "source_digest": "sha256:1031f075b040838f199bf471d5a300358c6f0a4decef0bcc4123e5bec9844602"
 }

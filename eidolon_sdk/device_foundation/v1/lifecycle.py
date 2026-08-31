@@ -123,7 +123,7 @@ class BusinessOwnerId(RootModel[str]):
 #: refused, and the contract typed the field as a loose Identifier so no client
 #: could have known. It lives here now, once, and the schema names the shape so
 #: an invented id fails at the boundary rather than at Hub.
-_DEVICE_INSTANCE_NAMESPACE = "device-instance-"
+DEVICE_INSTANCE_NAMESPACE = "device-instance-"
 
 
 #: How an operational public key declares itself on the wire. Stripped here
@@ -131,6 +131,14 @@ _DEVICE_INSTANCE_NAMESPACE = "device-instance-"
 #: content of the rule below: a caller that strips it itself and a caller that
 #: forgets to would derive two different identities for one key.
 SPKI_SCHEME = "p256-spki:"
+
+#: The 26-byte header of every P-256 SubjectPublicKeyInfo: SEQUENCE,
+#: AlgorithmIdentifier { id-ecPublicKey, prime256v1 }, then the BIT STRING that
+#: carries the 65-byte uncompressed point.
+P256_SPKI_PREFIX = bytes.fromhex("3059301306072a8648ce3d020106082a8648ce3d030107034200")
+
+#: `0x04 || X || Y` — the same key an SPKI carries, written without its header.
+P256_UNCOMPRESSED_POINT_LENGTH = 65
 
 
 def operational_public_key_bytes(operational_public_key: str) -> bytes:
@@ -149,6 +157,21 @@ def operational_public_key_bytes(operational_public_key: str) -> bytes:
         raise ValueError("operational public key is not base64url SPKI") from exc
     if not raw:
         raise ValueError("operational public key is empty")
+    if raw[:1] == b"\x04" and len(raw) == P256_UNCOMPRESSED_POINT_LENGTH:
+        # The same key, written the other way — and the difference disappears
+        # the moment it is hashed. Both encodings name one P-256 key, but their
+        # digests are two different, equally well-formed device instance ids,
+        # and an Authority knows only one of them. Accepting this quietly is
+        # worse than refusing it: nothing fails at the point of the mistake, and
+        # what surfaces later is a device nobody has a record of.
+        raise ValueError(
+            "operational public key is a raw uncompressed point, not SPKI: "
+            "hashing it would derive an identity no Authority has a record of"
+        )
+    if len(raw) != len(P256_SPKI_PREFIX) + P256_UNCOMPRESSED_POINT_LENGTH or not raw.startswith(
+        P256_SPKI_PREFIX
+    ):
+        raise ValueError("operational public key is not a P-256 SubjectPublicKeyInfo")
     return raw
 
 
@@ -162,7 +185,7 @@ def derive_device_instance_id(operational_public_key: str) -> str:
     the vectors said a device's identity was its MAC address.
     """
 
-    return _DEVICE_INSTANCE_NAMESPACE + hashlib.sha256(
+    return DEVICE_INSTANCE_NAMESPACE + hashlib.sha256(
         operational_public_key_bytes(operational_public_key)
     ).hexdigest()
 

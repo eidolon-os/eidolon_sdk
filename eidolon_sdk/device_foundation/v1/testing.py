@@ -14,9 +14,9 @@ carry a second version of the rule or eighty characters of hex per fixture.
 
 from __future__ import annotations
 
-from base64 import urlsafe_b64encode
+from hashlib import sha256
 
-from .lifecycle import derive_device_instance_id
+from .lifecycle import DEVICE_INSTANCE_NAMESPACE
 
 __all__ = ["named_device_instance_id"]
 
@@ -31,4 +31,11 @@ def named_device_instance_id(label: str) -> str:
 
     if not label:
         raise ValueError("a test device needs a name")
-    return derive_device_instance_id(urlsafe_b64encode(label.encode()).decode())
+    # Built here rather than routed through the key derivation. This produces a
+    # well-formed id for a device that has no key, which is a legitimate thing
+    # for a test to want and *not* the thing `derive_device_instance_id` does:
+    # feeding it a label base64url-encoded to look like a key taught the
+    # derivation to accept anything decodable, and that tolerance is what let a
+    # raw point — a real key in the wrong encoding — be hashed into an identity
+    # no Authority has a record of.
+    return DEVICE_INSTANCE_NAMESPACE + sha256(label.encode()).hexdigest()

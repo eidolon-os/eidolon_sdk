@@ -55,6 +55,9 @@ def canonical_bytes(value: Any) -> bytes:
         raise ConformanceError(f"value is not RFC 8785/I-JSON: {exc}") from exc
 
 
+from eidolon_sdk.device_foundation.v1 import derive_device_instance_id  # noqa: E402
+
+
 def _field_paths(value: Any, prefix: str = "", opaque: frozenset[str] = frozenset()) -> Any:
     """Every field position a golden vector actually contains, at any depth.
 
@@ -1385,6 +1388,81 @@ def check_development_commissioning_identity() -> int:
     return 1
 
 
+def check_device_instance_derivation() -> int:
+    """What a device instance id is derived from, and what may never derive one.
+
+    The rule had four implementations and no vector. Each of Hub, the firmware,
+    this SDK and a phone read it from prose; three of the four would hash a raw
+    uncompressed point into a perfectly well-formed identity that no Authority
+    has a record of, and the phone was the only one that refused. That failure
+    has no crypto error and no signature mismatch — it surfaces as a device
+    nobody recognises, on some boards and not others.
+    """
+
+    vector = load_json(ROOT / "golden" / "device-instance-derivation.json")
+    if (vector["namespace"], vector["digest"]) != ("device-instance-", "sha256"):
+        raise ConformanceError("device instance derivation names another rule")
+    spki = _b64url_decode(vector["spki_der_base64url"])
+    if len(spki) != vector["spki_der_length_bytes"]:
+        raise ConformanceError("device instance derivation SPKI length disagrees with its bytes")
+    if vector["device_instance_id"] != vector["namespace"] + hashlib.sha256(spki).hexdigest():
+        raise ConformanceError("device instance id is not the SPKI digest this vector states")
+    # Every accepted spelling of one key is one device. The prefixed and bare
+    # forms both occur in the contract, and a consumer that reads only one of
+    # them derives two identities for a single key.
+    for spelling in vector["accepted_spellings"]:
+        if derive_device_instance_id(spelling) != vector["device_instance_id"]:
+            raise ConformanceError(f"accepted spelling derives another device: {spelling[:24]}")
+    for case in vector["must_refuse"]:
+        try:
+            derived = derive_device_instance_id(case["encoded"])
+        except ValueError:
+            continue
+        raise ConformanceError(
+            f"device instance derivation accepted {case['case']}: {derived}"
+        )
+    # The point carried inside the SPKI is the same key, so the refusal above is
+    # about encoding rather than about a different key — and the digest it would
+    # have produced is recorded so a consumer can recognise it in the wild.
+    raw_point = next(
+        case for case in vector["must_refuse"] if case["case"] == "raw-uncompressed-point"
+    )
+    if _b64url_decode(raw_point["encoded"]) != spki[-raw_point["length_bytes"]:]:
+        raise ConformanceError("the refused point is not the key this vector derives from")
+    if raw_point["digest_if_wrongly_hashed"] == vector["device_instance_id"]:
+        raise ConformanceError("the wrongly-hashed digest cannot equal the correct one")
+    if raw_point["digest_if_wrongly_hashed"] != vector["namespace"] + hashlib.sha256(
+        _b64url_decode(raw_point["encoded"])
+    ).hexdigest():
+        raise ConformanceError("recorded wrong digest is not what hashing the point produces")
+    require_field_inventory(
+        vector,
+        golden="device-instance-derivation",
+        validated={
+            "namespace", "digest", "operational_public_key", "spki_der_base64url",
+            "spki_der_length_bytes", "device_instance_id", "accepted_spellings",
+            "must_refuse",
+        }
+        | {f"must_refuse[{index}]" for index in range(len(vector["must_refuse"]))}
+        | {
+            f"must_refuse[{index}].{field}"
+            for index, case in enumerate(vector["must_refuse"])
+            for field in ("case", "encoded", "length_bytes")
+        }
+        | {
+            f"must_refuse[{index}].digest_if_wrongly_hashed"
+            for index, case in enumerate(vector["must_refuse"])
+            if "digest_if_wrongly_hashed" in case
+        },
+        descriptive={"vector_id", "purpose", "derived_from"}
+        | {
+            f"must_refuse[{index}].why"
+            for index in range(len(vector["must_refuse"]))
+        },
+    )
+    return 1 + len(vector["must_refuse"])
+
+
 def check_p1_exit_evidence() -> int:
     evidence = load_json(ROOT / "evidence" / "p1-host-independence.json")
     if evidence["scope"] != (
@@ -1520,6 +1598,7 @@ def run() -> dict[str, int]:
         "host_independent_sources": check_host_independence(),
         "requirements": check_traceability(schemas),
         "state_vectors": check_state_vectors(),
+        "device_instance_derivation": check_device_instance_derivation(),
         "p1_exit_evidence": check_p1_exit_evidence(),
     }
 

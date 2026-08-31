@@ -29,19 +29,19 @@ from eidolon_sdk.device_foundation.v1 import (
     ManifestRef,
     OwnerDomainId,
     manifest_digest,
-    derive_device_instance_id,
 )
 from eidolon_sdk.device_foundation.v1.device_erase import (
     DeviceEraseContractError,
     verify_p256_signature,
 )
+from eidolon_sdk.device_foundation.v1.testing import named_device_instance_id
 
 
 def _b64(value: bytes) -> str:
     return base64.urlsafe_b64encode(value).decode().rstrip("=")
 
 
-_DEVICE = derive_device_instance_id("p256-spki:MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE")
+_DEVICE = named_device_instance_id("device-under-test")
 
 
 def _device_ref() -> DeviceRef:
