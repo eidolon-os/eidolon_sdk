@@ -2,8 +2,11 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import pytest
 
+import eidolon_sdk.biz.dialogue_control as dialogue_control
 from eidolon_sdk.biz.dialogue_control import CommittedTurnDecision, TurnCommitBoundary
 
 
@@ -54,3 +57,17 @@ def test_committed_turn_decision_rejects_non_terminal_evidence() -> None:
 
     with pytest.raises(ValueError, match="final and VAD-terminal"):
         CommittedTurnDecision.from_metadata(metadata)
+
+
+def test_dialogue_contract_contains_no_fixed_phrase_classifier_surface() -> None:
+    forbidden_exports = {
+        "LexiconInterruptClassifier",
+        "classify_control_intent",
+        "hard_stop_intent",
+        "hard_stop_prefix_intent",
+    }
+    package_root = Path(dialogue_control.__file__).parent
+
+    assert forbidden_exports.isdisjoint(vars(dialogue_control))
+    assert not (package_root / "classify.py").exists()
+    assert not (package_root / "lexicon.py").exists()
