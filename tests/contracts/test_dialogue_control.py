@@ -50,23 +50,6 @@ class TestHardStopIntent:
     def test_asr_homophone_canonicalization(self) -> None:
         assert canonicalize_interrupt_text("亭") == "停"
 
-    @pytest.mark.parametrize(
-        ("raw", "canonical"),
-        [
-            ("换个画", "换个话"),
-            ("换个画题", "换个话题"),
-            ("换个花题。", "换个话题"),
-            ("换个华", "换个话"),
-        ],
-    )
-    def test_asr_topic_switch_prefix_canonicalization(
-        self,
-        raw: str,
-        canonical: str,
-    ) -> None:
-        assert canonicalize_interrupt_text(raw) == canonical
-
-
 class TestClassifyControlIntent:
     def test_whole_utterance_stop(self) -> None:
         result = classify_control_intent("停，别说了")
@@ -130,17 +113,6 @@ class TestLexiconInterruptClassifier:
         kw = dict(vad_active=True, agent_speaking=True, eot_score=0.5)
         assert conservative.classify(text, **kw).intent is InterruptIntent.UNCERTAIN
         assert fast.classify(text, **kw).intent is InterruptIntent.TOPIC_SWITCH
-
-    @pytest.mark.parametrize("text", ["换个画题", "换个花题", "换个华题"])
-    def test_fast_topic_switch_uses_canonical_policy_text(self, text: str) -> None:
-        result = LexiconInterruptClassifier(fast_intents=True).classify(
-            text,
-            vad_active=True,
-            agent_speaking=True,
-            eot_score=0.0,
-        )
-
-        assert result.intent is InterruptIntent.TOPIC_SWITCH
 
     def test_repeated_noise_char(self) -> None:
         clf = LexiconInterruptClassifier()

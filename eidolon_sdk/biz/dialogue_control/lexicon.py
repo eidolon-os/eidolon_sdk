@@ -341,12 +341,4 @@ ASR_EXACT_CANONICALIZATIONS: dict[str, str] = {
     "亭": "停",
 }
 
-ASR_PREFIX_CANONICALIZATIONS: tuple[tuple[str, str], ...] = (
-    # Preserve raw transcripts for chat/logging and normalize only the shared
-    # dialogue-control view.  Both are common streaming-ASR homophones for the
-    # productive redirect prefix "换个话..."; a longer continuation still has
-    # to match the normal topic-switch policy after canonicalization.
-    ("换个画", "换个话"),
-    ("换个花", "换个话"),
-    ("换个华", "换个话"),
-)
+ASR_PREFIX_CANONICALIZATIONS: tuple[tuple[str, str], ...] = ()
