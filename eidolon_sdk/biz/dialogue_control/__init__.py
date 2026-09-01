@@ -1,16 +1,14 @@
-"""Shared dialogue-control contracts: interrupt/stop/topic-switch intents.
+"""Shared dialogue-control contracts: intent hints and committed decisions.
 
-Single source of truth for the intent taxonomy and the deterministic hot-path
-lexicons used on both sides of the Chat stream:
+Single source of truth for provider-neutral dialogue contracts:
 
-- eidolon_channel classifies barge-in transcripts on its fast path (Tier0) and
-  cancels the in-flight turn;
-- eidolon_agent re-classifies the query text on its slow path and returns the
-  structured control intent (``termination_cause`` / ``control_intent``) so the
-  upstream can circuit-break TTS and rendering.
+- eidolon_channel collects provider-neutral evidence while deciding a turn;
+- the channel's product commit boundary emits ``CommittedTurnDecision``;
+- eidolon_agent validates that typed commitment and handles the text normally.
 
-Keeping both consumers on one lexicon prevents the two sides from drifting
-apart on what counts as "停，别说了".
+The commitment carries no lexical intent, keeping fixed phrases out of
+cross-process authority. Legacy lexicon exports remain for offline evaluation
+and compatibility; production turn commitment does not execute them.
 """
 
 from eidolon_sdk.biz.dialogue_control.classify import (
@@ -42,11 +40,20 @@ from eidolon_sdk.biz.dialogue_control.lexicon import (
     NOISE_LIKE_TRANSCRIPTIONS,
     REPEATED_NOISE_CHARS,
 )
+from eidolon_sdk.biz.dialogue_control.turn_decision import (
+    TURN_DECISION_SCHEMA_VERSION,
+    CommittedTurnDecision,
+    CommittedTurnEvidence,
+    TurnCommitBoundary,
+    committed_turn_text_sha256,
+)
 
 __all__ = [
     "ASR_EXACT_CANONICALIZATIONS",
     "ASR_PREFIX_CANONICALIZATIONS",
     "BACKCHANNEL_WORDS",
+    "CommittedTurnDecision",
+    "CommittedTurnEvidence",
     "DEFAULT_ATTENTION_EARLY_DUCK_PREFIX_LEXICON",
     "DEFAULT_CORRECTION_EXCLUSION_LEXICON",
     "DEFAULT_CORRECTION_LEXICON",
@@ -62,8 +69,11 @@ __all__ = [
     "LexiconInterruptClassifier",
     "NOISE_LIKE_TRANSCRIPTIONS",
     "REPEATED_NOISE_CHARS",
+    "TURN_DECISION_SCHEMA_VERSION",
+    "TurnCommitBoundary",
     "canonicalize_interrupt_text",
     "classify_control_intent",
+    "committed_turn_text_sha256",
     "hard_stop_intent",
     "hard_stop_prefix_intent",
     "normalize_interrupt_text",
