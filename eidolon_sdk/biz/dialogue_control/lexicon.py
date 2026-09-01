@@ -335,9 +335,9 @@ REPEATED_NOISE_CHARS = "啊嗯哈咳哎哦唉"
 INTERRUPT_TEXT_TRAILING_CHARS = "。.!？?！,， "
 
 ASR_EXACT_CANONICALIZATIONS: dict[str, str] = {
-    # Streaming recognizers can briefly emit the homophone "亭" before
-    # resolving the hard-stop phrase "停一下". Exact-only keeps ordinary
-    # words like "亭子" out of the fast cancel path.
+    # Bailian/FunASR can briefly emit the homophone "亭" before resolving the
+    # hard-stop phrase "停一下". Exact-only keeps ordinary words like "亭子"
+    # out of the fast cancel path.
     "亭": "停",
 }
 

@@ -50,6 +50,7 @@ class TestHardStopIntent:
     def test_asr_homophone_canonicalization(self) -> None:
         assert canonicalize_interrupt_text("亭") == "停"
 
+
 class TestClassifyControlIntent:
     def test_whole_utterance_stop(self) -> None:
         result = classify_control_intent("停，别说了")
