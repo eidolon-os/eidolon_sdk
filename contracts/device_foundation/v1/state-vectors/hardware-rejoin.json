@@ -1,6 +1,8 @@
 {
   "vector_id": "DF-PH2-REJOIN-001",
-  "stable_hardware_identity_ref": "hardware-6578648226809efedd5c2d0e0b8afe028fb5e1b26e1443a9122832aea0693405",
+  "scenario": "One Body revoked and then admitted again while its issued base identity survived on the device. Local erase is the other scenario and it is deliberately not this one: erasing the base identity ends the lineage instead of continuing it.",
+  "stable_hardware_identity_ref": "hardware-d6b2e54014f5310d5cd8461824c2455a83f4c89c9b55ed0b73b4f5166cf414b4",
+  "device_base_id": "device-base-4f3b4f3b4f3b4f3b4f3b4f3b4f3b4f3b4f3b4f3b4f3b4f3b4f3b4f3b4f3b4f3b",
   "incarnations": [
     {
       "device_instance_id": "device-instance-5cd252fb0ce8932436faf8ccd1040981b89ee4ad6b9fe9e2a2b7e71aacb27cd3",
@@ -15,15 +17,20 @@
   ],
   "invariants": {
     "hardware_identity_ref_changes": false,
-    "hardware_identity_is_derived_from_verified_hardware_lookup": true,
+    "hardware_identity_is_derived_from_issued_base_identity": true,
     "hardware_identity_is_operator_supplied": false,
     "hardware_identity_states_board_type": false,
     "device_instance_id_changes_after_physical_recovery": true,
-    "claim_generation_monotonic_per_owner_and_hardware": true,
+    "claim_generation_monotonic_per_owner_and_base_identity": true,
     "old_claim_tombstone_retained": true,
     "old_request_can_mutate_new_claim": false,
     "old_operation_can_mutate_new_claim": false,
     "hardware_identity_from_operational_evidence_digest": false,
-    "mac_is_device_instance_id": false
+    "mac_is_device_instance_id": false,
+    "device_may_report_its_own_base_identity": false,
+    "revoked_base_identity_may_re_enter_without_a_fresh_voucher": false,
+    "local_erase_destroys_the_base_identity": true,
+    "erased_device_rejoins_as_a_new_base_identity": true,
+    "platform_auto_correlates_by_unauthenticated_mac": false
   }
 }

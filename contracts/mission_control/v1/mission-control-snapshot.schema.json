@@ -658,7 +658,18 @@
             "null"
           ],
           "additionalProperties": false,
-          "description": "Per Owner, not per companion. A companion's own recall comes off its turn.",
+          "description": "Owner Realm materialization under the caller-selected Companion scope.",
+          "required": [
+            "realms_total",
+            "active_realm_id",
+            "audience_scope",
+            "data_readable",
+            "materialization_state",
+            "projection_pending",
+            "last_materialized_at",
+            "degraded_reason",
+            "last_write_disposition"
+          ],
           "properties": {
             "realms_total": {
               "type": "integer",
@@ -669,19 +680,30 @@
               "maxLength": 64,
               "default": ""
             },
-            "runners_online": {
-              "type": [
-                "integer",
-                "null"
-              ],
+            "audience_scope": {
+              "type": "string",
+              "maxLength": 128,
+              "default": ""
+            },
+            "data_readable": {
+              "type": "boolean"
+            },
+            "materialization_state": {
+              "type": "string",
+              "enum": ["ready", "materializing", "degraded", "unavailable"]
+            },
+            "projection_pending": {
+              "type": "integer",
               "minimum": 0
             },
-            "runners_total": {
-              "type": [
-                "integer",
-                "null"
-              ],
-              "minimum": 0
+            "last_materialized_at": {
+              "type": ["string", "null"],
+              "format": "date-time"
+            },
+            "degraded_reason": {
+              "type": "string",
+              "maxLength": 1024,
+              "default": ""
             },
             "last_write_disposition": {
               "type": "string",

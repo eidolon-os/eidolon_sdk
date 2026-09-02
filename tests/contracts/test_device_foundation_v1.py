@@ -30,7 +30,7 @@ def test_conformance_runner_passes() -> None:
     assert result["fixtures"] >= 100
     assert result["requirements"] >= 40
     assert result["state_vectors"] == 6
-    assert result["development_commissioning_identity"] == 1
+    assert result["commissioning_voucher"] == 1
     assert result["claim_revoke_vectors"] == 1
     assert result["p1_exit_evidence"] == 1
 
@@ -43,23 +43,43 @@ def _rewrite(tmp_path: Path, relative: str, document: dict) -> Path:
     return root
 
 
-def test_development_identity_rejects_a_hardware_identity_that_was_typed_in(
+def test_commissioning_vector_rejects_an_identity_that_was_typed_in(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """The registry once let an operator type this value, and one did: a
+    """A registry once let an operator type this value, and one did: a
     Waveshare ESP32-S3-Touch-AMOLED board was admitted as
     "hardware-box3-1cdbd47aef0c" and every later generation of that Claim
-    repeated the board type. Nothing verifies a board type, so the contract
-    only accepts an identity derived from the verified hardware lookup id."""
+    repeated the board type. That registry is gone, but the rule it failed at
+    is the one that still matters: only an identity derived from the base
+    identity the Hub itself issued may enter the record."""
 
     runner = _load_runner()
-    relative = "golden/development-commissioning-identity.json"
+    relative = "golden/commissioning-voucher.json"
     vector = runner.load_json(CONTRACT_ROOT / relative)
     vector["hardware_identity_ref"] = "hardware-box-3-golden"
     monkeypatch.setattr(runner, "ROOT", _rewrite(tmp_path, relative, vector))
 
-    with pytest.raises(runner.ConformanceError, match="hardware identity"):
-        runner.check_development_commissioning_identity()
+    with pytest.raises(runner.ConformanceError, match="identity ref"):
+        runner.check_commissioning_voucher()
+
+
+def test_commissioning_vector_rejects_a_voucher_bound_to_another_key(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The binding to one operational key is the whole of the voucher's value.
+
+    Without it the voucher is a bearer ticket: anything that reads it once —
+    a log line, a screenshot, a proxy — could exchange it for standing under
+    somebody else's key."""
+
+    runner = _load_runner()
+    relative = "golden/commissioning-voucher.json"
+    vector = runner.load_json(CONTRACT_ROOT / relative)
+    vector["voucher"]["claims"]["operational_spki_sha256"] = "sha256:" + "0" * 64
+    monkeypatch.setattr(runner, "ROOT", _rewrite(tmp_path, relative, vector))
+
+    with pytest.raises(runner.ConformanceError, match="bound to this operational key"):
+        runner.check_commissioning_voucher()
 
 
 def test_rejoin_vector_rejects_an_operator_supplied_hardware_identity(

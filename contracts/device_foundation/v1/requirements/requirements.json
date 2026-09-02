@@ -816,7 +816,7 @@
       "schema_ids": ["common/DeviceRef", "admission/CreateEnrollment", "admission/ClaimRecord"],
       "producer_tests": ["HUB::test_same_hardware_rejoins_as_new_instance_generation_two_and_old_claim_is_fenced"],
       "consumer_tests": ["ESP32::physical-recovery-rotates-operational-instance"],
-      "simulator_vectors": ["state-vectors/hardware-rejoin.json", "golden/development-commissioning-identity.json"],
+      "simulator_vectors": ["state-vectors/hardware-rejoin.json", "golden/commissioning-voucher.json"],
       "integration_tests": ["CONFORMANCE::check_development_commissioning_identity", "HUB::development-registry-v2-fail-closed"],
       "hil_tests": ["HIL::erase-rejoin-generation-two-and-old-operation-rejected"],
       "status": "covered",

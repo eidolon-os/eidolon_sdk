@@ -13,6 +13,18 @@
       "value": "device-instance-3164c593258209d757654dbd421d2bd9732fe088bce70d8c90be15dd98b587ba"
     },
     {
+      "case_id": "DF-COMMON-DEVICE-BASE-ID-MINTED-VALID",
+      "schema": "https://contracts.eidolon.live/device-foundation/v1/common/schemas.schema.json",
+      "definition": "DeviceBaseId",
+      "value": "device-base-4f3b4f3b4f3b4f3b4f3b4f3b4f3b4f3b4f3b4f3b4f3b4f3b4f3b4f3b4f3b4f3b"
+    },
+    {
+      "case_id": "DF-COMMON-DEVICE-BASE-ID-SOFTWARE-VALID",
+      "schema": "https://contracts.eidolon.live/device-foundation/v1/common/schemas.schema.json",
+      "definition": "DeviceBaseId",
+      "value": "software-body-a71ca71ca71ca71ca71ca71ca71ca71ca71ca71c"
+    },
+    {
       "case_id": "DF-COMMON-SHA256-DIGEST-VALID",
       "schema": "https://contracts.eidolon.live/device-foundation/v1/common/schemas.schema.json",
       "definition": "Sha256Digest",
@@ -228,9 +240,8 @@
           "button",
           "qr_secret"
         ],
-        "attestation_schemes": [
-          "manufacturer-p256"
-        ],
+        "base_identity_source": "hub-issued",
+        "attestation_schemes": [],
         "secure_storage_level": "secure-element",
         "monotonic_counter": true,
         "candidate_network": true,

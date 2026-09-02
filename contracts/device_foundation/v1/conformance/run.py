@@ -15,12 +15,14 @@ import sys
 from pathlib import Path
 from typing import Any
 
+import jwt
 import rfc8785
 from cryptography.exceptions import InvalidSignature, InvalidTag
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import ec
 from cryptography.hazmat.primitives.asymmetric.utils import encode_dss_signature
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+from cryptography.hazmat.primitives.kdf.hkdf import HKDF
 from jsonschema import Draft202012Validator, FormatChecker
 from referencing import Registry, Resource
 
@@ -53,6 +55,95 @@ def canonical_bytes(value: Any) -> bytes:
         return rfc8785.dumps(value)
     except (ValueError, TypeError) as exc:
         raise ConformanceError(f"value is not RFC 8785/I-JSON: {exc}") from exc
+
+
+from eidolon_sdk.device_foundation.v1 import (  # noqa: E402
+    ADMISSION_AUDIENCE,
+    AdmissionCredential,
+    AdmissionCredentialError,
+    BusinessOwnerId,
+    ControllerActorRef,
+    DeviceRef,
+    OwnerDomainId,
+    derive_device_instance_id,
+    issue_admission_credential,
+    read_admission_credential,
+)
+
+_ALGORITHM_NAME = "HS256"
+
+
+def _field_paths(value: Any, prefix: str = "", opaque: frozenset[str] = frozenset()) -> Any:
+    """Every field position a golden vector actually contains, at any depth.
+
+    Except under an `opaque` path. Some fields carry a *document* rather than a
+    field set — the input side of a canonicalisation vector is the clearest
+    case: its whole purpose is that arbitrary JSON canonicalises the same way,
+    so a key added inside it is a new test input, not a new contract field.
+    Enumerating into it would demand a declaration for every leaf of every
+    payload and teach the reader to add names without thinking, which is the
+    habit this whole mechanism exists to prevent.
+    """
+
+    if isinstance(value, dict):
+        for key, item in value.items():
+            path = f"{prefix}.{key}" if prefix else str(key)
+            yield path
+            if path not in opaque:
+                yield from _field_paths(item, path, opaque)
+    elif isinstance(value, list):
+        for index, item in enumerate(value):
+            path = f"{prefix}[{index}]"
+            if isinstance(item, (dict, list)):
+                yield path
+                if path not in opaque:
+                    yield from _field_paths(item, path, opaque)
+
+
+def require_field_inventory(
+    vector: Any,
+    *,
+    golden: str,
+    validated: set[str],
+    descriptive: set[str],
+    opaque: set[str] = frozenset(),
+) -> None:
+    """Hold a golden to its own field set, and say which fields carry weight.
+
+    Without this a field could be added to a vector and nothing anywhere would
+    notice. Measured rather than assumed: deleting any one of 79 of the 379
+    field positions across these goldens left the whole suite green, so a
+    reader had no way to tell a load-bearing field from a caption. Two of them
+    were `commissioning_nonce` and `owner_domain_id` — inputs to the
+    commissioning HMAC.
+
+    The split is the point. `validated` means some assertion below fails if the
+    value changes; `descriptive` means the field is documentation and is
+    declared as such on purpose. Anything in neither set is refused, so a new
+    field cannot enter a contract vector without somebody deciding which it is.
+    """
+
+    overlap = validated & descriptive
+    if overlap:
+        raise ConformanceError(
+            f"{golden}: field is declared both validated and descriptive: {sorted(overlap)}"
+        )
+    unknown_opaque = opaque - validated - descriptive
+    if unknown_opaque:
+        raise ConformanceError(
+            f"{golden}: opaque field is not declared at all: {sorted(unknown_opaque)}"
+        )
+    actual = set(_field_paths(vector, opaque=frozenset(opaque)))
+    undeclared = actual - validated - descriptive
+    if undeclared:
+        raise ConformanceError(
+            f"{golden}: golden vector has undeclared fields: {sorted(undeclared)}"
+        )
+    absent = (validated | descriptive) - actual
+    if absent:
+        raise ConformanceError(
+            f"{golden}: declared fields are absent from the vector: {sorted(absent)}"
+        )
 
 
 def _b64url_decode(value: str) -> bytes:
@@ -112,7 +203,14 @@ def check_fixtures(schemas: dict[str, dict[str, Any]], registry: Registry) -> in
 
 
 def check_canonical_vectors() -> int:
-    vectors = load_json(ROOT / "golden" / "canonical-vectors.json")["vectors"]
+    document = load_json(ROOT / "golden" / "canonical-vectors.json")
+    # The canonicalisation these vectors are vectors *of*. `canonical_bytes`
+    # below is RFC 8785; left unread, this file could have named another
+    # standard and still been checked with JCS — agreement on a canonical form
+    # nobody used.
+    if document["standard"] != "RFC 8785":
+        raise ConformanceError("canonical vectors name a standard this check does not apply")
+    vectors = document["vectors"]
     for vector in vectors:
         actual = canonical_bytes(vector["value"])
         expected = vector["canonical_utf8"].encode("utf-8")
@@ -123,6 +221,28 @@ def check_canonical_vectors() -> int:
         expected_hash = vector.get("sha256")
         if expected_hash and hashlib.sha256(actual).hexdigest() != expected_hash:
             raise ConformanceError(f"{vector['vector_id']}: canonical SHA-256 mismatch")
+    for index, vector in enumerate(vectors):
+        require_field_inventory(
+            vector,
+            golden=f"canonical-vectors[{index}]",
+            validated={"value", "canonical_utf8"} | ({"sha256"} if "sha256" in vector else set()),
+            descriptive={"vector_id", "source"},
+            # The document being canonicalised. Its shape is the test input.
+            opaque={"value"},
+        )
+    require_field_inventory(
+        document,
+        golden="canonical-vectors",
+        opaque={f"vectors[{index}].value" for index in range(len(vectors))},
+        validated={"standard", "vectors"}
+        | {f"vectors[{index}]" for index in range(len(vectors))}
+        | {
+            f"vectors[{index}].{field}"
+            for index, vector in enumerate(vectors)
+            for field in vector
+        },
+        descriptive=set(),
+    )
     return len(vectors)
 
 
@@ -142,7 +262,22 @@ def _apply_mutation(value: Any, mutation: dict[str, Any]) -> Any:
 
 
 def check_es256_vectors() -> int:
-    vectors = load_json(ROOT / "golden" / "es256-vectors.json")["vectors"]
+    document = load_json(ROOT / "golden" / "es256-vectors.json")
+    # The algorithm and encoding are asserted below by construction — 64 raw
+    # bytes split into r and s, base64url without padding. Naming them and not
+    # reading them let the file declare one thing while this check did another.
+    declared = (
+        document["profile_id"],
+        document["signature_algorithm"],
+        document["signature_encoding"],
+    )
+    if declared != (
+        "eidolon-trust-p256-hpke-v1",
+        "ES256",
+        "64-byte-r-concat-s-base64url-no-padding",
+    ):
+        raise ConformanceError("ES256 vectors declare a profile or encoding this check does not use")
+    vectors = document["vectors"]
     for vector in vectors:
         canonical = _canonical_vector(vector["canonical_vector_id"])
         value = canonical["value"]
@@ -171,6 +306,40 @@ def check_es256_vectors() -> int:
             verified = False
         if verified is not vector["valid"]:
             raise ConformanceError(f"{vector['vector_id']}: signature verdict mismatch")
+    for index, vector in enumerate(vectors):
+        require_field_inventory(
+            vector,
+            golden=f"es256-vectors[{index}]",
+            validated={
+                "canonical_vector_id",
+                "key_id",
+                "public_key_spki_base64url",
+                "signature",
+                "valid",
+            }
+            | ({"mutation", "mutation.path", "mutation.value"} if "mutation" in vector else set()),
+            descriptive={"vector_id"},
+        )
+    require_field_inventory(
+        document,
+        golden="es256-vectors",
+        validated={
+            "profile_id", "signature_algorithm", "signature_encoding", "vectors",
+        }
+        | {f"vectors[{index}]" for index in range(len(vectors))}
+        | {
+            f"vectors[{index}].{field}"
+            for index, vector in enumerate(vectors)
+            for field in vector
+        }
+        | {
+            f"vectors[{index}].mutation.{field}"
+            for index, vector in enumerate(vectors)
+            if "mutation" in vector
+            for field in vector["mutation"]
+        },
+        descriptive=set(),
+    )
     return len(vectors)
 
 
@@ -265,6 +434,61 @@ def check_claim_revoke_vector() -> int:
         for field in vector["excluded_from_fingerprint"]
     ):
         raise ConformanceError("Claim revoke fingerprint document contains excluded fields")
+    # What the fingerprint is actually taken over, derived from the command
+    # rather than trusted beside it. The command and the document were two
+    # independent objects here: the whole `device_ref` subtree could be deleted
+    # from the command with this suite still green, so a vector could fingerprint
+    # a document that was not the command it sits next to.
+    command = vector["command"]
+    excluded = set(vector["excluded_from_fingerprint"])
+    expected_payload = {
+        key: value
+        for key, value in command.items()
+        if key not in excluded and key != "operation"
+    }
+    if vector["fingerprint_document"]["payload"] != expected_payload:
+        raise ConformanceError(
+            "Claim revoke fingerprint payload is not the command minus its excluded fields"
+        )
+    if vector["fingerprint_document"]["owner_domain_id"] != command["device_ref"]["owner_domain_id"]:
+        raise ConformanceError("Claim revoke fingerprint is scoped to another Owner Domain")
+    # Two names for one operation, and nothing derives either from the other:
+    # the wire command says `operation`, the fingerprint document says
+    # `command_type`. Both are pinned so that changing one without the other is
+    # red rather than a silent divergence between what is sent and what is
+    # fingerprinted.
+    if (command["operation"], vector["fingerprint_document"]["command_type"]) != (
+        "device.claim-revocation",
+        "device.claim.revoke",
+    ):
+        raise ConformanceError("Claim revoke operation naming drifted")
+    require_field_inventory(
+        vector,
+        golden="claim-revoke",
+        validated={
+            "command",
+            "command.command_id", "command.correlation_id", "command.operation",
+            "command.reason", "command.device_ref",
+            "command.device_ref.device_instance_id",
+            "command.device_ref.owner_domain_id",
+            "command.device_ref.owner_domain_generation",
+            "command.device_ref.claim_generation",
+            "command.device_ref.trust_epoch",
+            "fingerprint_document",
+            "fingerprint_document.command_type",
+            "fingerprint_document.owner_domain_id",
+            "fingerprint_document.payload",
+            "fingerprint_document.payload.device_ref",
+            "fingerprint_document.payload.device_ref.device_instance_id",
+            "fingerprint_document.payload.device_ref.owner_domain_id",
+            "fingerprint_document.payload.device_ref.owner_domain_generation",
+            "fingerprint_document.payload.device_ref.claim_generation",
+            "fingerprint_document.payload.device_ref.trust_epoch",
+            "fingerprint_document.payload.reason",
+            "canonical_fingerprint_utf8", "fingerprint", "excluded_from_fingerprint",
+        },
+        descriptive=set(),
+    )
     return 1
 
 
@@ -292,6 +516,25 @@ def check_owner_directory_vector() -> int:
         key.verify(der, message, ec.ECDSA(hashes.SHA256()))
     except InvalidSignature as exc:
         raise ConformanceError("Owner directory signature is invalid") from exc
+    if vector["profile_id"] != "eidolon-trust-p256-hpke-v1":
+        raise ConformanceError("Owner directory vector declares another trust profile")
+    require_field_inventory(
+        vector,
+        golden="owner-domain-descriptor",
+        validated={
+            "profile_id", "authority_signing_spki_pem", "canonical_signing_utf8",
+            "descriptor",
+            "descriptor.descriptor_uri", "descriptor.directory_revision",
+            "descriptor.endpoints", "descriptor.expires_at", "descriptor.issued_at",
+            "descriptor.owner_domain_generation", "descriptor.owner_domain_id",
+            "descriptor.signature", "descriptor.signing_key_id",
+            "descriptor.trust_root_refs",
+        },
+        descriptive={"vector_id"},
+        # Every endpoint is inside the signed canonical bytes above, so a field
+        # added to one is already held by the signature rather than by a name.
+        opaque={"descriptor.endpoints"},
+    )
     return 1
 
 
@@ -318,8 +561,17 @@ def check_setup_descriptor_vector(
     declared = sorted(vector["required_fields"] + vector["optional_fields"])
     if declared != sorted(definition["properties"]):
         raise ConformanceError("setup descriptor vector does not cover every declared field")
-    if vector["optional_fields"] != ["expires_in_seconds"]:
-        raise ConformanceError("only the setup window duration may be absent from a descriptor")
+    # Two fields may be absent, and each absence says something specific: no
+    # duration means an offer that does not end, and no base identity means a
+    # device that has never been commissioned — or one whose storage was erased,
+    # which is now the same statement. Anything else missing is a producer that
+    # failed to say who it is.
+    if vector["optional_fields"] != ["device_base_id", "expires_in_seconds"]:
+        raise ConformanceError("a descriptor may omit only its window duration and its base identity")
+    if "device_base_id" in vector["no_deadline"]["descriptor"]:
+        raise ConformanceError(
+            "the no-deadline shape must show a device that has never been commissioned"
+        )
     validator = Draft202012Validator(
         {"$ref": vector["schema"]}, registry=registry, format_checker=FORMAT_CHECKER
     )
@@ -343,6 +595,36 @@ def check_setup_descriptor_vector(
         candidate["expires_in_seconds"] = encoded
         if validator.is_valid(candidate):
             raise ConformanceError(f"setup descriptor accepted {encoded!r} as a window duration")
+    # The trust values a descriptor may carry, held to the schema rather than
+    # listed beside it. Unread, this was a second statement of the enum: a value
+    # could be added to the schema and never appear here, or listed here and
+    # never be accepted.
+    if vector["trust_values"] != definition["properties"]["trust"]["enum"]:
+        raise ConformanceError("setup descriptor trust values and schema disagree")
+    for shape in ("bounded_window", "no_deadline"):
+        descriptor = vector[shape]["descriptor"]
+        if descriptor["trust"] not in vector["trust_values"]:
+            raise ConformanceError(f"setup descriptor {shape} carries an undeclared trust value")
+        if descriptor["contract_version"] != vector["contract_version"]:
+            raise ConformanceError(
+                f"setup descriptor {shape} is not the contract version this vector declares"
+            )
+    require_field_inventory(
+        vector,
+        golden="setup-descriptor",
+        validated={
+            "contract_version", "schema", "required_fields", "optional_fields",
+            "trust_values", "rejected_expires_in_seconds",
+            "bounded_window", "bounded_window.descriptor",
+            "bounded_window.canonical_utf8", "bounded_window.canonical_sha256",
+            "no_deadline", "no_deadline.descriptor",
+            "no_deadline.canonical_utf8", "no_deadline.canonical_sha256",
+        },
+        descriptive={"vector_id"},
+        # Each descriptor is validated against the schema and pinned by its own
+        # canonical digest above, so a field added to one is already held.
+        opaque={"bounded_window.descriptor", "no_deadline.descriptor"},
+    )
     return 1
 
 
@@ -427,13 +709,44 @@ def check_hpke_vector() -> int:
         if actual.hex() != vector[name]:
             raise ConformanceError(f"RFC 9180 {name} mismatch")
     encryption = vector["encryption"]
+    # The per-message nonce is derived, not read. RFC 9180 seals with
+    # `base_nonce XOR seq`, and taking `nonce` as given left both it and
+    # `sequence_number` unchecked — the vector could have named any sequence
+    # number and still passed, so the one rule that ties a message to its
+    # position in the stream was stated in the vector and enforced nowhere.
+    sequence_number = encryption["sequence_number"]
+    derived_nonce = (
+        int.from_bytes(nonce, "big") ^ sequence_number
+    ).to_bytes(len(nonce), "big")
+    if derived_nonce.hex() != encryption["nonce"]:
+        raise ConformanceError(
+            "RFC 9180 message nonce is not base_nonce XOR the sequence number"
+        )
     ciphertext = AESGCM(key).encrypt(
-        bytes.fromhex(encryption["nonce"]),
+        derived_nonce,
         bytes.fromhex(encryption["plaintext"]),
         bytes.fromhex(encryption["aad"]),
     )
     if ciphertext.hex() != encryption["ciphertext"]:
         raise ConformanceError("RFC 9180 AES-128-GCM ciphertext mismatch")
+    require_field_inventory(
+        vector,
+        golden="rfc9180-p256-base",
+        validated={
+            "mode", "kem_id", "kdf_id", "aead_id",
+            "ikmE", "ikmR", "skEm", "skRm", "pkEm", "pkRm",
+            "enc", "shared_secret", "info",
+            "key_schedule_context", "secret", "key", "base_nonce",
+            "exporter_secret",
+            "encryption",
+            "encryption.sequence_number",
+            "encryption.nonce",
+            "encryption.plaintext",
+            "encryption.aad",
+            "encryption.ciphertext",
+        },
+        descriptive={"vector_id", "source"},
+    )
     return 1
 
 
@@ -442,6 +755,18 @@ def check_claim_grant_aad() -> int:
     aad = canonical_bytes(vector["aad"])
     if hashlib.sha256(aad).hexdigest() != vector["canonical_aad_sha256"]:
         raise ConformanceError("ClaimGrant AAD canonical digest mismatch")
+    # The AEAD is named by the vector and decrypted with AES-GCM below. Left
+    # unread, a vector could name any other AEAD and still be decrypted with
+    # this one — the suite would report agreement on a cipher nobody used.
+    if vector["test_aead"] != "AES-128-GCM":
+        raise ConformanceError("ClaimGrant AAD vector names an AEAD this check does not use")
+    # Every AAD field must appear in the negative matrix, derived from the AAD
+    # rather than restated: a field added to the AAD and forgotten here would
+    # be a field whose mutation nobody proves is rejected.
+    if set(vector["mutate_each_field_must_fail"]) != set(vector["aad"]):
+        raise ConformanceError(
+            "ClaimGrant AAD negative matrix does not cover exactly the AAD's own fields"
+        )
     key = bytes.fromhex(vector["test_key"])
     nonce = bytes.fromhex(vector["test_nonce"])
     plaintext = bytes.fromhex(vector["plaintext"])
@@ -462,6 +787,23 @@ def check_claim_grant_aad() -> int:
         except InvalidTag:
             continue
         raise ConformanceError(f"ClaimGrant AAD mutation did not fail: {field}")
+    require_field_inventory(
+        vector,
+        golden="claim-grant-aad",
+        validated={
+            "aad",
+            "aad.contract", "aad.profile_id", "aad.enrollment_id",
+            "aad.proposal_revision", "aad.device_instance_id",
+            "aad.hardware_evidence_digest", "aad.manifest_ref",
+            "aad.manifest_ref.manifest_id", "aad.manifest_ref.revision",
+            "aad.manifest_ref.digest", "aad.owner_domain_id",
+            "aad.owner_domain_generation", "aad.claim_generation",
+            "aad.trust_epoch", "aad.grant_id",
+            "canonical_aad_sha256", "test_aead", "test_key", "test_nonce",
+            "plaintext", "ciphertext", "mutate_each_field_must_fail",
+        },
+        descriptive={"vector_id"},
+    )
     return 1 + len(vector["mutate_each_field_must_fail"])
 
 
@@ -472,12 +814,63 @@ def check_claim_grant_wire_envelope() -> int:
         raise ConformanceError("ClaimGrant wire-envelope AAD canonical bytes drifted")
     if "sha256:" + hashlib.sha256(encoded).hexdigest() != vector["aad_sha256"]:
         raise ConformanceError("ClaimGrant wire-envelope AAD digest drifted")
-    expected = {
-        "profile_id", "kem", "kdf", "aead", "recipient_handoff_key_id",
-        "encapsulated_key", "ciphertext", "aad",
-    }
+    envelope = vector["envelope"]
+    # The suite the envelope declares, held to the frozen profile. These five
+    # were readable and unread: every one of them could be deleted with this
+    # suite still green, so an envelope could have announced another KEM, KDF
+    # or AEAD and nothing here would have disagreed.
+    declared_suite = (
+        envelope["contract"],
+        envelope["profile_id"],
+        envelope["kem"],
+        envelope["kdf"],
+        envelope["aead"],
+    )
+    if declared_suite != (
+        "eidolon.device-foundation.claim-grant-envelope",
+        "eidolon-trust-p256-hpke-v1",
+        "DHKEM-P256-HKDF-SHA256",
+        "HKDF-SHA256",
+        "AES-128-GCM",
+    ):
+        raise ConformanceError("ClaimGrant wire envelope does not declare the frozen suite")
+    if not re.fullmatch(r"sha256:[0-9a-f]{64}", envelope["recipient_handoff_key_id"]):
+        raise ConformanceError("ClaimGrant recipient handoff key id is not a sha256 digest")
+    for name in ("encapsulated_key", "ciphertext"):
+        if not _b64url_decode(envelope[name]):
+            raise ConformanceError(f"ClaimGrant wire envelope {name} is empty")
+    # Derived from the envelope rather than restated beside it. The set used to
+    # be written out here by hand, which made it a second statement of the
+    # envelope's shape: a field added to the envelope would not have been
+    # required to appear in the pre-open negative matrix.
+    expected = set(envelope) - {"contract"}
     if set(vector["pre_open_mutations_must_fail"]) != expected:
         raise ConformanceError("ClaimGrant pre-open negative matrix is incomplete")
+    require_field_inventory(
+        vector,
+        golden="claim-grant-wire-envelope",
+        validated={
+            "envelope",
+            "envelope.contract", "envelope.profile_id", "envelope.kem",
+            "envelope.kdf", "envelope.aead",
+            "envelope.recipient_handoff_key_id", "envelope.encapsulated_key",
+            "envelope.ciphertext", "envelope.aad",
+            "envelope.aad.contract", "envelope.aad.profile_id",
+            "envelope.aad.enrollment_id", "envelope.aad.proposal_revision",
+            "envelope.aad.device_instance_id",
+            "envelope.aad.hardware_evidence_digest",
+            "envelope.aad.manifest_ref",
+            "envelope.aad.manifest_ref.manifest_id",
+            "envelope.aad.manifest_ref.revision",
+            "envelope.aad.manifest_ref.digest",
+            "envelope.aad.owner_domain_id",
+            "envelope.aad.owner_domain_generation",
+            "envelope.aad.claim_generation", "envelope.aad.trust_epoch",
+            "envelope.aad.grant_id",
+            "aad_canonical_utf8", "aad_sha256", "pre_open_mutations_must_fail",
+        },
+        descriptive={"vector_id"},
+    )
     return 1 + len(expected)
 
 
@@ -495,6 +888,32 @@ def check_admission_event_stream() -> int:
         raise ConformanceError("transport recovery fields entered event business equality")
     if set(vector["semantics"]) != {"duplicate", "gap", "restart", "replay"}:
         raise ConformanceError("Claim stream recovery semantics are incomplete")
+    # The stream items are supposed to be the *same* business event delivered
+    # twice. Nothing said so: `event_ref` was never read, so the vector could
+    # have carried positions for an event it does not contain, which is exactly
+    # the claim it exists to make.
+    if {item["event_ref"] for item in vector["stream_items"]} != {vector["event"]["id"]}:
+        raise ConformanceError("Claim stream items do not all reference this vector's event")
+    require_field_inventory(
+        vector,
+        golden="admission-event-stream",
+        validated={
+            "event", "business_event_sha256", "semantics", "stream_items",
+            "transport_fields_excluded_from_event_equality",
+        }
+        # Asserted as an exact set just above, so each key carries weight.
+        | {f"semantics.{name}" for name in vector["semantics"]}
+        | {f"stream_items[{index}]" for index in range(len(vector["stream_items"]))}
+        | {
+            f"stream_items[{index}].{field}"
+            for index in range(len(vector["stream_items"]))
+            for field in ("event_ref", "stream_position")
+        },
+        descriptive={"vector_id"},
+        # Every field of the event is inside `business_event_sha256`, so one
+        # added there is already held by the digest rather than by a name.
+        opaque={"event"},
+    )
     return 1
 
 
@@ -515,6 +934,47 @@ def check_protocomm_framing() -> int:
     }
     if set(vector["session_owned_resources"]) != required_resources:
         raise ConformanceError("Protocomm session resource ownership is incomplete")
+    # The profile these framing rules belong to. All three were readable and
+    # unread, so this vector could have described another transport's framing
+    # and still passed as this one's.
+    if (vector["profile_id"], vector["protocol"], vector["security"]) != (
+        "eidolon-trust-p256-hpke-v1",
+        "ESP-IDF-Protocomm-Security2",
+        "SRP6a-AES-256-GCM",
+    ):
+        raise ConformanceError("Protocomm vector describes another profile or transport")
+    if vector["minimum_lifetime"] != "StartingTransport-through-Stopped":
+        raise ConformanceError("Protocomm session lifetime boundary drifted")
+    # The negative cases — the part of a framing contract that says what must be
+    # refused. They were the least validated fields in any golden here: the
+    # whole list could be deleted and nothing noticed, so a profile could stop
+    # rejecting a zero-length semantic request without a single test changing.
+    if {(case["case"], case["stable_error"]) for case in vector["invalid_cases"]} != {
+        ("zero-length-semantic-request", "INVALID_ARGUMENT"),
+        ("unknown-profile", "CONTRACT_UNSUPPORTED"),
+    }:
+        raise ConformanceError("Protocomm negative framing cases or their stable errors drifted")
+    require_field_inventory(
+        vector,
+        golden="protocomm-security2-framing",
+        validated={
+            "profile_id", "protocol", "security", "minimum_lifetime",
+            "session_owned_resources", "semantic_empty_request",
+            "semantic_empty_request.json",
+            "semantic_empty_request.canonical_utf8_hex",
+            "semantic_empty_request.zero_length_ciphertext_payload_allowed",
+            "invalid_cases",
+        }
+        | {f"invalid_cases[{index}]" for index in range(len(vector["invalid_cases"]))}
+        | {
+            f"invalid_cases[{index}].{field}"
+            for index in range(len(vector["invalid_cases"]))
+            for field in ("case", "stable_error")
+        },
+        descriptive={"vector_id"},
+        # The request document whose canonical bytes are asserted above.
+        opaque={"semantic_empty_request.json"},
+    )
     return 1
 
 
@@ -743,9 +1203,16 @@ def check_state_vectors() -> int:
         raise ConformanceError("hardware rejoin Claim generation is not monotonic")
     rejoin_true = {
         "device_instance_id_changes_after_physical_recovery",
-        "claim_generation_monotonic_per_owner_and_hardware",
+        "claim_generation_monotonic_per_owner_and_base_identity",
         "old_claim_tombstone_retained",
-        "hardware_identity_is_derived_from_verified_hardware_lookup",
+        "hardware_identity_is_derived_from_issued_base_identity",
+        # Erasing local storage ends the lineage rather than continuing it.
+        # The factory secret that used to survive an erase is gone, so a wiped
+        # device cannot prove it is the same board — and a platform that
+        # correlated it anyway would be inheriting ownership from an
+        # unauthenticated MAC.
+        "local_erase_destroys_the_base_identity",
+        "erased_device_rejoins_as_a_new_base_identity",
     }
     if any(rejoin_invariants[name] is not True for name in rejoin_true):
         raise ConformanceError("hardware rejoin positive invariant drifted")
@@ -760,13 +1227,14 @@ def check_state_vectors() -> int:
         # identity is how a Waveshare AMOLED board became a "box3" for good.
         "hardware_identity_is_operator_supplied",
         "hardware_identity_states_board_type",
+        "device_may_report_its_own_base_identity",
+        "revoked_base_identity_may_re_enter_without_a_fresh_voucher",
+        "platform_auto_correlates_by_unauthenticated_mac",
     }
     if any(rejoin_invariants[name] is not False for name in rejoin_false):
         raise ConformanceError("hardware rejoin fencing invariant drifted")
     if rejoin["stable_hardware_identity_ref"] != _derived_hardware_identity_ref(
-        load_json(ROOT / "golden" / "development-commissioning-identity.json")[
-            "hardware_lookup_id"
-        ]
+        load_json(ROOT / "golden" / "commissioning-voucher.json")["device_base_id"]
     ):
         raise ConformanceError("rejoin hardware identity is not the derived identity")
 
@@ -813,64 +1281,96 @@ def check_state_vectors() -> int:
     return 6
 
 
-def _derived_hardware_identity_ref(hardware_lookup_id: str) -> str:
-    """Derive the one permanent hardware identity of a verified lookup id.
+def _derived_hardware_identity_ref(device_base_id: str) -> str:
+    """Derive the one permanent identity ref of an issued base identity.
 
-    Case and surrounding whitespace fold because a MAC address is hex and a
-    firmware that reformats it must not fork one board into two identity
+    Case and surrounding whitespace fold because the input is hex and a
+    producer that reformats it must not fork one Body into two identity
     lineages; nothing else about the input survives, so an unverifiable claim
-    (a board type, a vendor, a room) cannot ride along inside the identity.
+    (a board type, a vendor, a room) cannot ride along inside the identity. The
+    input is always a base identity the Hub itself issued: a value the device
+    chose could otherwise become permanent history simply by being well shaped.
     """
 
-    canonical = hardware_lookup_id.strip().casefold()
+    canonical = device_base_id.strip().casefold()
     label = "eidolon-hardware-identity-v1"
     digest = hashlib.sha256((label + "\0" + canonical).encode()).hexdigest()
     return "hardware-" + digest
 
 
-def check_development_commissioning_identity() -> int:
-    vector = load_json(ROOT / "golden" / "development-commissioning-identity.json")
-    # A development registry entry pre-shares a setup secret and states nothing
-    # else. It used to carry a hand-typed hardware_identity_ref, and a
-    # Waveshare ESP32-S3-Touch-AMOLED board was admitted as
-    # "hardware-box3-1cdbd47aef0c": an unverifiable board type welded into an
-    # identity that outlives every Claim of that hardware.
-    if vector["profile_id"] != "eidolon-development-hmac-commissioning-v2":
-        raise ConformanceError("development commissioning registry profile drifted")
-    if vector["registry_entry_fields"] != ["setup_secret"]:
-        raise ConformanceError("development registry entry may only pre-share a secret")
-    derivation_input = vector["hardware_identity_derivation_input_utf8_with_nul_separator"]
-    if derivation_input != "eidolon-hardware-identity-v1\0" + vector[
-        "hardware_lookup_id"
-    ].casefold():
-        raise ConformanceError("hardware identity derivation input drifted")
-    if vector["hardware_identity_ref"] != _derived_hardware_identity_ref(
-        vector["hardware_lookup_id"]
-    ) or vector["hardware_identity_ref"] != "hardware-" + hashlib.sha256(
-        derivation_input.encode()
-    ).hexdigest():
-        raise ConformanceError("hardware identity is not derived from the verified lookup id")
-    canonical = canonical_bytes(vector["evidence_document"])
-    if canonical.decode() != vector["evidence_canonical_utf8"]:
-        raise ConformanceError("development evidence JCS bytes drifted")
-    if vector["wire_evidence"] != (
-        vector["evidence_canonical_utf8"] + "." + vector["evidence_signature"]
-    ):
-        raise ConformanceError("development evidence wire framing drifted")
+def check_commissioning_voucher() -> int:
+    """Hold the issued-base-identity vector to its own arithmetic.
+
+    The vector this replaced described a per-device factory secret that a
+    firmware image and a Hub-side registry file both had to carry, byte for
+    byte. Two ledgers for one fact drifted the way two ledgers do: a v1 registry
+    entry welded an unverifiable board type into a permanent identity, and a
+    rollback across that file's format left the Hub crash-looping 110 times.
+    Neither failure has a carrier any more — the device carries nothing, and
+    the Hub keeps no per-device file. What must not drift now is the binding:
+    an issued base identity, one operational key, and a voucher that is worth
+    nothing to anyone holding a different key.
+    """
+
+    vector = load_json(ROOT / "golden" / "commissioning-voucher.json")
+    if vector["evidence_scheme"] != "hub-issued-base-p256":
+        raise ConformanceError("base identity evidence scheme drifted")
+    if vector["base_identity_provenance"] != "minted":
+        raise ConformanceError("hardware base identity must be minted, never derived from the device")
+
     spki_der = _b64url_decode(vector["operational_public_key"].removeprefix("p256-spki:"))
     digest = hashlib.sha256(spki_der).hexdigest()
     if vector["operational_spki_sha256"] != "sha256:" + digest:
         raise ConformanceError("operational SPKI fingerprint drifted")
     if vector["device_instance_id"] != "device-instance-" + digest:
         raise ConformanceError("device instance id is not the operational SPKI fingerprint")
+
+    # The device may not choose this value, so the vector must show it being
+    # derived from the issued base identity and from nothing else.
+    for base_id, input_field, ref_field in (
+        (
+            vector["device_base_id"],
+            "hardware_identity_derivation_input_utf8_with_nul_separator",
+            "hardware_identity_ref",
+        ),
+        (
+            vector["software_body_device_base_id"],
+            "software_body_hardware_identity_derivation_input_utf8_with_nul_separator",
+            "software_body_hardware_identity_ref",
+        ),
+    ):
+        derivation_input = vector[input_field]
+        if derivation_input != "eidolon-hardware-identity-v1\0" + base_id.casefold():
+            raise ConformanceError("base identity derivation input drifted")
+        if vector[ref_field] != _derived_hardware_identity_ref(
+            base_id
+        ) or vector[ref_field] != "hardware-" + hashlib.sha256(
+            derivation_input.encode()
+        ).hexdigest():
+            raise ConformanceError("identity ref is not derived from the issued base identity")
+
+    document = vector["evidence_document"]
+    if document["device_base_id"] != vector["device_base_id"]:
+        raise ConformanceError("evidence document states a different base identity")
+    canonical = canonical_bytes(document)
+    if canonical.decode() != vector["evidence_canonical_utf8"]:
+        raise ConformanceError("base identity evidence JCS bytes drifted")
+    if vector["wire_evidence"] != (
+        vector["evidence_canonical_utf8"] + "." + vector["evidence_signature"]
+    ):
+        raise ConformanceError("base identity evidence wire framing drifted")
+    if vector["evidence_digest"] != "sha256:" + hashlib.sha256(
+        vector["wire_evidence"].encode()
+    ).hexdigest():
+        raise ConformanceError("evidence digest is not the digest of the wire evidence")
     raw_signature = _b64url_decode(vector["evidence_signature"])
     if len(raw_signature) != 64:
-        raise ConformanceError("development evidence signature is not raw ES256 r||s")
+        raise ConformanceError("base identity evidence signature is not raw ES256 r||s")
     public_key = serialization.load_der_public_key(spki_der)
     if not isinstance(public_key, ec.EllipticCurvePublicKey) or not isinstance(
         public_key.curve, ec.SECP256R1
     ):
-        raise ConformanceError("development evidence operational key is not P-256")
+        raise ConformanceError("base identity evidence operational key is not P-256")
     try:
         public_key.verify(
             encode_dss_signature(
@@ -881,18 +1381,366 @@ def check_development_commissioning_identity() -> int:
             ec.ECDSA(hashes.SHA256()),
         )
     except InvalidSignature as exc:
-        raise ConformanceError("development evidence signature is invalid") from exc
-    setup_secret = _b64url_decode(vector["setup_secret_base64url"])
-    expected_proof = base64.urlsafe_b64encode(
-        hmac.new(
-            setup_secret,
-            vector["hmac_input_utf8_with_nul_separators"].encode(),
-            hashlib.sha256,
-        ).digest()
+        raise ConformanceError("base identity evidence signature is invalid") from exc
+    if vector["evidence_signature_encoding"] != (
+        "ES256 raw r||s, 64 bytes, base64url without padding"
+    ):
+        raise ConformanceError(
+            "base identity evidence signature encoding is not the one verified above"
+        )
+
+    # The voucher is recomputed from the two constants the vector names, not
+    # read back from itself. A vector that merely restated its own token would
+    # let the signing-key derivation change while the suite stayed green, and
+    # the symptom of that is a 401 on every first commissioning with neither
+    # side's intermediate value visible.
+    voucher = vector["voucher"]
+    if voucher["scheme"] != "hub-issued-commissioning-voucher-v1":
+        raise ConformanceError("commissioning proof scheme drifted")
+    claims = voucher["claims"]
+    if claims["operational_spki_sha256"] != vector["operational_spki_sha256"]:
+        raise ConformanceError("voucher is not bound to this operational key")
+    if claims["device_base_id"] != vector["device_base_id"]:
+        raise ConformanceError("voucher states a different base identity")
+    if claims["jti"] != voucher["jti"] or claims["exp"] != voucher["expires_at_unix"]:
+        raise ConformanceError("voucher claims disagree with the vector's own fields")
+    signing_key = HKDF(
+        algorithm=hashes.SHA256(),
+        length=32,
+        salt=None,
+        info=b"eidolon-commissioning-voucher-v1",
+    ).derive(bytes.fromhex(voucher["host_management_secret_hex"]))
+    if signing_key.hex() != voucher["signing_key_hex"]:
+        raise ConformanceError("voucher signing key derivation drifted")
+    header_canonical = canonical_bytes(voucher["header"])
+    claims_canonical = canonical_bytes(claims)
+    if header_canonical.decode() != voucher["header_canonical_utf8"]:
+        raise ConformanceError("voucher header JCS bytes drifted")
+    if claims_canonical.decode() != voucher["claims_canonical_utf8"]:
+        raise ConformanceError("voucher claims JCS bytes drifted")
+    signing_input = "{}.{}".format(
+        base64.urlsafe_b64encode(header_canonical).rstrip(b"=").decode(),
+        base64.urlsafe_b64encode(claims_canonical).rstrip(b"=").decode(),
+    )
+    if signing_input != voucher["signing_input"]:
+        raise ConformanceError("voucher signing input framing drifted")
+    signature = base64.urlsafe_b64encode(
+        hmac.new(signing_key, signing_input.encode(), hashlib.sha256).digest()
     ).rstrip(b"=").decode()
-    if not hmac.compare_digest(expected_proof, vector["commissioning_proof"]):
-        raise ConformanceError("development commissioning HMAC vector drifted")
+    if voucher["compact"] != f"{signing_input}.{signature}":
+        raise ConformanceError("voucher signature drifted")
+    if voucher["nonce_rule"] != "commissioning_proof.nonce MUST equal the voucher jti":
+        raise ConformanceError("voucher nonce rule drifted")
+
+    base_key = vector["enrolled_base_key"]
+    if base_key["scheme"] != "enrolled-base-key-v1":
+        raise ConformanceError("continuation proof scheme drifted")
+    base_document = base_key["signing_document"]
+    if base_document["nonce"] != base_key["nonce"]:
+        raise ConformanceError("continuation proof nonce disagrees with its own document")
+    base_canonical = canonical_bytes(base_document)
+    if base_canonical.decode() != base_key["canonical_utf8"]:
+        raise ConformanceError("continuation proof JCS bytes drifted")
+    base_signature = _b64url_decode(base_key["proof"])
+    if len(base_signature) != 64:
+        raise ConformanceError("continuation proof is not raw ES256 r||s")
+    try:
+        public_key.verify(
+            encode_dss_signature(
+                int.from_bytes(base_signature[:32], "big"),
+                int.from_bytes(base_signature[32:], "big"),
+            ),
+            base_canonical,
+            ec.ECDSA(hashes.SHA256()),
+        )
+    except InvalidSignature as exc:
+        raise ConformanceError("continuation proof signature is invalid") from exc
+
+    refusals = [entry["case"] for entry in vector["must_be_refused"]]
+    if refusals != [
+        "voucher bound to another operational key",
+        "voucher replayed after its jti was consumed",
+        "device reports a device_base_id the Hub never issued",
+        "second base identity offered for an already bound operational key",
+        "enrolled-base-key-v1 presented by a Revoked or Rejected base identity",
+    ]:
+        raise ConformanceError("the refusals this vector exists to name drifted")
+
+    refusal_fields = {"must_be_refused"}
+    for index in range(len(vector["must_be_refused"])):
+        refusal_fields |= {
+            f"must_be_refused[{index}]",
+            f"must_be_refused[{index}].case",
+            f"must_be_refused[{index}].why",
+        }
+    require_field_inventory(
+        vector,
+        golden="commissioning-voucher",
+        validated={
+            "device_base_id",
+            "base_identity_provenance",
+            "hardware_identity_derivation_input_utf8_with_nul_separator",
+            "hardware_identity_ref",
+            "software_body_device_base_id",
+            "software_body_hardware_identity_derivation_input_utf8_with_nul_separator",
+            "software_body_hardware_identity_ref",
+            "operational_public_key",
+            "operational_spki_sha256",
+            "device_instance_id",
+            "evidence_scheme",
+            "evidence_document",
+            "evidence_document.device_base_id",
+            "evidence_document.device_instance_id",
+            "evidence_document.operational_public_key",
+            "evidence_document.profile_id",
+            "evidence_canonical_utf8",
+            "evidence_signature_encoding",
+            "evidence_signature",
+            "wire_evidence",
+            "evidence_digest",
+            "owner_domain_id",
+            "voucher",
+            "voucher.scheme",
+            "voucher.host_management_secret_hex",
+            "voucher.signing_key_hex",
+            "voucher.header",
+            "voucher.header.alg",
+            "voucher.header.typ",
+            "voucher.header_canonical_utf8",
+            "voucher.claims",
+            "voucher.claims.base_identity_provenance",
+            "voucher.claims.device_base_id",
+            "voucher.claims.exp",
+            "voucher.claims.jti",
+            "voucher.claims.operational_spki_sha256",
+            "voucher.claims.owner_domain_id",
+            "voucher.claims.purpose",
+            "voucher.claims_canonical_utf8",
+            "voucher.signing_input",
+            "voucher.compact",
+            "voucher.jti",
+            "voucher.expires_at_unix",
+            "voucher.nonce_rule",
+            "enrolled_base_key",
+            "enrolled_base_key.scheme",
+            "enrolled_base_key.signing_document",
+            "enrolled_base_key.signing_document.contract",
+            "enrolled_base_key.signing_document.device_base_id",
+            "enrolled_base_key.signing_document.device_instance_id",
+            "enrolled_base_key.signing_document.nonce",
+            "enrolled_base_key.signing_document.owner_domain_id",
+            "enrolled_base_key.canonical_utf8",
+            "enrolled_base_key.proof",
+            "enrolled_base_key.nonce",
+        }
+        | refusal_fields,
+        descriptive={
+            "vector_id",
+            "supersedes",
+            "why",
+            "device_operational_scalar_hex",
+            "voucher.signing_key_derivation",
+            "enrolled_base_key.when",
+        },
+    )
     return 1
+
+
+def check_admission_credential() -> int:
+    """Hold the shared credential implementation to the incident this file records.
+
+    Admin mints and Hub reads through one SDK function, so the two cannot spell
+    a claim differently any more. What that shared function cannot do is notice
+    that it has stopped matching *this* file — and this file is the written
+    record of a real outage: the removal path presented another Hub surface's
+    vocabulary (``actor_ref`` as a bare string, ``owner_id``, ``roles``) and
+    every device removal was refused with a 401 that never mentioned a
+    credential, for months.
+
+    Nothing read this file until now, and it had already drifted: the
+    implementation emits an optional ``target_device_ref`` claim that the file
+    did not list. That is what a vector with no reader does — it becomes a
+    description of what the code used to do.
+    """
+
+    vector = load_json(ROOT / "golden" / "admission-credential.json")
+    if (vector["header_scheme"], vector["algorithm"], vector["audience"]) != (
+        "Bearer",
+        "HS256",
+        ADMISSION_AUDIENCE,
+    ):
+        raise ConformanceError("Admission credential vector names another scheme or audience")
+
+    secret = b"conformance-admission-credential-secret-32+"
+    stable = vector["stable_claims"]
+    header = issue_admission_credential(
+        AdmissionCredential(
+            subject=stable["sub"],
+            actor=ControllerActorRef.model_validate(stable["actor"]),
+            owner_domain_id=OwnerDomainId(stable["owner_domain_id"]),
+            business_owner_id=BusinessOwnerId(stable["business_owner_id"]),
+            scopes=tuple(stable["scopes"]),
+            intent_id=stable["intent_id"],
+        ),
+        secret=secret,
+        ttl_seconds=300,
+    )
+    scheme, _, token = header.partition(" ")
+    if scheme != vector["header_scheme"]:
+        raise ConformanceError("minted Admission credential does not use the declared scheme")
+    minted = jwt.decode(
+        token, secret, algorithms=[vector["algorithm"]], audience=vector["audience"]
+    )
+    # The claim names actually put on the wire, held to the two lists this file
+    # publishes. Drift in either direction is refused: a claim minted and not
+    # listed, and a claim listed and not minted.
+    # Required must all be minted; optional may be absent; nothing undeclared
+    # may appear. Not an equality — that only holds when every optional claim
+    # happens to be present, and would let this file omit an optional claim the
+    # implementation can emit.
+    declared = set(vector["required_claims"]) | set(vector["optional_claims"])
+    if undeclared := set(minted) - declared:
+        raise ConformanceError(
+            f"Admission credential mints claims this vector does not name: {sorted(undeclared)}"
+        )
+    if missing := set(vector["required_claims"]) - set(minted):
+        raise ConformanceError(
+            f"Admission credential omits required claims: {sorted(missing)}"
+        )
+    # Every claim whose value does not depend on when it was minted has to have
+    # a stated value here. Iterating whatever `stable_claims` happened to hold
+    # meant a claim could be dropped from this file and nothing would ask for
+    # it: `presenter` and `aud` were both deletable, and `presenter` is the one
+    # that binds a credential to the party presenting it.
+    timing = {"iat", "exp"}
+    pinned = set(vector["required_claims"]) - timing
+    if not pinned <= set(stable):
+        raise ConformanceError(
+            f"Admission vector states no value for {sorted(pinned - set(stable))}"
+        )
+    for name, expected in stable.items():
+        if minted[name] != expected:
+            raise ConformanceError(f"minted Admission claim {name} is not the stable value")
+
+    reread = read_admission_credential(header, secret=secret)
+    if (
+        reread.subject != stable["sub"]
+        or str(reread.owner_domain_id) != stable["owner_domain_id"]
+        or str(reread.business_owner_id) != stable["business_owner_id"]
+        or list(reread.scopes) != stable["scopes"]
+    ):
+        raise ConformanceError("Admission credential does not survive its own round trip")
+
+    # The outage, replayed. This shape decoded as a JWT perfectly well; what
+    # failed was the vocabulary, and it has to keep failing.
+    # The exact vocabulary that failed, pinned name by name. Refusal alone does
+    # not hold these: the shape is refused for several reasons at once, so any
+    # single claim could be deleted from the record and it would still be
+    # refused — and the record is the only place the wrong vocabulary is
+    # written down.
+    if set(vector["rejected_shape"]["claims"]) != {
+        "sub", "presenter", "aud", "actor_ref", "owner_id", "roles", "scopes", "exp"
+    }:
+        raise ConformanceError("the recorded vocabulary of the 401 outage changed")
+    rejected = jwt.encode(vector["rejected_shape"]["claims"], secret, algorithm=_ALGORITHM_NAME)
+    try:
+        read_admission_credential("Bearer " + rejected, secret=secret)
+    except AdmissionCredentialError:
+        pass
+    else:
+        raise ConformanceError(
+            "the credential shape that refused every device removal is accepted again"
+        )
+
+    require_field_inventory(
+        vector,
+        golden="admission-credential",
+        validated={
+            "header_scheme", "algorithm", "audience", "required_claims",
+            "optional_claims", "stable_claims",
+            "rejected_shape", "rejected_shape.claims",
+        }
+        | {f"stable_claims.{name}" for name in stable}
+        | {f"stable_claims.actor.{name}" for name in stable["actor"]}
+        | {f"rejected_shape.claims.{name}" for name in vector["rejected_shape"]["claims"]},
+        descriptive={"contract", "purpose", "rejected_shape.why"},
+    )
+    return 1 + len(vector["required_claims"])
+
+
+def check_device_instance_derivation() -> int:
+    """What a device instance id is derived from, and what may never derive one.
+
+    The rule had four implementations and no vector. Each of Hub, the firmware,
+    this SDK and a phone read it from prose; three of the four would hash a raw
+    uncompressed point into a perfectly well-formed identity that no Authority
+    has a record of, and the phone was the only one that refused. That failure
+    has no crypto error and no signature mismatch — it surfaces as a device
+    nobody recognises, on some boards and not others.
+    """
+
+    vector = load_json(ROOT / "golden" / "device-instance-derivation.json")
+    if (vector["namespace"], vector["digest"]) != ("device-instance-", "sha256"):
+        raise ConformanceError("device instance derivation names another rule")
+    spki = _b64url_decode(vector["spki_der_base64url"])
+    if len(spki) != vector["spki_der_length_bytes"]:
+        raise ConformanceError("device instance derivation SPKI length disagrees with its bytes")
+    if vector["device_instance_id"] != vector["namespace"] + hashlib.sha256(spki).hexdigest():
+        raise ConformanceError("device instance id is not the SPKI digest this vector states")
+    # Every accepted spelling of one key is one device. The prefixed and bare
+    # forms both occur in the contract, and a consumer that reads only one of
+    # them derives two identities for a single key.
+    for spelling in vector["accepted_spellings"]:
+        if derive_device_instance_id(spelling) != vector["device_instance_id"]:
+            raise ConformanceError(f"accepted spelling derives another device: {spelling[:24]}")
+    for case in vector["must_refuse"]:
+        try:
+            derived = derive_device_instance_id(case["encoded"])
+        except ValueError:
+            continue
+        raise ConformanceError(
+            f"device instance derivation accepted {case['case']}: {derived}"
+        )
+    # The point carried inside the SPKI is the same key, so the refusal above is
+    # about encoding rather than about a different key — and the digest it would
+    # have produced is recorded so a consumer can recognise it in the wild.
+    raw_point = next(
+        case for case in vector["must_refuse"] if case["case"] == "raw-uncompressed-point"
+    )
+    if _b64url_decode(raw_point["encoded"]) != spki[-raw_point["length_bytes"]:]:
+        raise ConformanceError("the refused point is not the key this vector derives from")
+    if raw_point["digest_if_wrongly_hashed"] == vector["device_instance_id"]:
+        raise ConformanceError("the wrongly-hashed digest cannot equal the correct one")
+    if raw_point["digest_if_wrongly_hashed"] != vector["namespace"] + hashlib.sha256(
+        _b64url_decode(raw_point["encoded"])
+    ).hexdigest():
+        raise ConformanceError("recorded wrong digest is not what hashing the point produces")
+    require_field_inventory(
+        vector,
+        golden="device-instance-derivation",
+        validated={
+            "namespace", "digest", "operational_public_key", "spki_der_base64url",
+            "spki_der_length_bytes", "device_instance_id", "accepted_spellings",
+            "must_refuse",
+        }
+        | {f"must_refuse[{index}]" for index in range(len(vector["must_refuse"]))}
+        | {
+            f"must_refuse[{index}].{field}"
+            for index, case in enumerate(vector["must_refuse"])
+            for field in ("case", "encoded", "length_bytes")
+        }
+        | {
+            f"must_refuse[{index}].digest_if_wrongly_hashed"
+            for index, case in enumerate(vector["must_refuse"])
+            if "digest_if_wrongly_hashed" in case
+        },
+        descriptive={"vector_id", "purpose", "derived_from"}
+        | {
+            f"must_refuse[{index}].why"
+            for index in range(len(vector["must_refuse"]))
+        },
+    )
+    return 1 + len(vector["must_refuse"])
 
 
 def check_p1_exit_evidence() -> int:
@@ -1025,11 +1873,13 @@ def run() -> dict[str, int]:
         "claim_grant_wire_checks": check_claim_grant_wire_envelope(),
         "claim_event_stream_vectors": check_admission_event_stream(),
         "protocomm_vectors": check_protocomm_framing(),
-        "development_commissioning_identity": check_development_commissioning_identity(),
+        "commissioning_voucher": check_commissioning_voucher(),
         "profiles": check_profile(),
         "host_independent_sources": check_host_independence(),
         "requirements": check_traceability(schemas),
         "state_vectors": check_state_vectors(),
+        "admission_credential": check_admission_credential(),
+        "device_instance_derivation": check_device_instance_derivation(),
         "p1_exit_evidence": check_p1_exit_evidence(),
     }
 

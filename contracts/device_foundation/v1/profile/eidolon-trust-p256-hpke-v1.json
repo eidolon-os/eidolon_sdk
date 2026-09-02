@@ -41,9 +41,17 @@
     "private_key_exportable": false,
     "development_minimum_storage": "encrypted-flash"
   },
+  "base_identity": {
+    "source": "hub-issued",
+    "issued_during": "commissioning",
+    "witnessed_by": "authenticated-controller-session",
+    "bound_to": "device-operational-spki-sha256",
+    "device_carries_factory_material": false,
+    "survives_local_erase": false
+  },
   "hardware_attestation": {
-    "production": "manufacturer-p256-certificate-chain",
-    "development": "dev-self-signed-p256",
+    "production": "manufacturer-attestation-p256",
+    "development": null,
     "development_allowed_in_production_owner_domain": false
   },
   "commissioning_session": {

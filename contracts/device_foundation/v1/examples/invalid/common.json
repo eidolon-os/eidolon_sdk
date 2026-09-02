@@ -15,6 +15,13 @@
       }
     },
     {
+      "case_id": "DF-COMMON-DEVICE-BASE-ID-REJECTS-SELF-REPORTED-MAC",
+      "schema": "https://contracts.eidolon.live/device-foundation/v1/common/schemas.schema.json",
+      "definition": "DeviceBaseId",
+      "error_contains": "is not valid under any of the given schemas",
+      "value": "30:ed:a0:f3:df:d4"
+    },
+    {
       "case_id": "DF-PH2-DEVICE-REF-REJECTS-MANIFEST-DIGEST",
       "schema": "https://contracts.eidolon.live/device-foundation/v1/common/schemas.schema.json",
       "definition": "DeviceRef",
@@ -158,9 +165,8 @@
         "physical_presence": [
           "button"
         ],
-        "attestation_schemes": [
-          "manufacturer-p256"
-        ],
+        "base_identity_source": "hub-issued",
+        "attestation_schemes": [],
         "secure_storage_level": "secure-element",
         "monotonic_counter": true,
         "candidate_network": true,

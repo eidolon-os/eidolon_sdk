@@ -4,8 +4,8 @@
   "files": [
     {
       "path": "admission/schemas.schema.json",
-      "sha256": "21030d1431efcc6e0a0a901fa83b21429ab157457f7d52d48b9e54483ca14936",
-      "size": 19103
+      "sha256": "02189d8e6850e3dc76d93e81b3bb53320d3dc9175b9e0f3e20a9e6650b9c08cc",
+      "size": 19140
     },
     {
       "path": "baseline/cross-repo-heads.v1.json",
@@ -34,13 +34,13 @@
     },
     {
       "path": "common/schemas.schema.json",
-      "sha256": "fe9af35a6cba5318c9d6b208721688ae06c18a31450a8885794f8dd6db12af38",
-      "size": 24237
+      "sha256": "6a17524d2d63071f5ee878c1b54462041d4d614e6a9a2059dc1ed446e55fe1d3",
+      "size": 26231
     },
     {
       "path": "conformance/run.py",
-      "sha256": "aee089be273e8614addc0b2c5ac0d95f0e001d62ddf4cc13f104242c69290a89",
-      "size": 50047
+      "sha256": "897cf305e579b858343c5ab494c0521bce2433476906f3f438a7a4b3f8d812e1",
+      "size": 90141
     },
     {
       "path": "delivery-port/schemas.schema.json",
@@ -79,13 +79,13 @@
     },
     {
       "path": "examples/invalid/authority.json",
-      "sha256": "8627cc160b5a2e999778cd9e4353a6f0ea80081269b843f9f61995572cb4b5a7",
-      "size": 9762
+      "sha256": "5780516d73c1fe63c0e7efbf702cd1023a61cb048b9f7bc1f9b52137b86d726b",
+      "size": 9765
     },
     {
       "path": "examples/invalid/common.json",
-      "sha256": "8e470b2e9ae96834d46cbf0420999515e35f063fbec3a2e06fa56c9db4f54cf7",
-      "size": 11559
+      "sha256": "efa3d7947c8a1357a6d34eebafb68d4472f0aace9daf5d67d02453c497840d53",
+      "size": 11890
     },
     {
       "path": "examples/invalid/device-erase.json",
@@ -104,8 +104,8 @@
     },
     {
       "path": "examples/valid/admission.json",
-      "sha256": "8b1b47ca48f34467180213e0bf8086c714fc4a1db0c5b83b74fe78962fdeda2b",
-      "size": 11402
+      "sha256": "c53d5c97c43fa6c7541b6c47a7af1590ba7f01b7b439f93eeeff641f0d42d02e",
+      "size": 11405
     },
     {
       "path": "examples/valid/body-mesh.json",
@@ -114,8 +114,8 @@
     },
     {
       "path": "examples/valid/common.json",
-      "sha256": "121899a693236e3c894e01c0c01eceed711020b06619e01a3daa876ff8be56db",
-      "size": 11874
+      "sha256": "211406c7660de1404b2509f748a102ef76e0dff556a070b2670a324717993daf",
+      "size": 12459
     },
     {
       "path": "examples/valid/delivery-and-events.json",
@@ -149,8 +149,8 @@
     },
     {
       "path": "generation/templates/device_foundation_v1.dart",
-      "sha256": "a81df9e87461d9cf065d7025b361013e5570998809e6edd9f794c6c072e336a8",
-      "size": 47856
+      "sha256": "4446c0ca34a111b8514764f6bc55cb1de5db225eb663b8ae6544ed0ca04e90bb",
+      "size": 48898
     },
     {
       "path": "generation/templates/device_foundation_v1.py",
@@ -159,13 +159,13 @@
     },
     {
       "path": "generation/templates/device_foundation_v1_generated.h",
-      "sha256": "92884e38056e4889bc67afdca00961f49fae80ed1d9c161485a7f5c0cccb4c27",
-      "size": 18703
+      "sha256": "76527f1a7f1dd4c246034ae305990db0f706ebf53cacee2771b95a40ffe3341d",
+      "size": 19099
     },
     {
       "path": "golden/admission-credential.json",
-      "sha256": "299e51b22d10b96354ed144b547e25ef9e108c3a9e9a87be3d93bc8e4fce637b",
-      "size": 1747
+      "sha256": "f5c9c671b168926439abdd03d821b67d2ccab809454608d45154f4fd6f7d149a",
+      "size": 1772
     },
     {
       "path": "golden/admission-event-stream.json",
@@ -193,14 +193,19 @@
       "size": 1472
     },
     {
-      "path": "golden/development-commissioning-identity.json",
-      "sha256": "cf9e43b30f18d6c4ab2839a78abf6f4bde52da65c232b4cb40d0b79954e288bb",
-      "size": 2692
+      "path": "golden/commissioning-voucher.json",
+      "sha256": "53072e86b2592f8cd2aa6d1e49e1a8bbb2079bbd0dd1014fa763ccd1ebc65a65",
+      "size": 8381
     },
     {
       "path": "golden/device-delivery.json",
       "sha256": "34247f84bb77af03783bfcadff7073ffc9248fd9a729e4a448d3fe0d94537633",
       "size": 5345
+    },
+    {
+      "path": "golden/device-instance-derivation.json",
+      "sha256": "40fe62d4c0cfc5de8d55c2881caca88d5baec4aec183912a3b673d0664ca3b8a",
+      "size": 2318
     },
     {
       "path": "golden/device-local-erase.json",
@@ -229,8 +234,8 @@
     },
     {
       "path": "golden/setup-descriptor.json",
-      "sha256": "fb8a600f9eda52f489fb49c9bfd37144078fbe8f1498e711b71a77e67559c540",
-      "size": 2525
+      "sha256": "3a66bcf529d3822fc4778cd5fcc07d1cd6233e962f5bad07161e24594c991870",
+      "size": 2751
     },
     {
       "path": "lifecycle/schemas.schema.json",
@@ -239,8 +244,8 @@
     },
     {
       "path": "profile/eidolon-trust-p256-hpke-v1.json",
-      "sha256": "4be18cfbc2658d624d499d8a9b0172154a60385b34aca2764e80614cc05c9be9",
-      "size": 2910
+      "sha256": "469584fb54ffc1618cbeff99405f1236b9d0ebab530720ec63759b42b2636159",
+      "size": 3164
     },
     {
       "path": "requirements/characterization.json",
@@ -259,8 +264,8 @@
     },
     {
       "path": "requirements/requirements.json",
-      "sha256": "a072b4c82c3be8e764249a19bc6654f4f83fb4f9bea73fbae6ef35ed3deb2e85",
-      "size": 45293
+      "sha256": "e20f973f47b5cf6b7997d2936276b60d3e8dcd4f28eeedc9fbe0b765ed367d5c",
+      "size": 45280
     },
     {
       "path": "state-vectors/commissioning-runtime.json",
@@ -274,8 +279,8 @@
     },
     {
       "path": "state-vectors/hardware-rejoin.json",
-      "sha256": "d79ae247cdd21c8ea15eb7af1d575c385dc55e867d55114a06cc0a97382e0dcc",
-      "size": 1151
+      "sha256": "18e96bcbde4514c36c762fa3f69232a6365f4a816ffeddaa5365027bc9862617",
+      "size": 1804
     },
     {
       "path": "state-vectors/host-relocation.json",
@@ -295,5 +300,5 @@
   ],
   "generator": "device-foundation-v1-catalog",
   "generator_version": "1.0",
-  "source_digest": "sha256:10a2b1e14daaf2c02ae88e76ef32b58c65a44e75ff9f86b0dc70394318698183"
+  "source_digest": "sha256:eb4d4b49462b249700178ac0a2fb8acd2a0545a16d5e974b51c82f626deb8d14"
 }
