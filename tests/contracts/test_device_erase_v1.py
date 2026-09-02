@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import base64
+import inspect
 from datetime import UTC, datetime, timedelta
 
 import pytest
@@ -22,6 +23,7 @@ from eidolon_sdk.device_foundation.v1 import (
     verify_device_erase_ack,
     verify_operation_key_proof,
 )
+from eidolon_sdk.device_foundation.v1 import device_erase
 from eidolon_sdk.device_foundation.v1.lifecycle import SPKI_SCHEME
 from eidolon_sdk.device_foundation.v1.testing import named_device_instance_id
 
@@ -140,3 +142,75 @@ def test_status_cannot_report_acknowledged_without_terminal_result() -> None:
         DeviceLocalEraseOperationStatus(
             **{**values, "terminal_result": "permanent-failure"}
         )
+
+
+def test_every_key_taking_helper_reads_both_spellings() -> None:
+    """The guard belongs on the callers, not only on the helper.
+
+    `operational_public_key_bytes` has always known how to read both spellings
+    of an operational key. That did not help: three functions in this module
+    reimplemented the decode and read only one of them, and every erase
+    acknowledgement a real Body signed was refused for a day.
+
+    So this asserts the property over the module's whole surface rather than
+    over the functions someone remembered to fix — it enumerates every public
+    helper that takes a `public_key_spki` and requires the two spellings to
+    behave the same. A fourth helper added with its own decode fails here,
+    which is the only place that failure is cheap.
+    """
+
+    key = ec.generate_private_key(ec.SECP256R1())
+    spki = _b64(
+        key.public_key().public_bytes(
+            serialization.Encoding.DER,
+            serialization.PublicFormat.SubjectPublicKeyInfo,
+        )
+    )
+    scheme_named = SPKI_SCHEME + spki
+
+    def takes_a_key(member: object) -> bool:
+        # Imported classes land in this module's namespace too, and some of
+        # them are builtins with no readable signature. Only functions defined
+        # here are the surface this test is about.
+        if not inspect.isfunction(member) or member.__module__ != device_erase.__name__:
+            return False
+        return "public_key_spki" in inspect.signature(member).parameters
+
+    taking_a_key = [
+        (name, member)
+        for name, member in vars(device_erase).items()
+        if not name.startswith("_") and takes_a_key(member)
+    ]
+    # If this module ever stops offering any, the assertion above has quietly
+    # stopped testing anything.
+    assert {name for name, _ in taking_a_key} == {
+        "operation_key_id",
+        "verify_p256_signature",
+        "verify_device_erase_ack",
+    }, "a helper taking an operational key was added or removed; check it reads both spellings"
+
+    ack_values = {
+        "contract": "eidolon.device-foundation.device-operation-ack",
+        "contract_version": "1.0",
+        "operation_id": "erase_operation_02",
+        "operation_type": "device-local.erase",
+        "device_ref": _ref().model_dump(mode="json"),
+        "ack_sequence": 1,
+        "result": "erased",
+        "result_code": "ERASED",
+        "device_monotonic_time": 99,
+    }
+    ack = DeviceLocalEraseAck(**ack_values, device_signature=_raw_sign(key, ack_values))
+    extra: dict[str, object] = {
+        "verify_p256_signature": {
+            "signing_document": ack.signing_document(),
+            "signature": ack.device_signature,
+        },
+        "verify_device_erase_ack": {"ack": ack},
+    }
+
+    for name, member in taking_a_key:
+        arguments = extra.get(name, {})
+        bare = member(public_key_spki=spki, **arguments)
+        named = member(public_key_spki=scheme_named, **arguments)
+        assert bare == named, f"{name} reads the two spellings as different keys"
