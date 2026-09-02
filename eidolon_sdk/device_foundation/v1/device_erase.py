@@ -14,7 +14,7 @@ from cryptography.hazmat.primitives.asymmetric import ec
 from cryptography.hazmat.primitives.asymmetric.utils import encode_dss_signature
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
-from .lifecycle import DeviceInstanceId, DeviceRef
+from .lifecycle import DeviceInstanceId, DeviceRef, operational_public_key_bytes
 
 
 class DeviceEraseContractError(ValueError):
@@ -165,14 +165,36 @@ def operation_fingerprint(command: DeviceLocalEraseCommand) -> str:
 
 
 def operation_key_id(public_key_spki: str) -> str:
-    return "sha256:" + hashlib.sha256(_b64url_decode(public_key_spki)).hexdigest()
+    return "sha256:" + hashlib.sha256(_key_bytes(public_key_spki)).hexdigest()
+
+
+def _key_bytes(public_key_spki: str) -> bytes:
+    """The SPKI bytes, whichever of the two contract spellings arrived.
+
+    Both occur, and they name one key: a device hands up the bare base64url
+    SPKI, while admission records the same key as `p256-spki:<base64url>` and
+    the erase ledger carries that recorded form. Reading only one of them is
+    not a stricter check, it is a wrong one — every ACK a real Body signed was
+    refused with "invalid operational P-256 public key", because the ledger's
+    spelling never reached a decoder that knew about the scheme.
+
+    `operational_public_key_bytes` is where that rule already lives, and its
+    own comment says why it must be one function: a caller that strips the
+    scheme itself and a caller that forgets to derive two different identities
+    for one key. This module had three callers doing it the second way.
+    """
+
+    try:
+        return operational_public_key_bytes(public_key_spki)
+    except ValueError as exc:
+        raise DeviceEraseContractError("invalid operational P-256 public key") from exc
 
 
 def verify_p256_signature(
     *, public_key_spki: str, signing_document: dict[str, object], signature: str
 ) -> None:
     try:
-        key = serialization.load_der_public_key(_b64url_decode(public_key_spki))
+        key = serialization.load_der_public_key(_key_bytes(public_key_spki))
     except (TypeError, ValueError) as exc:
         raise DeviceEraseContractError("invalid operational P-256 public key") from exc
     if not isinstance(key, ec.EllipticCurvePublicKey) or not isinstance(

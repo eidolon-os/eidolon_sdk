@@ -18,9 +18,11 @@ from eidolon_sdk.device_foundation.v1 import (
     DeviceRef,
     canonical_bytes,
     operation_fingerprint,
+    operation_key_id,
     verify_device_erase_ack,
     verify_operation_key_proof,
 )
+from eidolon_sdk.device_foundation.v1.lifecycle import SPKI_SCHEME
 from eidolon_sdk.device_foundation.v1.testing import named_device_instance_id
 
 
@@ -108,6 +110,16 @@ def test_key_proof_and_ack_require_the_bound_device_private_key() -> None:
     )
     with pytest.raises(DeviceEraseContractError, match="verification failed"):
         verify_device_erase_ack(ack=bad, public_key_spki=spki)
+
+    # The same key as the erase ledger records it. A device hands up the bare
+    # base64url SPKI, but the operation is bound to the key admission stored,
+    # which names its scheme — and that recorded spelling is what arrives here.
+    # Reading only the bare form refused every ACK a real Body ever signed.
+    scheme_named = SPKI_SCHEME + spki
+    verify_device_erase_ack(ack=ack, public_key_spki=scheme_named)
+    assert operation_key_id(scheme_named) == operation_key_id(spki)
+    with pytest.raises(DeviceEraseContractError, match="verification failed"):
+        verify_device_erase_ack(ack=bad, public_key_spki=scheme_named)
 
 
 def test_status_cannot_report_acknowledged_without_terminal_result() -> None:
