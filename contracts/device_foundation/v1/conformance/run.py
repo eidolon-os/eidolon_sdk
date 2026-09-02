@@ -561,17 +561,8 @@ def check_setup_descriptor_vector(
     declared = sorted(vector["required_fields"] + vector["optional_fields"])
     if declared != sorted(definition["properties"]):
         raise ConformanceError("setup descriptor vector does not cover every declared field")
-    # Two fields may be absent, and each absence says something specific: no
-    # duration means an offer that does not end, and no base identity means a
-    # device that has never been commissioned — or one whose storage was erased,
-    # which is now the same statement. Anything else missing is a producer that
-    # failed to say who it is.
-    if vector["optional_fields"] != ["device_base_id", "expires_in_seconds"]:
-        raise ConformanceError("a descriptor may omit only its window duration and its base identity")
-    if "device_base_id" in vector["no_deadline"]["descriptor"]:
-        raise ConformanceError(
-            "the no-deadline shape must show a device that has never been commissioned"
-        )
+    if vector["optional_fields"] != ["expires_in_seconds"]:
+        raise ConformanceError("only the setup window duration may be absent from a descriptor")
     validator = Draft202012Validator(
         {"$ref": vector["schema"]}, registry=registry, format_checker=FORMAT_CHECKER
     )
