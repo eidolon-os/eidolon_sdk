@@ -857,7 +857,8 @@
       "producer_tests": [
         "SDK::test_a_manifest_document_is_refused_where_it_is_proposed",
         "SDK::test_the_shipped_box3_manifest_is_still_admissible",
-        "SDK::test_codecs_is_optional_and_no_media_is_a_legal_declaration"
+        "SDK::test_codecs_is_optional_and_no_media_is_a_legal_declaration",
+        "ESP32::TestCanonicalManifest"
       ],
       "consumer_tests": [
         "CHANNEL::test_manifest_shapes.py::test_box3_manifest_is_carried",
@@ -870,9 +871,14 @@
         "DF-MANIFEST-ACCEPTS-A-BODY-THAT-DECLARES-NO-MEDIA",
         "DF-MANIFEST-REJECTS-THE-ENDPOINTS-DOCUMENT-THAT-STRANDED-A-CLAIM",
         "DF-ADMISSION-CREATE-REJECTS-THE-DOCUMENT-THAT-STRANDED-A-CLAIM",
-        "DF-CONTROL-ASSERT-REJECTS-MEDIA-WITH-NO-DIRECTION"
+        "DF-CONTROL-ASSERT-REJECTS-MEDIA-WITH-NO-DIRECTION",
+        "golden/device-manifest.json"
       ],
-      "integration_tests": ["CONFORMANCE::check_fixtures", "GENERATION::generate --check"],
+      "integration_tests": [
+        "CONFORMANCE::check_fixtures",
+        "CONFORMANCE::check_device_manifest_vector",
+        "GENERATION::generate --check"
+      ],
       "hil_tests": [],
       "status": "covered",
       "waiver_reason": null,

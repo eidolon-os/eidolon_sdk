@@ -63,10 +63,12 @@ from eidolon_sdk.device_foundation.v1 import (  # noqa: E402
     AdmissionCredentialError,
     BusinessOwnerId,
     ControllerActorRef,
+    DeviceCapabilityManifest,
     DeviceRef,
     OwnerDomainId,
     derive_device_instance_id,
     issue_admission_credential,
+    manifest_digest,
     read_admission_credential,
 )
 
@@ -374,6 +376,54 @@ def check_device_local_erase_vector() -> int:
         except InvalidSignature as exc:
             raise ConformanceError(f"{signature_name} is invalid") from exc
     return 1
+
+
+def check_device_manifest_vector() -> int:
+    """The bytes a board must emit, checked against the shape that admits them.
+
+    A producer vector, not a schema example: it exists so the device firmware can
+    assert its own output rather than a copy of it. The copy is what drifts — the
+    setup descriptor was a field table written by hand at both ends, kept in step
+    by a person comparing two files, and every device out of the box ended up
+    telling the controller its own description broke the contract.
+    """
+
+    document = load_json(ROOT / "golden" / "device-manifest.json")
+    cases = document["cases"]
+    if not cases:
+        raise ConformanceError("device manifest vector carries no case")
+    seen: set[tuple[str, bool]] = set()
+    for case in cases:
+        name = f"{case['board_name']}/camera={case['has_camera']}"
+        parsed = json.loads(case["canonical_utf8"])
+        # The vector's bytes must be the canonical form of the vector's own
+        # document, or the firmware would be pinned to bytes nothing else agrees
+        # describe this Manifest.
+        if canonical_bytes(parsed).decode("utf-8") != case["canonical_utf8"]:
+            raise ConformanceError(f"{name}: canonical_utf8 is not RFC 8785 of its document")
+        if manifest_digest(parsed) != case["digest"]:
+            raise ConformanceError(f"{name}: digest does not describe the document")
+        # And the bytes a device emits must be a document the entry admits.
+        # This is the whole point of the vector: the producer and the gate are
+        # checked against one definition instead of agreeing by coincidence.
+        DeviceCapabilityManifest.model_validate(parsed)
+        if parsed["title"] != case["board_name"]:
+            raise ConformanceError(f"{name}: title is not the board name it was built from")
+        kinds = [item["kind"] for item in parsed["media"]]
+        if ("video" in kinds) != bool(case["has_camera"]):
+            raise ConformanceError(f"{name}: declared video does not match the build")
+        modes = {
+            item["schema"]["const"]
+            for item in parsed["properties"]
+            if item["name"] == "interaction_mode"
+        }
+        if modes != {case["interaction_mode"]}:
+            raise ConformanceError(f"{name}: declared interaction_mode does not match the build")
+        key = (case["interaction_mode"], bool(case["has_camera"]))
+        if key in seen:
+            raise ConformanceError(f"{name}: two vectors for one build profile")
+        seen.add(key)
+    return len(cases)
 
 
 def check_device_delivery_vector() -> int:
@@ -1856,6 +1906,7 @@ def run() -> dict[str, int]:
         "es256_vectors": check_es256_vectors(),
         "device_local_erase_vectors": check_device_local_erase_vector(),
         "device_delivery_vectors": check_device_delivery_vector(),
+        "device_manifest_vectors": check_device_manifest_vector(),
         "claim_revoke_vectors": check_claim_revoke_vector(),
         "owner_directory_vectors": check_owner_directory_vector(),
         "setup_descriptor_vectors": check_setup_descriptor_vector(schemas, registry),
