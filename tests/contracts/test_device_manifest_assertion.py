@@ -55,8 +55,27 @@ def _device_ref() -> DeviceRef:
 
 
 def _document(*, camera: bool) -> dict[str, object]:
-    media = [{"kind": "audio"}] + ([{"kind": "video"}] if camera else [])
-    return {"schema_version": 1, "media": media, "properties": [], "actions": [], "events": []}
+    """A whole document, in the shape a real board actually sends.
+
+    These fixtures used to declare `[{"kind": "audio"}]` and no title, which no
+    consumer of a Manifest would have carried: the entry typed the document
+    `{"type": "object"}`, so a test could assert on a shape that could never
+    reach a channel.
+    """
+
+    media: list[dict[str, object]] = [
+        {"codecs": ["opus"], "direction": "bidirectional", "kind": "audio"}
+    ]
+    if camera:
+        media.append({"codecs": ["h264"], "direction": "publish", "kind": "video"})
+    return {
+        "actions": [],
+        "events": [],
+        "media": media,
+        "properties": [],
+        "schema_version": 1,
+        "title": "eidolon-box3",
+    }
 
 
 def _manifest(*, revision: int, camera: bool) -> ManifestDocument:

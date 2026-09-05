@@ -292,6 +292,166 @@
       "definition": "DeviceInstanceId",
       "error_contains": "does not match '^device-instance-[0-9a-f]{64}$'",
       "value": "device-instance-3164c593"
+    },
+    {
+      "case_id": "DF-MANIFEST-REJECTS-THE-ENDPOINTS-DOCUMENT-THAT-STRANDED-A-CLAIM",
+      "schema": "https://contracts.eidolon.live/device-foundation/v1/common/schemas.schema.json",
+      "definition": "DeviceCapabilityManifest",
+      "error_contains": "required",
+      "value": {
+        "endpoints": []
+      }
+    },
+    {
+      "case_id": "DF-MANIFEST-REJECTS-UNKNOWN-MEDIA-DIRECTION",
+      "schema": "https://contracts.eidolon.live/device-foundation/v1/common/schemas.schema.json",
+      "definition": "DeviceCapabilityManifest",
+      "error_contains": "is not one of",
+      "value": {
+        "actions": [],
+        "events": [],
+        "media": [
+          {
+            "codecs": [
+              "opus"
+            ],
+            "direction": "duplex",
+            "kind": "audio"
+          }
+        ],
+        "properties": [],
+        "schema_version": 1,
+        "title": "bad-direction"
+      }
+    },
+    {
+      "case_id": "DF-MANIFEST-REJECTS-UNKNOWN-MEDIA-KIND",
+      "schema": "https://contracts.eidolon.live/device-foundation/v1/common/schemas.schema.json",
+      "definition": "DeviceCapabilityManifest",
+      "error_contains": "is not one of",
+      "value": {
+        "actions": [],
+        "events": [],
+        "media": [
+          {
+            "codecs": [
+              "opus"
+            ],
+            "direction": "publish",
+            "kind": "haptic"
+          }
+        ],
+        "properties": [],
+        "schema_version": 1,
+        "title": "bad-kind"
+      }
+    },
+    {
+      "case_id": "DF-MANIFEST-REJECTS-MEDIA-WITHOUT-DIRECTION",
+      "schema": "https://contracts.eidolon.live/device-foundation/v1/common/schemas.schema.json",
+      "definition": "DeviceCapabilityManifest",
+      "error_contains": "'direction' is a required property",
+      "value": {
+        "actions": [],
+        "events": [],
+        "media": [
+          {
+            "codecs": [
+              "opus"
+            ],
+            "kind": "audio"
+          }
+        ],
+        "properties": [],
+        "schema_version": 1,
+        "title": "no-direction"
+      }
+    },
+    {
+      "case_id": "DF-MANIFEST-REJECTS-ANOTHER-SCHEMA-VERSION",
+      "schema": "https://contracts.eidolon.live/device-foundation/v1/common/schemas.schema.json",
+      "definition": "DeviceCapabilityManifest",
+      "error_contains": "was expected",
+      "value": {
+        "actions": [],
+        "events": [],
+        "media": [],
+        "properties": [],
+        "schema_version": 2,
+        "title": "future"
+      }
+    },
+    {
+      "case_id": "DF-MANIFEST-REJECTS-A-BLANK-TITLE",
+      "schema": "https://contracts.eidolon.live/device-foundation/v1/common/schemas.schema.json",
+      "definition": "DeviceCapabilityManifest",
+      "error_contains": "does not match",
+      "value": {
+        "actions": [],
+        "events": [],
+        "media": [],
+        "properties": [],
+        "schema_version": 1,
+        "title": "   "
+      }
+    },
+    {
+      "case_id": "DF-MANIFEST-REJECTS-AN-UNDECLARED-FIELD",
+      "schema": "https://contracts.eidolon.live/device-foundation/v1/common/schemas.schema.json",
+      "definition": "DeviceCapabilityManifest",
+      "error_contains": "Additional properties",
+      "value": {
+        "actions": [],
+        "events": [],
+        "media": [],
+        "properties": [],
+        "schema_version": 1,
+        "title": "extra",
+        "endpoints": []
+      }
+    },
+    {
+      "case_id": "DF-MANIFEST-REJECTS-AN-UNDECLARED-MEDIA-FIELD",
+      "schema": "https://contracts.eidolon.live/device-foundation/v1/common/schemas.schema.json",
+      "definition": "DeviceCapabilityManifest",
+      "error_contains": "Additional properties",
+      "value": {
+        "actions": [],
+        "events": [],
+        "media": [
+          {
+            "codecs": [
+              "opus"
+            ],
+            "direction": "publish",
+            "kind": "audio",
+            "bitrate": 24000
+          }
+        ],
+        "properties": [],
+        "schema_version": 1,
+        "title": "extra-media"
+      }
+    },
+    {
+      "case_id": "DF-MANIFEST-REJECTS-A-PROPERTY-WITH-NO-SCHEMA",
+      "schema": "https://contracts.eidolon.live/device-foundation/v1/common/schemas.schema.json",
+      "definition": "DeviceCapabilityManifest",
+      "error_contains": "'schema' is a required property",
+      "value": {
+        "actions": [],
+        "events": [],
+        "media": [],
+        "properties": [
+          {
+            "name": "interaction_mode",
+            "observable": false,
+            "writable": false
+          }
+        ],
+        "schema_version": 1,
+        "title": "schemaless-property"
+      }
     }
   ]
 }

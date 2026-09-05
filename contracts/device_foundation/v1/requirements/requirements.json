@@ -844,6 +844,39 @@
       "status": "covered",
       "waiver_reason": null,
       "waiver_expires_at": null
+    },
+    {
+      "requirement_id": "DF-MANIFEST-001",
+      "normative_text_ref": "3.6 the Manifest document MUST have one canonical shape, and both entry points MUST refuse a document that does not have it, before an Owner is asked to approve anything",
+      "owner": "eidolon_sdk+eidolon_hub+eidolon_channel+eidolon-client-esp32",
+      "schema_ids": [
+        "common/DeviceCapabilityManifest",
+        "admission/CreateEnrollment",
+        "device-control/ManifestDocument"
+      ],
+      "producer_tests": [
+        "SDK::test_a_manifest_document_is_refused_where_it_is_proposed",
+        "SDK::test_the_shipped_box3_manifest_is_still_admissible",
+        "SDK::test_codecs_is_optional_and_no_media_is_a_legal_declaration"
+      ],
+      "consumer_tests": [
+        "CHANNEL::test_manifest_shapes.py::test_box3_manifest_is_carried",
+        "CHANNEL::test_manifest_shapes.py::test_the_canonical_shape_is_what_this_provider_accepts",
+        "HUB::test_a_contract_refusal_is_not_recorded_as_a_pending_convergence"
+      ],
+      "simulator_vectors": [
+        "DF-MANIFEST-BOX3-DOCUMENT-VALID",
+        "DF-MANIFEST-ACCEPTS-MEDIA-WITHOUT-CODECS",
+        "DF-MANIFEST-ACCEPTS-A-BODY-THAT-DECLARES-NO-MEDIA",
+        "DF-MANIFEST-REJECTS-THE-ENDPOINTS-DOCUMENT-THAT-STRANDED-A-CLAIM",
+        "DF-ADMISSION-CREATE-REJECTS-THE-DOCUMENT-THAT-STRANDED-A-CLAIM",
+        "DF-CONTROL-ASSERT-REJECTS-MEDIA-WITH-NO-DIRECTION"
+      ],
+      "integration_tests": ["CONFORMANCE::check_fixtures", "GENERATION::generate --check"],
+      "hil_tests": [],
+      "status": "covered",
+      "waiver_reason": null,
+      "waiver_expires_at": null
     }
   ]
 }

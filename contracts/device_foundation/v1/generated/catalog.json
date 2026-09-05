@@ -4,8 +4,8 @@
   "files": [
     {
       "path": "admission/schemas.schema.json",
-      "sha256": "02189d8e6850e3dc76d93e81b3bb53320d3dc9175b9e0f3e20a9e6650b9c08cc",
-      "size": 19140
+      "sha256": "f40799897a4f888f4c2f18099928086cc65e6c0209979ecfc1cd0a1a3a6a6125",
+      "size": 19195
     },
     {
       "path": "baseline/cross-repo-heads.v1.json",
@@ -34,8 +34,8 @@
     },
     {
       "path": "common/schemas.schema.json",
-      "sha256": "ceb3fa657e6b1fd96e23f663687da4c6a995a2d05626a536d7a3e1c88aac0f03",
-      "size": 25579
+      "sha256": "b56737aa2e28bca9946c60b8e446d0dd588f8b0390e533d6d80c951e1af5431e",
+      "size": 30624
     },
     {
       "path": "conformance/run.py",
@@ -49,8 +49,8 @@
     },
     {
       "path": "device-control/schemas.schema.json",
-      "sha256": "a0c0c80d01a52b5a23d60500ba69aa5f26f91e4321bde7271ddb689581caa276",
-      "size": 14855
+      "sha256": "3843530f4b25066b63da58d0daad1a1778fa5a7496f9b9a85c1edd8c18795106",
+      "size": 14910
     },
     {
       "path": "events/claim-activated-data.schema.json",
@@ -79,13 +79,13 @@
     },
     {
       "path": "examples/invalid/authority.json",
-      "sha256": "5780516d73c1fe63c0e7efbf702cd1023a61cb048b9f7bc1f9b52137b86d726b",
-      "size": 9765
+      "sha256": "c57bcdae37c3e4c62385e012616e6254fc9ff9c41d7839972223d218d0106f00",
+      "size": 11308
     },
     {
       "path": "examples/invalid/common.json",
-      "sha256": "efa3d7947c8a1357a6d34eebafb68d4472f0aace9daf5d67d02453c497840d53",
-      "size": 11890
+      "sha256": "48e4c9ec9ae51d5512228e0184ebc9dd17d5373fd66f298d9a257ca6b3cbbbde",
+      "size": 16558
     },
     {
       "path": "examples/invalid/device-erase.json",
@@ -94,8 +94,8 @@
     },
     {
       "path": "examples/invalid/lifecycle.json",
-      "sha256": "30f1e148d303fb719e895b00ff8db4da685d916e92160a1ac3f4bbd87c295fe6",
-      "size": 5069
+      "sha256": "06e4ef1608fe097b55ccb7bf8769bd0dbba74b5b4aff2e3918706b7cbfee7c9b",
+      "size": 7236
     },
     {
       "path": "examples/valid/admission-consumer-surface.json",
@@ -104,8 +104,8 @@
     },
     {
       "path": "examples/valid/admission.json",
-      "sha256": "c53d5c97c43fa6c7541b6c47a7af1590ba7f01b7b439f93eeeff641f0d42d02e",
-      "size": 11405
+      "sha256": "6b9227ac6ffe9efe6c4ae1ffab8aa1999cce2185b2b3b6c06fb0e111b5997c52",
+      "size": 12814
     },
     {
       "path": "examples/valid/body-mesh.json",
@@ -114,8 +114,8 @@
     },
     {
       "path": "examples/valid/common.json",
-      "sha256": "211406c7660de1404b2509f748a102ef76e0dff556a070b2670a324717993daf",
-      "size": 12459
+      "sha256": "da3f6e78f50e874d091656c59aa67e87c58d9c09ac4acfdf5f624df9b98e8c54",
+      "size": 17294
     },
     {
       "path": "examples/valid/delivery-and-events.json",
@@ -124,8 +124,8 @@
     },
     {
       "path": "examples/valid/device-control.json",
-      "sha256": "ee717e15eba90731ccb655e17ac26ca3ff82c2622bbe6e4de042dedc93599e36",
-      "size": 6880
+      "sha256": "d7d138b3feaad6a13d53d50c813a38ce8c0b1d3d3b8cec502a724a1aeb1d6518",
+      "size": 7944
     },
     {
       "path": "examples/valid/device-erase.json",
@@ -264,8 +264,8 @@
     },
     {
       "path": "requirements/requirements.json",
-      "sha256": "e20f973f47b5cf6b7997d2936276b60d3e8dcd4f28eeedc9fbe0b765ed367d5c",
-      "size": 45280
+      "sha256": "2f41302e9611f4878b0b5abe460770fe08b9219c7c64caa14515b669ca10a26f",
+      "size": 46917
     },
     {
       "path": "state-vectors/commissioning-runtime.json",
@@ -300,5 +300,5 @@
   ],
   "generator": "device-foundation-v1-catalog",
   "generator_version": "1.0",
-  "source_digest": "sha256:48175bf717d6a2424c1c0e0b2af9af269ab58275020895a9aa9620c102bcbee5"
+  "source_digest": "sha256:2f5949dad8fb3e1daed5abdad9c400ffa2bdd2ecec9234a51dd27316ce821a65"
 }

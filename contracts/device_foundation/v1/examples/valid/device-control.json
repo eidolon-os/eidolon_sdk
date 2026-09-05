@@ -108,20 +108,39 @@
       "value": {
         "manifest_id": "esp-box-3",
         "revision": 2,
-        "digest": "sha256:c51ad6b586a71e054267495e13b5d04b251a3a84f242d69f1c1eb3cdbeb7b07d",
+        "digest": "sha256:0c883ad7fe84a08fcc83b789c7dd44026459740150b39635053b44d1b7de4515",
         "document": {
-          "schema_version": 1,
+          "actions": [],
+          "events": [],
           "media": [
             {
+              "codecs": [
+                "opus"
+              ],
+              "direction": "bidirectional",
               "kind": "audio"
             },
             {
+              "codecs": [
+                "h264"
+              ],
+              "direction": "publish",
               "kind": "video"
             }
           ],
-          "properties": [],
-          "actions": [],
-          "events": []
+          "properties": [
+            {
+              "name": "interaction_mode",
+              "observable": false,
+              "schema": {
+                "const": "full_duplex",
+                "type": "string"
+              },
+              "writable": false
+            }
+          ],
+          "schema_version": 1,
+          "title": "eidolon-box3"
         }
       }
     },
@@ -142,20 +161,39 @@
         "manifest": {
           "manifest_id": "esp-box-3",
           "revision": 2,
-          "digest": "sha256:c51ad6b586a71e054267495e13b5d04b251a3a84f242d69f1c1eb3cdbeb7b07d",
+          "digest": "sha256:0c883ad7fe84a08fcc83b789c7dd44026459740150b39635053b44d1b7de4515",
           "document": {
-            "schema_version": 1,
+            "actions": [],
+            "events": [],
             "media": [
               {
+                "codecs": [
+                  "opus"
+                ],
+                "direction": "bidirectional",
                 "kind": "audio"
               },
               {
+                "codecs": [
+                  "h264"
+                ],
+                "direction": "publish",
                 "kind": "video"
               }
             ],
-            "properties": [],
-            "actions": [],
-            "events": []
+            "properties": [
+              {
+                "name": "interaction_mode",
+                "observable": false,
+                "schema": {
+                  "const": "full_duplex",
+                  "type": "string"
+                },
+                "writable": false
+              }
+            ],
+            "schema_version": 1,
+            "title": "eidolon-box3"
           }
         },
         "nonce": "0123456789abcdefghij",
@@ -181,7 +219,7 @@
         "accepted": {
           "manifest_id": "esp-box-3",
           "revision": 2,
-          "digest": "sha256:c51ad6b586a71e054267495e13b5d04b251a3a84f242d69f1c1eb3cdbeb7b07d"
+          "digest": "sha256:0c883ad7fe84a08fcc83b789c7dd44026459740150b39635053b44d1b7de4515"
         },
         "outcome": "accepted",
         "accepted_at": "2026-08-25T10:00:00Z"

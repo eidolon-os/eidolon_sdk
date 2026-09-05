@@ -328,6 +328,194 @@
         "session_id": "setup_session_01",
         "trust": "development-tofu"
       }
+    },
+    {
+      "case_id": "DF-MANIFEST-BOX3-DOCUMENT-VALID",
+      "schema": "https://contracts.eidolon.live/device-foundation/v1/common/schemas.schema.json",
+      "definition": "DeviceCapabilityManifest",
+      "value": {
+        "actions": [],
+        "events": [],
+        "media": [
+          {
+            "codecs": [
+              "opus"
+            ],
+            "direction": "bidirectional",
+            "kind": "audio"
+          }
+        ],
+        "properties": [
+          {
+            "name": "interaction_mode",
+            "observable": false,
+            "schema": {
+              "const": "full_duplex",
+              "type": "string"
+            },
+            "writable": false
+          }
+        ],
+        "schema_version": 1,
+        "title": "eidolon-box3"
+      }
+    },
+    {
+      "case_id": "DF-MANIFEST-BOX3-CAMERA-DOCUMENT-VALID",
+      "schema": "https://contracts.eidolon.live/device-foundation/v1/common/schemas.schema.json",
+      "definition": "DeviceCapabilityManifest",
+      "value": {
+        "actions": [],
+        "events": [],
+        "media": [
+          {
+            "codecs": [
+              "opus"
+            ],
+            "direction": "bidirectional",
+            "kind": "audio"
+          },
+          {
+            "codecs": [
+              "h264"
+            ],
+            "direction": "publish",
+            "kind": "video"
+          }
+        ],
+        "properties": [
+          {
+            "name": "interaction_mode",
+            "observable": false,
+            "schema": {
+              "const": "full_duplex",
+              "type": "string"
+            },
+            "writable": false
+          }
+        ],
+        "schema_version": 1,
+        "title": "eidolon-box3-camera"
+      }
+    },
+    {
+      "case_id": "DF-MANIFEST-SOFTWARE-BODY-DOCUMENT-VALID",
+      "schema": "https://contracts.eidolon.live/device-foundation/v1/common/schemas.schema.json",
+      "definition": "DeviceCapabilityManifest",
+      "value": {
+        "actions": [],
+        "events": [],
+        "media": [
+          {
+            "codecs": [
+              "opus"
+            ],
+            "direction": "bidirectional",
+            "kind": "audio"
+          },
+          {
+            "codecs": [
+              "h264"
+            ],
+            "direction": "subscribe",
+            "kind": "video"
+          }
+        ],
+        "properties": [
+          {
+            "name": "interaction_mode",
+            "observable": false,
+            "schema": {
+              "const": "full_duplex",
+              "type": "string"
+            },
+            "writable": false
+          }
+        ],
+        "schema_version": 1,
+        "title": "Eidolon Mobile"
+      }
+    },
+    {
+      "case_id": "DF-MANIFEST-ACCEPTS-MEDIA-WITHOUT-CODECS",
+      "schema": "https://contracts.eidolon.live/device-foundation/v1/common/schemas.schema.json",
+      "definition": "DeviceCapabilityManifest",
+      "value": {
+        "actions": [],
+        "events": [],
+        "media": [
+          {
+            "direction": "bidirectional",
+            "kind": "audio"
+          }
+        ],
+        "properties": [],
+        "schema_version": 1,
+        "title": "no-codecs"
+      }
+    },
+    {
+      "case_id": "DF-MANIFEST-ACCEPTS-A-BODY-THAT-DECLARES-NO-MEDIA",
+      "schema": "https://contracts.eidolon.live/device-foundation/v1/common/schemas.schema.json",
+      "definition": "DeviceCapabilityManifest",
+      "value": {
+        "actions": [],
+        "events": [],
+        "media": [],
+        "properties": [],
+        "schema_version": 1,
+        "title": "sensor-only"
+      }
+    },
+    {
+      "case_id": "DF-MANIFEST-FULL-AFFORDANCE-DOCUMENT-VALID",
+      "schema": "https://contracts.eidolon.live/device-foundation/v1/common/schemas.schema.json",
+      "definition": "DeviceCapabilityManifest",
+      "value": {
+        "actions": [
+          {
+            "name": "set_volume",
+            "version": 1,
+            "input_schema": {
+              "type": "integer"
+            },
+            "output_schema": {
+              "type": "null"
+            },
+            "idempotent": true
+          }
+        ],
+        "events": [
+          {
+            "name": "button_pressed",
+            "data_schema": {
+              "type": "object"
+            }
+          }
+        ],
+        "media": [
+          {
+            "codecs": [
+              "opus"
+            ],
+            "direction": "publish",
+            "kind": "audio"
+          }
+        ],
+        "properties": [
+          {
+            "name": "interaction_mode",
+            "observable": false,
+            "schema": {
+              "const": "ptt",
+              "type": "string"
+            },
+            "writable": false
+          }
+        ],
+        "schema_version": 1,
+        "title": "every-affordance"
+      }
     }
   ]
 }

@@ -518,7 +518,7 @@
           "$ref": "../common/schemas.schema.json#/$defs/Sha256Digest"
         },
         "document": {
-          "type": "object"
+          "$ref": "../common/schemas.schema.json#/$defs/DeviceCapabilityManifest"
         }
       }
     },

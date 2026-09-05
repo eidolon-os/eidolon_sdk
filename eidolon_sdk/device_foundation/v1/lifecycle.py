@@ -219,6 +219,110 @@ def manifest_digest(document: Mapping[str, Any]) -> str:
     return "sha256:" + hashlib.sha256(rfc8785.dumps(dict(document))).hexdigest()
 
 
+class _ManifestPart(BaseModel):
+    """One entry inside a Manifest, exact like every other canonical document.
+
+    ``populate_by_name``/``serialize_by_alias`` are here for ``schema``, which
+    shadows an attribute on ``BaseModel`` and so cannot be a field name. Without
+    the serialization alias the model could parse a wire document and then dump
+    one no binding accepts.
+    """
+
+    model_config = ConfigDict(
+        extra="forbid",
+        frozen=True,
+        strict=True,
+        populate_by_name=True,
+        serialize_by_alias=True,
+    )
+
+
+class ManifestProperty(_ManifestPart):
+    name: str = Field(min_length=1, max_length=128)
+    schema_: dict[str, Any] = Field(alias="schema")
+    observable: bool
+    writable: bool
+
+
+class ManifestAction(_ManifestPart):
+    name: str = Field(min_length=1, max_length=128)
+    version: int = Field(ge=1, le=65_535)
+    input_schema: dict[str, Any]
+    output_schema: dict[str, Any]
+    idempotent: bool
+
+
+class ManifestEvent(_ManifestPart):
+    name: str = Field(min_length=1, max_length=128)
+    data_schema: dict[str, Any]
+
+
+class ManifestMedia(_ManifestPart):
+    """What a Body can carry, and which way.
+
+    ``kind`` and ``direction`` decide the device's publish grants, so a media
+    entry that omits either is asking for a permission without saying which.
+    ``codecs`` is optional: no consumer anywhere reads a codec value, and the
+    values shipped by working producers already disagree — a board sends
+    ``opus`` where a fixture says ``audio/opus`` and both are carried. It was
+    the only field in this document able to refuse a device, with no reader to
+    justify the refusal.
+    """
+
+    kind: Literal["audio", "video"]
+    direction: Literal["publish", "subscribe", "bidirectional"]
+    codecs: tuple[str, ...] = Field(default=(), max_length=32)
+
+    @field_validator("codecs", mode="before")
+    @classmethod
+    def _codecs(cls, value: object) -> object:
+        return tuple(value) if isinstance(value, list) else value
+
+
+class DeviceCapabilityManifest(_ManifestPart):
+    """The shape of a device's declaration — its vocabulary, and nothing more.
+
+    The field set, ``kind`` and ``direction`` are vocabulary facts. Checking
+    them requires knowing nothing about whether a Channel exists, whether this
+    deployment runs a media transport, or whether this device should be given a
+    conversational agent; all of that stays with the Channel Authority, which is
+    the only reader of a Manifest's content.
+
+    That distinction is the point. An Authority is deliberately opaque to what a
+    Manifest *means*: requiring this vocabulary's own version field of a
+    document authored elsewhere is what let one projection row crash-loop a Hub
+    at boot, for a Manifest it had already accepted. But "not the Authority's
+    semantics" was taken to mean "not checked anywhere", and the entry typed the
+    document ``{"type": "object"}``. A wrong shape was therefore accepted,
+    approved by an Owner — an approval that cannot be un-spent — forwarded, and
+    only then refused by the Provider, which the Authority recorded as a channel
+    still pending. Nothing was wrong with the device that waiting would fix.
+
+    This runs at the wire boundary, on a document being proposed. It is not on
+    the path that hydrates stored documents, so a Manifest already accepted
+    under the older, wider entry still projects and still boots.
+    """
+
+    schema_version: Literal[1]
+    title: str = Field(min_length=1, max_length=128)
+    properties: tuple[ManifestProperty, ...] = Field(max_length=64)
+    actions: tuple[ManifestAction, ...] = Field(max_length=64)
+    events: tuple[ManifestEvent, ...] = Field(max_length=64)
+    media: tuple[ManifestMedia, ...] = Field(max_length=16)
+
+    @field_validator("properties", "actions", "events", "media", mode="before")
+    @classmethod
+    def _arrays(cls, value: object) -> object:
+        return tuple(value) if isinstance(value, list) else value
+
+    @field_validator("title", mode="after")
+    @classmethod
+    def _title_says_something(cls, value: str) -> str:
+        if not value.strip():
+            raise ValueError("manifest title cannot be blank")
+        return value
+
+
 class ManifestDocument(_Model):
     """A device's own account of what it can do, as of some revision of itself.
 
@@ -231,7 +335,16 @@ class ManifestDocument(_Model):
     manifest_id: str = Field(min_length=3, max_length=128)
     revision: int = Field(ge=1)
     digest: str = Field(pattern=r"^sha256:[0-9a-f]{64}$")
+    #: Kept as the decoded object the device sent, not as the parsed model: the
+    #: digest is over exactly these bytes, and normalising the document through
+    #: a binding would make the two disagree for anything the binding tidied.
     document: dict[str, Any]
+
+    @field_validator("document", mode="after")
+    @classmethod
+    def _document_declares_the_canonical_shape(cls, value: dict[str, Any]) -> dict[str, Any]:
+        DeviceCapabilityManifest.model_validate(value)
+        return value
 
     @model_validator(mode="after")
     def _digest_describes_this_document(self) -> "ManifestDocument":

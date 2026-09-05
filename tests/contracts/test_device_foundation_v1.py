@@ -488,3 +488,109 @@ def test_replacing_an_assignment_needs_no_policy_refs_because_nothing_defines_on
     assert cleared.companion_ref is None
     assert cleared.policy_refs == ()
     assert cleared.model_dump(mode="json")["policy_refs"] == []
+
+
+def _box3_document() -> dict:
+    """The document a shipped BOX-3 build emits, as the golden corpus holds it."""
+
+    cases = json.loads(
+        (CONTRACT_ROOT / "examples" / "valid" / "common.json").read_text(encoding="utf-8")
+    )["cases"]
+    for case in cases:
+        if case["case_id"] == "DF-MANIFEST-BOX3-DOCUMENT-VALID":
+            return case["value"]
+    raise AssertionError("the shipped BOX-3 manifest vector is missing")
+
+
+def test_the_shipped_box3_manifest_is_still_admissible() -> None:
+    """The precondition for refusing anything: do not refuse what already ships.
+
+    Tightening the entry is only safe if the devices already claimed on real
+    hardware still get in. This vector is transcribed from
+    ``BuildDeviceManifestJson`` in eidolon-client-esp32; if it stops validating,
+    the shape gate has locked out the fleet.
+    """
+
+    from eidolon_sdk.device_foundation.v1 import (
+        DeviceCapabilityManifest,
+        ManifestDocument,
+        manifest_digest,
+    )
+
+    document = _box3_document()
+    parsed = DeviceCapabilityManifest.model_validate(document)
+    assert [media.kind for media in parsed.media] == ["audio"]
+    assert parsed.media[0].direction == "bidirectional"
+    # And it goes through the wire type both entry points carry, digest and all.
+    carried = ManifestDocument(
+        manifest_id="esp-box-3",
+        revision=1,
+        digest=manifest_digest(document),
+        document=document,
+    )
+    assert carried.document == document
+
+
+def test_a_manifest_document_is_refused_where_it_is_proposed() -> None:
+    """The defect: the earliest refusal came after an irrevocable approval.
+
+    ``document`` was typed ``{"type": "object"}`` at both entry points, so a
+    wrong shape was admitted, approved by an Owner, forwarded, and only then
+    refused by the one component that reads a Manifest's content — which the
+    Authority recorded as a channel still pending. `{"endpoints": []}` is not a
+    hypothetical: it is what the first canonically claimed device sent.
+    """
+
+    from pydantic import ValidationError
+
+    from eidolon_sdk.device_foundation.v1 import ManifestDocument, manifest_digest
+
+    def propose(document: dict) -> ManifestDocument:
+        return ManifestDocument(
+            manifest_id="esp-box-3",
+            revision=1,
+            digest=manifest_digest(document),
+            document=document,
+        )
+
+    good = _box3_document()
+    for name, document in (
+        ("the endpoints document", {"endpoints": []}),
+        ("a field the vocabulary does not define", {**good, "endpoints": []}),
+        ("another schema version", {**good, "schema_version": 2}),
+        ("a blank title", {**good, "title": "   "}),
+        ("media with no direction", {**good, "media": [{"kind": "audio"}]}),
+        ("media of an unknown kind", {**good, "media": [{"kind": "haptic", "direction": "publish"}]}),
+        (
+            "media in an unknown direction",
+            {**good, "media": [{"kind": "audio", "direction": "duplex"}]},
+        ),
+    ):
+        with pytest.raises(ValidationError):
+            propose(document)
+            raise AssertionError(f"{name} was admitted")
+
+
+def test_codecs_is_optional_and_no_media_is_a_legal_declaration() -> None:
+    """Two shapes that must be accepted, each for its own reason.
+
+    ``codecs`` had the power to refuse a device and no reader to justify it: no
+    consumer in any repository reads a codec value, and producers that both work
+    already disagree about the values. And a Body that declares no media is a
+    product question, not a wire-shape one — refusing it here would burn "every
+    Body has a voice" into a contract four repositories share. Accepting it is
+    not the same as letting it quietly succeed, which is settled where media is
+    understood, not here.
+    """
+
+    from eidolon_sdk.device_foundation.v1 import DeviceCapabilityManifest
+
+    good = _box3_document()
+
+    without_codecs = DeviceCapabilityManifest.model_validate(
+        {**good, "media": [{"kind": "audio", "direction": "bidirectional"}]}
+    )
+    assert without_codecs.media[0].codecs == ()
+
+    silent = DeviceCapabilityManifest.model_validate({**good, "media": []})
+    assert silent.media == ()

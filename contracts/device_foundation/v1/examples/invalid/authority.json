@@ -244,6 +244,43 @@
           "activated_at": "2026-08-18T00:05:00Z"
         }
       }
+    },
+    {
+      "case_id": "DF-ADMISSION-CREATE-REJECTS-THE-DOCUMENT-THAT-STRANDED-A-CLAIM",
+      "schema": "https://contracts.eidolon.live/device-foundation/v1/admission/schemas.schema.json",
+      "definition": "CreateEnrollment",
+      "error_contains": "Additional properties",
+      "value": {
+        "profile_id": "eidolon-trust-p256-hpke-v1",
+        "device_instance_candidate_id": "device-instance-1aa0ad0054afc2f841e72ddbadb37e06f52b5c7621679bbe60fe3aa4c461c594",
+        "requested_owner_domain_id": "owner-domain_01",
+        "hardware_identity_evidence": {
+          "scheme": "hub-issued-base-p256",
+          "evidence": "bWFudWZhY3R1cmVyLWNoYWlu",
+          "evidence_digest": "sha256:1111111111111111111111111111111111111111111111111111111111111111"
+        },
+        "commissioning_proof": {
+          "scheme": "hub-issued-commissioning-voucher-v1",
+          "proof": "c3JwNmEtcHJvb2YtYnl0ZXM",
+          "nonce": "bm9uY2Utbm9uY2Utbm9uY2U"
+        },
+        "manifest": {
+          "manifest_id": "manifest_01",
+          "revision": 2,
+          "digest": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+          "document": {
+            "endpoints": []
+          }
+        },
+        "handoff_key": {
+          "scheme": "DHKEM-P256-HKDF-SHA256",
+          "public_key": "p256-spki:MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE"
+        },
+        "operational_key": {
+          "scheme": "ES256-P256",
+          "public_key": "p256-spki:MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE"
+        }
+      }
     }
   ]
 }
