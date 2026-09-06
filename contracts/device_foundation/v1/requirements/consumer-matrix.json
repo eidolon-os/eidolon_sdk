@@ -45,6 +45,12 @@
       "p0_change": false
     },
     {
+      "repo": "eidolon_ops",
+      "roles": ["owner-domain-descriptor-issuer", "release-input-verifier"],
+      "contracts": ["common"],
+      "p0_change": false
+    },
+    {
       "repo": "eidolon_data",
       "roles": ["owner-companion-reference-provider"],
       "contracts": ["opaque-owner-companion-refs"],
@@ -67,7 +73,6 @@
     { "repo": "docs", "reason": "normative source, not a wire producer or consumer" },
     { "repo": "eidolon_client_web", "reason": "no Body Device management dependency found" },
     { "repo": "eidolon_memory", "reason": "Companion memory lifecycle is device-independent" },
-    { "repo": "eidolon_ops", "reason": "deployment tooling; P0 does not deploy" },
     { "repo": "eidolon-official-site", "reason": "website only" },
     { "repo": "vendor/client-sdk-esp32", "reason": "external vendored transport SDK" }
   ]

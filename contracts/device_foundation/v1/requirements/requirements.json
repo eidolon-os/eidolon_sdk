@@ -678,6 +678,37 @@
       "waiver_expires_at": null
     },
     {
+      "requirement_id": "DF-P0-PIN-001",
+      "normative_text_ref": "Manifest契约收敛 §9.3 a consumer that copies canonical bytes MUST name a whole 40-character lowercase SDK commit and a sha256 per copied file, and that check MUST run in a gate",
+      "owner": "eidolon_sdk+eidolon-client-esp32+eidolon_client_mobile",
+      "schema_ids": [],
+      "producer_tests": [],
+      "consumer_tests": ["ESP32::tests/device_foundation_lock_shape_test.py"],
+      "simulator_vectors": [],
+      "integration_tests": ["ESP32::scripts/sync_device_foundation_v1.py --check"],
+      "hil_tests": [],
+      "status": "planned",
+      "waiver_reason": null,
+      "waiver_expires_at": null
+    },
+    {
+      "requirement_id": "DF-P0-CONSUMER-001",
+      "normative_text_ref": "Manifest契约收敛 §9.2 a repository the consumer matrix classifies as a non-participant MUST NOT consume this contract",
+      "owner": "eidolon_sdk",
+      "schema_ids": [],
+      "producer_tests": [],
+      "consumer_tests": [],
+      "simulator_vectors": [],
+      "integration_tests": [
+        "CONFORMANCE::check_traceability",
+        "SDK::test_a_non_participant_repository_does_not_consume_this_contract"
+      ],
+      "hil_tests": [],
+      "status": "covered",
+      "waiver_reason": null,
+      "waiver_expires_at": null
+    },
+    {
       "requirement_id": "DF-PH2-CONTRACT-001",
       "normative_text_ref": "3.4/3.6.2/19.2.2 DeviceRef MUST contain exactly five identity/generation fields and ManifestRef MUST be separate",
       "owner": "eidolon_sdk",

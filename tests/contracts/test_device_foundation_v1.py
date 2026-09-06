@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import os
 import re
 import shutil
 import subprocess
@@ -175,6 +176,76 @@ def test_generated_ph2_bindings_are_sdk_local() -> None:
             "EnrollmentProposalPage", "ClaimPage",
         ):
             assert symbol in text
+
+
+_CONTRACT_CONSUMPTION = re.compile(
+    r"(?:from|import)\s+eidolon_sdk\.device_foundation|contracts/device_foundation/"
+)
+_UNWALKED = {
+    ".git", ".venv", "venv", "__pycache__", "node_modules",
+    ".eidolon-ops", ".dart_tool", ".worktrees", "build",
+}
+
+
+def _contract_consumers(repository: Path) -> list[str]:
+    """Python files in `repository` that import this contract or name its path."""
+
+    found: list[str] = []
+    for directory, names, files in os.walk(repository):
+        names[:] = [name for name in names if name not in _UNWALKED]
+        for name in files:
+            if not name.endswith(".py"):
+                continue
+            path = Path(directory) / name
+            if _CONTRACT_CONSUMPTION.search(path.read_text(encoding="utf-8", errors="ignore")):
+                found.append(path.relative_to(repository).as_posix())
+    return sorted(found)
+
+
+def test_a_non_participant_repository_does_not_consume_this_contract(tmp_path: Path) -> None:
+    """The matrix's classification has to be true, not merely present.
+
+    `conformance/run.py` already refuses a repository the matrix has not
+    classified at all, but it cannot see whether a classification is still
+    accurate. `eidolon_ops` was carried as a non-participant reading
+    "deployment tooling; P0 does not deploy" while
+    `src/eidolon_ops/owner_domain_assets.py` imported this contract to issue the
+    Owner Domain descriptor, and `requirements.json` — its neighbour in the same
+    directory — named `eidolon_ops` a co-owner of DF-HOST-007 and pointed at that
+    repository's own test. Two files here disagreed, and the set check both of
+    them pass could not notice.
+
+    Kept out of the conformance runner deliberately: that runner is what a
+    consumer runs against the contract alone, and requiring the whole workspace
+    to be present would narrow where it can run. Cross-repository facts are
+    checked here, beside the baseline tests that already read the workspace.
+    """
+
+    matrix = json.loads(
+        (CONTRACT_ROOT / "requirements" / "consumer-matrix.json").read_text(encoding="utf-8")
+    )
+    workspace = SDK_ROOT.parent
+
+    # The control, over a synthetic tree rather than over a real repository.
+    # The first version of this asserted the detector found something in the SDK
+    # itself and passed with a detector that matched nothing at all: this file
+    # contains the regex's own literal, so the scan was matching its own source.
+    # A control has to discriminate, not merely be non-empty.
+    (tmp_path / "consumes.py").write_text(
+        "from eidolon_sdk.device_foundation.v1 import DeviceRef\n", encoding="utf-8"
+    )
+    (tmp_path / "does_not.py").write_text("import json\n", encoding="utf-8")
+    assert _contract_consumers(tmp_path) == ["consumes.py"]
+
+    for entry in matrix["non_participants"]:
+        repository = workspace / entry["repo"]
+        if not repository.is_dir():
+            continue
+        consumers = _contract_consumers(repository)
+        assert not consumers, (
+            f"{entry['repo']} is classified a non-participant ({entry['reason']!r}) "
+            f"but consumes this contract: {consumers[:5]}"
+        )
 
 
 def test_baseline_repository_set_matches_workspace() -> None:

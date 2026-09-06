@@ -259,8 +259,8 @@
     },
     {
       "path": "requirements/consumer-matrix.json",
-      "sha256": "0b15c724ee5e154b8497260743cbb269fda810927f790462479fe90cc5206505",
-      "size": 2617
+      "sha256": "ce1dd1a5e99970f2e68902712a52756d5859496bd18ec933bdb42b96f3efb62e",
+      "size": 2709
     },
     {
       "path": "requirements/ph2b0-consumer-restart-manifest.json",
@@ -269,8 +269,8 @@
     },
     {
       "path": "requirements/requirements.json",
-      "sha256": "65186f4df77b1f8798529b69b0cd6e0e49fc59dc9782fd7bb8c33640bdf0b1c2",
-      "size": 47073
+      "sha256": "203831d0e9f0895a858058edb426d5e7fa0a850347647a18195d8da6253763ef",
+      "size": 48396
     },
     {
       "path": "state-vectors/commissioning-runtime.json",
@@ -305,5 +305,5 @@
   ],
   "generator": "device-foundation-v1-catalog",
   "generator_version": "1.0",
-  "source_digest": "sha256:d86c72bfed953f1d9fb63423fb89973e1cef74a9740ca29421c826aac2bb51a2"
+  "source_digest": "sha256:5fa8a9b96b30280afa3172c2d3104a00183e733e40802995cdaefc6ff0a5b502"
 }
