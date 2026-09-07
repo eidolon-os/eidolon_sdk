@@ -224,6 +224,75 @@
         "outcome": "accepted",
         "accepted_at": "2026-08-25T10:00:00Z"
       }
+    },
+    {
+      "case_id": "DF-CONTROL-CHANNEL-BINDING-VALID",
+      "schema": "https://contracts.eidolon.live/device-foundation/v1/device-control/schemas.schema.json",
+      "definition": "ChannelBinding",
+      "value": {
+        "channel_id": "chan-0f3a91c4d25b47e8a603",
+        "purpose": "device-session",
+        "kinds": [
+          "audio"
+        ],
+        "binding_format": "application/vnd.eidolon.example-session+json;v=1",
+        "issued_at_ms": 1788000000000,
+        "expires_at_ms": 1788001800000,
+        "opaque_binding": "eyJleGFtcGxlIjp0cnVlfQ=="
+      }
+    },
+    {
+      "case_id": "DF-CONTROL-CONFIGURATION-ACTIVE-VALID",
+      "schema": "https://contracts.eidolon.live/device-foundation/v1/device-control/schemas.schema.json",
+      "definition": "DeviceConfigurationResult",
+      "value": {
+        "operation": "device-control.configuration",
+        "nonce": "Y29uZmlndXJhdGlvbi1ub25jZQ",
+        "device_ref": {
+          "device_instance_id": "device-instance-591d7c62d0bc738376935f77ff2acd5472bbee64207a765df03af6d6240c07dc",
+          "owner_domain_id": "owner-domain_01",
+          "owner_domain_generation": 3,
+          "claim_generation": 7,
+          "trust_epoch": 4
+        },
+        "lifecycle_state": "approved",
+        "manifest": {
+          "manifest_id": "manifest_01",
+          "revision": 1,
+          "digest": "sha256:31f7d2a97fd3f1980db53c81a0a724cf1451109d9600d99009966301bea64bcc"
+        },
+        "channels": [
+          {
+            "channel_id": "chan-0f3a91c4d25b47e8a603",
+            "purpose": "device-session",
+            "kinds": [
+              "audio"
+            ],
+            "binding_format": "application/vnd.eidolon.example-session+json;v=1",
+            "issued_at_ms": 1788000000000,
+            "expires_at_ms": 1788001800000,
+            "opaque_binding": "eyJleGFtcGxlIjp0cnVlfQ=="
+          }
+        ]
+      }
+    },
+    {
+      "case_id": "DF-CONTROL-CONFIGURATION-APPROVED-WITH-NO-CHANNEL-VALID",
+      "schema": "https://contracts.eidolon.live/device-foundation/v1/device-control/schemas.schema.json",
+      "definition": "DeviceConfigurationResult",
+      "value": {
+        "operation": "device-control.configuration",
+        "nonce": "Y29uZmlndXJhdGlvbi1ub25jZQ",
+        "device_ref": {
+          "device_instance_id": "device-instance-591d7c62d0bc738376935f77ff2acd5472bbee64207a765df03af6d6240c07dc",
+          "owner_domain_id": "owner-domain_01",
+          "owner_domain_generation": 3,
+          "claim_generation": 7,
+          "trust_epoch": 4
+        },
+        "lifecycle_state": "approved",
+        "channels": []
+      }
     }
   ]
 }

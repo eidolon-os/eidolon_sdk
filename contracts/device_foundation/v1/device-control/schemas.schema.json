@@ -606,6 +606,106 @@
           "format": "date-time"
         }
       }
+    },
+    "ChannelBinding": {
+      "description": "One channel an Authority relays to a Body, and the whole of what the Authority knows about it. `binding_format` names the vocabulary of `opaque_binding` and `opaque_binding` is base64 of a document in it; neither is read here, and that opacity is the point — what a room or a topic is belongs to the Channel. A Body picks the entry whose `binding_format` it implements and ignores the rest, so this object can carry a transport a given Body has never heard of without that being an error anywhere.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "channel_id",
+        "purpose",
+        "kinds",
+        "binding_format",
+        "issued_at_ms",
+        "expires_at_ms",
+        "opaque_binding"
+      ],
+      "properties": {
+        "channel_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "purpose": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        "kinds": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 8,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 32
+          }
+        },
+        "binding_format": {
+          "description": "A media type naming the vocabulary of `opaque_binding`, version included. The version lives inside this string, so a Body that does not implement the version must refuse the entry rather than parse it as the one it knows.",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "issued_at_ms": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "expires_at_ms": {
+          "type": "integer",
+          "exclusiveMinimum": 0
+        },
+        "opaque_binding": {
+          "description": "base64 of the document `binding_format` names, standard alphabet with padding.",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 131072
+        }
+      }
+    },
+    "DeviceConfigurationResult": {
+      "description": "What a Body is told when it asks what it should be. `lifecycle_state` and the presence of a channel are two separate facts and must stay so: approved-with-no-channel is a real, expected state — the Authority holds the Claim and the Channel has not answered yet — and a Body that reads it as revoked, or as an error, gives up on an enrolment that is fine. `manifest` absent means the answer says nothing about which declaration the Authority holds; it never means it holds none.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "operation",
+        "nonce",
+        "device_ref",
+        "lifecycle_state",
+        "channels"
+      ],
+      "properties": {
+        "operation": {
+          "const": "device-control.configuration"
+        },
+        "nonce": {
+          "description": "Echoed from the request, so a Body can tell this answer from a replay of the answer to an older question.",
+          "type": "string",
+          "minLength": 16,
+          "maxLength": 128,
+          "pattern": "^[A-Za-z0-9_-]+$"
+        },
+        "device_ref": {
+          "$ref": "../common/schemas.schema.json#/$defs/DeviceRef"
+        },
+        "lifecycle_state": {
+          "enum": [
+            "approved",
+            "revoked"
+          ]
+        },
+        "manifest": {
+          "$ref": "../common/schemas.schema.json#/$defs/ManifestRef"
+        },
+        "channels": {
+          "description": "At most one. A Body holds one channel for as long as it is enrolled; a second entry would be a second answer to the question of where it lives.",
+          "type": "array",
+          "maxItems": 1,
+          "items": {
+            "$ref": "#/$defs/ChannelBinding"
+          }
+        }
+      }
     }
   }
 }

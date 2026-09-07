@@ -1024,6 +1024,36 @@
       "status": "planned",
       "waiver_reason": null,
       "waiver_expires_at": null
+    },
+    {
+      "requirement_id": "DF-DEVICE-CONTROL-RESPONSE-001",
+      "normative_text_ref": "纯软件Body准入方案 §4.1/§4.3 the configuration:pull answer MUST have one canonical shape, and lifecycle_state MUST stay separable from whether a channel is present: approved-with-no-channel is the Authority holding the Claim while the Channel has not answered, and a Body that reads it as failure abandons an enrolment that is fine while one that reads it as active joins a room that does not exist. §4.3 records the product already collapsing that distinction",
+      "owner": "eidolon_sdk+eidolon_hub+eidolon-client-esp32+eidolon_client_mobile",
+      "schema_ids": [
+        "device-control/DeviceConfigurationResult",
+        "device-control/ChannelBinding"
+      ],
+      "producer_tests": [
+        "HUB::tests/unit/device_control/test_configuration_response_vector.py::test_the_authority_answers_the_shape_the_vector_pins",
+        "HUB::tests/unit/device_control/test_configuration_response_vector.py::test_the_three_states_this_authority_can_answer_are_the_three_the_vector_declares"
+      ],
+      "consumer_tests": [
+        "ESP32::TestConfigurationResponseMatchesTheGoldenVector"
+      ],
+      "simulator_vectors": [
+        "golden/device-control-configuration-response.json",
+        "DF-CONTROL-CONFIGURATION-ACTIVE-VALID",
+        "DF-CONTROL-CONFIGURATION-APPROVED-WITH-NO-CHANNEL-VALID",
+        "DF-CONTROL-CHANNEL-BINDING-VALID"
+      ],
+      "integration_tests": [
+        "CONFORMANCE::check_device_configuration_response",
+        "CONFORMANCE::check_fixtures"
+      ],
+      "hil_tests": [],
+      "status": "planned",
+      "waiver_reason": null,
+      "waiver_expires_at": null
     }
   ]
 }

@@ -39,8 +39,8 @@
     },
     {
       "path": "conformance/run.py",
-      "sha256": "2354bbc8338aac8d858d394cb76877330581724b983facd8612f76a422d6b7c5",
-      "size": 111972
+      "sha256": "883bea8c252a694e93f04cdb65d580c07c373d0f02d18591e22477a4e712971f",
+      "size": 117827
     },
     {
       "path": "delivery-port/schemas.schema.json",
@@ -49,8 +49,8 @@
     },
     {
       "path": "device-control/schemas.schema.json",
-      "sha256": "3843530f4b25066b63da58d0daad1a1778fa5a7496f9b9a85c1edd8c18795106",
-      "size": 14910
+      "sha256": "c7114c4fb7eb11b841f5b96b433118db7a945e7f85d215423dbb601ef6992f06",
+      "size": 18785
     },
     {
       "path": "events/claim-activated-data.schema.json",
@@ -124,8 +124,8 @@
     },
     {
       "path": "examples/valid/device-control.json",
-      "sha256": "d7d138b3feaad6a13d53d50c813a38ce8c0b1d3d3b8cec502a724a1aeb1d6518",
-      "size": 7944
+      "sha256": "d7c47f49bcca7801e0206e20a9a9a6fa2db5c012394a890a97e205ef08e2aa71",
+      "size": 10574
     },
     {
       "path": "examples/valid/device-erase.json",
@@ -213,6 +213,11 @@
       "size": 2135
     },
     {
+      "path": "golden/device-control-configuration-response.json",
+      "sha256": "2d2b442c3200b022fc99f7aec0a75f3d0039088ce8da3637da825291b44f45cf",
+      "size": 11567
+    },
+    {
       "path": "golden/device-control-manifest-assertion-proof.json",
       "sha256": "29e31d28b3ccbe5cbc077f7804f0c24cc62ff30fd30f56774e2baebfe1e54fd5",
       "size": 2249
@@ -294,8 +299,8 @@
     },
     {
       "path": "requirements/requirements.json",
-      "sha256": "5d816223e78ab5f5adde2f4a02889c4f2babb4223e93f6c046258f8cd77cceb6",
-      "size": 54958
+      "sha256": "617e861a4364a356c49fffd6193933dbca0f13a864f6e27e4d5521e7bfb632d6",
+      "size": 56675
     },
     {
       "path": "state-vectors/commissioning-runtime.json",
@@ -330,5 +335,5 @@
   ],
   "generator": "device-foundation-v1-catalog",
   "generator_version": "1.0",
-  "source_digest": "sha256:415b890d421d9accb98cafe9d9828b4c7453b5672d054943d30c7abeea790a7d"
+  "source_digest": "sha256:540c0169de3189820a81ca5189dbcd13b2ac921d620a082553edd93c9785343d"
 }
