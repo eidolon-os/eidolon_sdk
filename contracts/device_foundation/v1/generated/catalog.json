@@ -39,8 +39,8 @@
     },
     {
       "path": "conformance/run.py",
-      "sha256": "3d948819df006599a48bc771f0269daa20edd0e9c5a11d4a7f04dc6c999b5c53",
-      "size": 124782
+      "sha256": "ddb9653088acb60a226d0ae9637d32d5e776ea7203fb48a94df20ed10b87b93c",
+      "size": 125771
     },
     {
       "path": "delivery-port/schemas.schema.json",
@@ -249,8 +249,8 @@
     },
     {
       "path": "golden/livekit-session-binding.json",
-      "sha256": "21c9a40aeb0621259e043502ecb7a352eda30ddb64cd5bc5e24b2481dbaff107",
-      "size": 6608
+      "sha256": "20bf749b9a6c598c78087ae2f2f1ffe5c1e4f80b1180266cd0ea68bc4ba07c82",
+      "size": 6944
     },
     {
       "path": "golden/owner-domain-descriptor.json",
@@ -299,8 +299,8 @@
     },
     {
       "path": "requirements/requirements.json",
-      "sha256": "c6e03cd84c644b2de79ff6b601c156ab63a2c2a4fd67c6bdadb8cc02499e4b50",
-      "size": 58297
+      "sha256": "af30d80d5ce785301bbbff046ce5d3b0093dbed91bac4e1a2e6fc4cee00e6344",
+      "size": 57223
     },
     {
       "path": "state-vectors/commissioning-runtime.json",
@@ -335,5 +335,5 @@
   ],
   "generator": "device-foundation-v1-catalog",
   "generator_version": "1.0",
-  "source_digest": "sha256:e097aad69e1a69209e5d9abd4149c17fbf62a7dd2a2eccc96e1ba999ba102aaa"
+  "source_digest": "sha256:cb09a9e29c3ead73e9d5681fcd28b75761d075653a4c709c207e078fc7295603"
 }

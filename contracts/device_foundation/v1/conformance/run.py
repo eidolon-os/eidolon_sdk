@@ -1386,9 +1386,18 @@ def check_livekit_session_binding() -> int:
     if base64.b64decode(vector["opaque_binding"], validate=True) != canonical:
         raise ConformanceError("the opaque binding does not decode to the canonical bytes")
 
-    refusals = vector["must_refuse"]
-    if not refusals:
-        raise ConformanceError("the LiveKit binding vector carries no refusal case")
+    # Two lists, because the obligations differ. `must_refuse` is a document a
+    # Body cannot act on at all. `may_refuse` is audio a Body that owns its
+    # capture can decline and a Body whose transport negotiates the format must
+    # not — requiring refusal there would make a working Body non-conformant.
+    # What replaces the missing obligation is stated rather than left out.
+    refusals = vector["must_refuse"] + vector["may_refuse"]
+    if not vector["must_refuse"] or not vector["may_refuse"]:
+        raise ConformanceError("the LiveKit binding vector lost one of its two refusal lists")
+    if not vector["must_not_claim_unapplied_audio"].strip():
+        raise ConformanceError(
+            "the vector permits ignoring `audio` and no longer says what a Body owes instead"
+        )
     seen: set[str] = set()
     for case in refusals:
         case_id = case["case_id"]
@@ -1418,16 +1427,23 @@ def check_livekit_session_binding() -> int:
             "binding_format", "canonical_utf8", "canonical_sha256", "member_paths",
             "opaque_binding", "opaque_binding_encoding",
             "not_the_opaque_binding", "not_the_opaque_binding.base64url_no_padding",
-            "must_refuse",
-            *(f"must_refuse[{index}]" for index in range(len(refusals))),
-            *(f"must_refuse[{index}].binding" for index in range(len(refusals))),
-            *(f"must_refuse[{index}].case_id" for index in range(len(refusals))),
+            "must_refuse", "may_refuse", "must_not_claim_unapplied_audio",
+            *(f"{key}[{index}]" for key in ("must_refuse", "may_refuse")
+              for index in range(len(vector[key]))),
+            *(f"{key}[{index}].binding" for key in ("must_refuse", "may_refuse")
+              for index in range(len(vector[key]))),
+            *(f"{key}[{index}].case_id" for key in ("must_refuse", "may_refuse")
+              for index in range(len(vector[key]))),
         },
         descriptive={
             "vector_id", "description", "no_schema_because",
-            *(f"must_refuse[{index}].why" for index in range(len(refusals))),
+            *(f"{key}[{index}].why" for key in ("must_refuse", "may_refuse")
+              for index in range(len(vector[key]))),
         },
-        opaque={f"must_refuse[{index}].binding" for index in range(len(refusals))},
+        opaque={
+            f"{key}[{index}].binding" for key in ("must_refuse", "may_refuse")
+            for index in range(len(vector[key]))
+        },
     )
     return 1 + len(refusals)
 

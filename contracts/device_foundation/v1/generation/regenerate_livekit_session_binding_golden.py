@@ -116,20 +116,38 @@ def main() -> None:
                 "why": "A room nobody may enter is not a channel, and an empty token is not one.",
                 "binding": {**document, "session": {**document["session"], "token": ""}},
             },
+        ],
+        # Refusable, not refused. Decided 2026-09-07, after a real device ran:
+        # this transport negotiates the audio format, so a Body that does not
+        # own its capture has nothing to apply and nothing to refuse. The phone
+        # publishes through the LiveKit SDK, whose only publish entry point
+        # takes no rate and no channel count; the firmware feeds PCM into the
+        # transport itself and can act on these. Requiring refusal would make
+        # the phone non-conformant for working; requiring nothing would let a
+        # Body accept a rate it silently ignores — which it did, behind an
+        # accessor answering 16000 that nothing set.
+        "may_refuse": [
             {
                 "case_id": "DF-LIVEKIT-SESSION-BINDING-SAMPLE-RATE-OUT-OF-RANGE",
                 "why": (
-                    "Outside the range a Body in this system opens a capture at. A rate "
-                    "accepted and then not honoured is silence with nothing reporting it."
+                    "Outside the range a Body that owns its capture can open one at. Such a "
+                    "Body may refuse; a Body whose transport negotiates the format must not, "
+                    "because refusing there denies a channel it would have served."
                 ),
                 "binding": {**document, "audio": {"sample_rate": 96000, "channels": 1}},
             },
             {
                 "case_id": "DF-LIVEKIT-SESSION-BINDING-THREE-CHANNELS",
-                "why": "Mono or stereo. There is no third thing a Body knows how to play.",
+                "why": "Mono or stereo, on the same terms as the rate above.",
                 "binding": {**document, "audio": {"sample_rate": 16000, "channels": 3}},
             },
         ],
+        # The half that is falsifiable either way, and the one that was broken.
+        "must_not_claim_unapplied_audio": (
+            "A Body that does not configure its capture from `audio` must not expose those "
+            "values as if it had. The phone answered 16000 from an accessor nothing set, and "
+            "that is what made the gap look closed for as long as it did."
+        ),
     }
     save("livekit-session-binding.json", vector)
 
