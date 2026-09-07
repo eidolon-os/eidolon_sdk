@@ -14,7 +14,12 @@ from cryptography.hazmat.primitives.asymmetric import ec
 from cryptography.hazmat.primitives.asymmetric.utils import encode_dss_signature
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
-from .lifecycle import DeviceInstanceId, DeviceRef, operational_public_key_bytes
+from .lifecycle import (
+    DeviceInstanceId,
+    DeviceRef,
+    operational_key_id,
+    operational_public_key_bytes,
+)
 
 
 class DeviceEraseContractError(ValueError):
@@ -165,7 +170,18 @@ def operation_fingerprint(command: DeviceLocalEraseCommand) -> str:
 
 
 def operation_key_id(public_key_spki: str) -> str:
-    return "sha256:" + hashlib.sha256(_key_bytes(public_key_spki)).hexdigest()
+    """This ledger's name for the shared fingerprint, with this module's error.
+
+    The value is `operational_key_id`'s — the same one a commissioning voucher
+    is bound to and a device instance id is derived from — so it is computed
+    there rather than a second time here. Only the failure is local: callers of
+    this module catch `DeviceEraseContractError`.
+    """
+
+    try:
+        return operational_key_id(public_key_spki)
+    except ValueError as exc:
+        raise DeviceEraseContractError("invalid operational P-256 public key") from exc
 
 
 def _key_bytes(public_key_spki: str) -> bytes:

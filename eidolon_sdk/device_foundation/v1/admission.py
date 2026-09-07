@@ -157,6 +157,84 @@ class HardwareIdentityEvidence(_Model):
     evidence_digest: str = Field(pattern=r"^sha256:[0-9a-f]{64}$")
 
 
+#: The scheme name of the only base-identity evidence V1 has.
+BASE_IDENTITY_EVIDENCE_SCHEME = "hub-issued-base-p256"
+
+#: The trust profile every V1 admission runs under.
+TRUST_PROFILE_ID = "eidolon-trust-p256-hpke-v1"
+
+#: The complete member set of the signed evidence document. A verifier requires
+#: exactly these, so an added member is not a compatible change.
+BASE_IDENTITY_EVIDENCE_FIELDS: Final = frozenset(
+    {
+        "device_base_id",
+        "device_instance_id",
+        "operational_public_key",
+        "profile_id",
+    }
+)
+
+
+def base_identity_evidence_document(
+    *,
+    device_base_id: str,
+    device_instance_id: DeviceInstanceId | str,
+    operational_public_key: str,
+) -> dict[str, Any]:
+    """What the device's operational key signs to show which identity it holds.
+
+    Produced by the device and rebuilt by the Authority, which re-derives the
+    RFC 8785 form and refuses anything whose bytes differ from the ones it was
+    sent — so member order is contractual here in exactly the way it is for a
+    voucher, and for the same reason: a JSON Schema cannot pin it, and the
+    contract types the wire value as a string.
+
+    `profile_id` is filled in rather than accepted. It is the one member with a
+    single legal value, and a producer that could pass it could pass a profile
+    the Authority does not run.
+    """
+
+    document = {
+        "device_base_id": device_base_id,
+        "device_instance_id": str(device_instance_id),
+        "operational_public_key": operational_public_key,
+        "profile_id": TRUST_PROFILE_ID,
+    }
+    # The member set a verifier enforces and the members built here are two
+    # statements of one fact, checked against each other rather than left to
+    # agree. Only editing one of the two constants can trip this, and the
+    # alternative to tripping is a document every Authority refuses.
+    if set(document) != BASE_IDENTITY_EVIDENCE_FIELDS:
+        raise AssertionError(
+            "base identity evidence document disagrees with "
+            "BASE_IDENTITY_EVIDENCE_FIELDS: built "
+            f"{sorted(document)}, declared {sorted(BASE_IDENTITY_EVIDENCE_FIELDS)}"
+        )
+    return document
+
+
+def base_identity_evidence_wire(*, document: dict[str, Any], signature: str) -> str:
+    """The wire form: the canonical document, a dot, then the signature.
+
+    The document travels as its own canonical bytes rather than as a re-encoded
+    object, because the verifier compares what it rebuilt against what arrived
+    and a re-encoding is what makes those differ. `signature` is ES256 raw
+    ``r||s``, 64 bytes, base64url unpadded — over these same canonical bytes.
+    """
+
+    return f"{rfc8785.dumps(document).decode()}.{signature}"
+
+
+def base_identity_evidence_digest(wire_evidence: str) -> str:
+    """The digest an Authority records for the evidence it was shown.
+
+    Over the wire form, not the document: it is what a Proposal carries forward
+    into the sealed ClaimGrant AAD, so it has to name the exact bytes presented.
+    """
+
+    return "sha256:" + hashlib.sha256(wire_evidence.encode()).hexdigest()
+
+
 class CommissioningProof(_Model):
     """Standing to ask, which is not the same question as approval.
 

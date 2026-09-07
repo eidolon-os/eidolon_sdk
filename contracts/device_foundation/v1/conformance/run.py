@@ -62,14 +62,20 @@ from eidolon_sdk.device_foundation.v1 import (  # noqa: E402
     MANIFEST_ASSERTION_OPERATION,
     AssertDeviceManifest,
     ManifestDocument,
+    BASE_IDENTITY_EVIDENCE_FIELDS,
+    BASE_IDENTITY_EVIDENCE_SCHEME,
     COMMISSIONING_VOUCHER_CLAIM_NAMES,
     COMMISSIONING_VOUCHER_HEADER,
     COMMISSIONING_VOUCHER_KEY_INFO,
     COMMISSIONING_VOUCHER_PURPOSE,
     claim_grant_ack_proof_document,
+    base_identity_evidence_digest,
+    base_identity_evidence_document,
+    base_identity_evidence_wire,
     claim_grant_collection_proof_document,
     commissioning_voucher_claims,
     derive_voucher_signing_key,
+    operational_key_id,
     sign_commissioning_voucher,
     device_control_configuration_proof_document,
     AdmissionCredential,
@@ -1841,7 +1847,7 @@ def check_commissioning_voucher() -> int:
     """
 
     vector = load_json(ROOT / "golden" / "commissioning-voucher.json")
-    if vector["evidence_scheme"] != "hub-issued-base-p256":
+    if vector["evidence_scheme"] != BASE_IDENTITY_EVIDENCE_SCHEME:
         raise ConformanceError("base identity evidence scheme drifted")
     if vector["base_identity_provenance"] != "minted":
         raise ConformanceError("hardware base identity must be minted, never derived from the device")
@@ -1850,6 +1856,17 @@ def check_commissioning_voucher() -> int:
     digest = hashlib.sha256(spki_der).hexdigest()
     if vector["operational_spki_sha256"] != "sha256:" + digest:
         raise ConformanceError("operational SPKI fingerprint drifted")
+    # Computed by the function the voucher, the instance id and the erase
+    # ledger all take this value from, in both of the SPKI spellings the
+    # contract carries — two spellings of this are two identities for one key.
+    for spelling in (
+        vector["operational_public_key"],
+        vector["operational_public_key"].removeprefix("p256-spki:"),
+    ):
+        if operational_key_id(spelling) != vector["operational_spki_sha256"]:
+            raise ConformanceError(
+                "operational key id is not what the canonical function computes"
+            )
     if vector["device_instance_id"] != "device-instance-" + digest:
         raise ConformanceError("device instance id is not the operational SPKI fingerprint")
 
@@ -1880,16 +1897,30 @@ def check_commissioning_voucher() -> int:
     document = vector["evidence_document"]
     if document["device_base_id"] != vector["device_base_id"]:
         raise ConformanceError("evidence document states a different base identity")
+    # Rebuilt by the function every producer calls. The device signs its own
+    # copy and the Authority re-derives these bytes to verify, so a member
+    # added, renamed or reordered is reported as an unverifiable proof rather
+    # than as a document disagreement.
+    if document != base_identity_evidence_document(
+        device_base_id=vector["device_base_id"],
+        device_instance_id=vector["device_instance_id"],
+        operational_public_key=vector["operational_public_key"],
+    ):
+        raise ConformanceError(
+            "evidence document is not what the canonical builder produces"
+        )
+    if set(document) != BASE_IDENTITY_EVIDENCE_FIELDS:
+        raise ConformanceError("evidence document member set drifted")
     canonical = canonical_bytes(document)
     if canonical.decode() != vector["evidence_canonical_utf8"]:
         raise ConformanceError("base identity evidence JCS bytes drifted")
-    if vector["wire_evidence"] != (
-        vector["evidence_canonical_utf8"] + "." + vector["evidence_signature"]
+    if vector["wire_evidence"] != base_identity_evidence_wire(
+        document=document, signature=vector["evidence_signature"]
     ):
         raise ConformanceError("base identity evidence wire framing drifted")
-    if vector["evidence_digest"] != "sha256:" + hashlib.sha256(
-        vector["wire_evidence"].encode()
-    ).hexdigest():
+    if vector["evidence_digest"] != base_identity_evidence_digest(
+        vector["wire_evidence"]
+    ):
         raise ConformanceError("evidence digest is not the digest of the wire evidence")
     raw_signature = _b64url_decode(vector["evidence_signature"])
     if len(raw_signature) != 64:

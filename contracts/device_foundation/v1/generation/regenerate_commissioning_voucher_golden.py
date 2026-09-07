@@ -25,10 +25,15 @@ from cryptography.hazmat.primitives.asymmetric import ec
 from cryptography.hazmat.primitives.asymmetric.utils import decode_dss_signature
 
 from eidolon_sdk.device_foundation.v1 import (
+    BASE_IDENTITY_EVIDENCE_SCHEME,
     COMMISSIONING_VOUCHER_HEADER,
     COMMISSIONING_VOUCHER_KEY_INFO,
+    base_identity_evidence_digest,
+    base_identity_evidence_document,
+    base_identity_evidence_wire,
     commissioning_voucher_claims,
     derive_voucher_signing_key,
+    operational_key_id,
     sign_commissioning_voucher,
 )
 
@@ -74,15 +79,18 @@ def main() -> None:
     spki_sha256 = hashlib.sha256(spki).hexdigest()
     device_instance_id = "device-instance-" + spki_sha256
 
-    evidence_document = {
-        "device_base_id": DEVICE_BASE_ID,
-        "device_instance_id": device_instance_id,
-        "operational_public_key": operational_public_key,
-        "profile_id": "eidolon-trust-p256-hpke-v1",
-    }
+    # Built and framed by the functions every producer calls, so the vector
+    # cannot be a second spelling of the document or of its wire form.
+    evidence_document = base_identity_evidence_document(
+        device_base_id=DEVICE_BASE_ID,
+        device_instance_id=device_instance_id,
+        operational_public_key=operational_public_key,
+    )
     evidence_canonical = rfc8785.dumps(evidence_document).decode()
     evidence_signature = raw_signature(key, evidence_document)
-    wire_evidence = f"{evidence_canonical}.{evidence_signature}"
+    wire_evidence = base_identity_evidence_wire(
+        document=evidence_document, signature=evidence_signature
+    )
 
     # The vector is written by the same function its consumers call, so the
     # bytes below cannot be a second spelling of the derivation.
@@ -94,7 +102,7 @@ def main() -> None:
     claims = commissioning_voucher_claims(
         device_base_id=DEVICE_BASE_ID,
         owner_domain_id=OWNER_DOMAIN_ID,
-        operational_spki_sha256="sha256:" + spki_sha256,
+        operational_spki_sha256=operational_key_id(operational_public_key),
         jti=JTI,
         expires_at_unix=EXPIRES_AT_UNIX,
     )
@@ -109,7 +117,7 @@ def main() -> None:
     continuation_claims = commissioning_voucher_claims(
         device_base_id=DEVICE_BASE_ID,
         owner_domain_id=OWNER_DOMAIN_ID,
-        operational_spki_sha256="sha256:" + spki_sha256,
+        operational_spki_sha256=operational_key_id(operational_public_key),
         jti=CONTINUATION_JTI,
         expires_at_unix=EXPIRES_AT_UNIX,
         provenance="derived-from-controller",
@@ -145,7 +153,7 @@ def main() -> None:
         ),
         "device_operational_scalar_hex": f"{OPERATIONAL_SCALAR:x}",
         "operational_public_key": operational_public_key,
-        "operational_spki_sha256": "sha256:" + spki_sha256,
+        "operational_spki_sha256": operational_key_id(operational_public_key),
         "device_instance_id": device_instance_id,
         "device_base_id": DEVICE_BASE_ID,
         "base_identity_provenance": "minted",
@@ -156,13 +164,13 @@ def main() -> None:
             software_derivation_input
         ),
         "software_body_hardware_identity_ref": software_identity_ref,
-        "evidence_scheme": "hub-issued-base-p256",
+        "evidence_scheme": BASE_IDENTITY_EVIDENCE_SCHEME,
         "evidence_document": evidence_document,
         "evidence_canonical_utf8": evidence_canonical,
         "evidence_signature_encoding": "ES256 raw r||s, 64 bytes, base64url without padding",
         "evidence_signature": evidence_signature,
         "wire_evidence": wire_evidence,
-        "evidence_digest": "sha256:" + hashlib.sha256(wire_evidence.encode()).hexdigest(),
+        "evidence_digest": base_identity_evidence_digest(wire_evidence),
         "owner_domain_id": OWNER_DOMAIN_ID,
         "voucher": {
             "scheme": "hub-issued-commissioning-voucher-v1",

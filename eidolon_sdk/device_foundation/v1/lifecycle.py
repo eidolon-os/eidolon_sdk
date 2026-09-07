@@ -175,6 +175,27 @@ def operational_public_key_bytes(operational_public_key: str) -> bytes:
     return raw
 
 
+def operational_key_id(operational_public_key: str) -> str:
+    """The ``sha256:<hex>`` fingerprint of an operational key's SPKI bytes.
+
+    One value with several jobs: the ``operational_spki_sha256`` a commissioning
+    voucher is bound to, the digest a ``device_instance_id`` is derived from,
+    and the key id the erase ledger records. Every one of them is compared for
+    equality against a value some other process computed, so two spellings of
+    this are two identities for one key — and the mismatch is never reported as
+    a fingerprint disagreement, only as a device nobody has a record of.
+
+    It went wrong once already in the direction the helper above guards: the
+    erase ledger's ``p256-spki:`` spelling reached a decoder that knew only the
+    bare base64url, and every ACK a real Body signed was refused as an invalid
+    key. So this reads the SPKI through the one function that accepts both
+    spellings and refuses everything else, rather than hashing whatever arrived.
+    """
+
+    digest = hashlib.sha256(operational_public_key_bytes(operational_public_key))
+    return "sha256:" + digest.hexdigest()
+
+
 def derive_device_instance_id(operational_public_key: str) -> str:
     """The device instance id that key, and only that key, may claim.
 
