@@ -24,14 +24,18 @@ import rfc8785
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import ec
 from cryptography.hazmat.primitives.asymmetric.utils import decode_dss_signature
-from cryptography.hazmat.primitives.kdf.hkdf import HKDF
+
+from eidolon_sdk.device_foundation.v1 import (
+    COMMISSIONING_VOUCHER_KEY_INFO,
+    COMMISSIONING_VOUCHER_PURPOSE,
+    derive_voucher_signing_key,
+)
 
 ROOT = Path(__file__).resolve().parents[1]
 
 # Stated so the vector is reproducible, never so a deployment reuses them.
 OPERATIONAL_SCALAR = 0x3456789ABCDEF123456789ABCDEF12
 MANAGEMENT_SECRET_HEX = "6f776e65722d646f6d61696e2d6d616e6167656d656e742d7365637265742d31"
-VOUCHER_KEY_INFO = b"eidolon-commissioning-voucher-v1"
 DEVICE_BASE_ID = "device-base-" + "4f3b" * 16
 SOFTWARE_BASE_ID = "software-body-" + "a71c" * 10
 OWNER_DOMAIN_ID = "owner-domain_01"
@@ -78,9 +82,9 @@ def main() -> None:
     evidence_signature = raw_signature(key, evidence_document)
     wire_evidence = f"{evidence_canonical}.{evidence_signature}"
 
-    voucher_key = HKDF(
-        algorithm=hashes.SHA256(), length=32, salt=None, info=VOUCHER_KEY_INFO
-    ).derive(bytes.fromhex(MANAGEMENT_SECRET_HEX))
+    # The vector is written by the same function its consumers call, so the
+    # bytes below cannot be a second spelling of the derivation.
+    voucher_key = derive_voucher_signing_key(bytes.fromhex(MANAGEMENT_SECRET_HEX))
 
     header = {"alg": "HS256", "typ": "JWT"}
     claims = {
@@ -90,7 +94,7 @@ def main() -> None:
         "jti": JTI,
         "operational_spki_sha256": "sha256:" + spki_sha256,
         "owner_domain_id": OWNER_DOMAIN_ID,
-        "purpose": "eidolon-commissioning-voucher-v1",
+        "purpose": COMMISSIONING_VOUCHER_PURPOSE,
     }
     header_canonical = rfc8785.dumps(header).decode()
     claims_canonical = rfc8785.dumps(claims).decode()
@@ -148,7 +152,7 @@ def main() -> None:
             "scheme": "hub-issued-commissioning-voucher-v1",
             "signing_key_derivation": (
                 "HKDF-SHA256(host management secret, salt=none, "
-                'info="eidolon-commissioning-voucher-v1", L=32)'
+                f'info="{COMMISSIONING_VOUCHER_KEY_INFO.decode()}", L=32)'
             ),
             "host_management_secret_hex": MANAGEMENT_SECRET_HEX,
             "signing_key_hex": voucher_key.hex(),

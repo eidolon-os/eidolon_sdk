@@ -22,7 +22,6 @@ from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import ec
 from cryptography.hazmat.primitives.asymmetric.utils import encode_dss_signature
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
-from cryptography.hazmat.primitives.kdf.hkdf import HKDF
 from jsonschema import Draft202012Validator, FormatChecker
 from referencing import Registry, Resource
 
@@ -59,8 +58,11 @@ def canonical_bytes(value: Any) -> bytes:
 
 from eidolon_sdk.device_foundation.v1 import (  # noqa: E402
     ADMISSION_AUDIENCE,
+    COMMISSIONING_VOUCHER_KEY_INFO,
+    COMMISSIONING_VOUCHER_PURPOSE,
     claim_grant_ack_proof_document,
     claim_grant_collection_proof_document,
+    derive_voucher_signing_key,
     AdmissionCredential,
     AdmissionCredentialError,
     BusinessOwnerId,
@@ -1714,14 +1716,25 @@ def check_commissioning_voucher() -> int:
         raise ConformanceError("voucher states a different base identity")
     if claims["jti"] != voucher["jti"] or claims["exp"] != voucher["expires_at_unix"]:
         raise ConformanceError("voucher claims disagree with the vector's own fields")
-    signing_key = HKDF(
-        algorithm=hashes.SHA256(),
-        length=32,
-        salt=None,
-        info=b"eidolon-commissioning-voucher-v1",
-    ).derive(bytes.fromhex(voucher["host_management_secret_hex"]))
+    if claims["purpose"] != COMMISSIONING_VOUCHER_PURPOSE:
+        raise ConformanceError("voucher purpose claim drifted")
+    # Derived by the function Admin and Hub both call, not by a second spelling
+    # of it here. A vector checked against its own restatement of the
+    # derivation would stay green while every real caller moved underneath it.
+    signing_key = derive_voucher_signing_key(
+        bytes.fromhex(voucher["host_management_secret_hex"])
+    )
     if signing_key.hex() != voucher["signing_key_hex"]:
         raise ConformanceError("voucher signing key derivation drifted")
+    # The prose beside the bytes is held to them too: a reader who trusts the
+    # description instead of recomputing must not be told a different rule.
+    if voucher["signing_key_derivation"] != (
+        "HKDF-SHA256(host management secret, salt=none, "
+        f'info="{COMMISSIONING_VOUCHER_KEY_INFO.decode()}", L=32)'
+    ):
+        raise ConformanceError(
+            "voucher signing key derivation prose disagrees with the derivation used"
+        )
     header_canonical = canonical_bytes(voucher["header"])
     claims_canonical = canonical_bytes(claims)
     if header_canonical.decode() != voucher["header_canonical_utf8"]:

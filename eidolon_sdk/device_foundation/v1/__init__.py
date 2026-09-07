@@ -47,6 +47,8 @@ from .admission_credential import (
 from .admission import (
     CLAIM_GRANT_ACK_PROOF_CONTRACT,
     CLAIM_GRANT_COLLECTION_PROOF_CONTRACT,
+    COMMISSIONING_VOUCHER_KEY_INFO,
+    COMMISSIONING_VOUCHER_PURPOSE,
     AckClaimGrant,
     AckClaimGrantResult,
     AdmissionListCursor,
@@ -80,6 +82,7 @@ from .admission import (
     OperationalPublicKey,
     claim_grant_ack_proof_document,
     claim_grant_collection_proof_document,
+    derive_voucher_signing_key,
 )
 from .body_mesh import (
     AssignmentCondition,
@@ -133,10 +136,13 @@ from .setup_descriptor import (
 __all__ = [
     "CLAIM_GRANT_ACK_PROOF_CONTRACT",
     "CLAIM_GRANT_COLLECTION_PROOF_CONTRACT",
+    "COMMISSIONING_VOUCHER_KEY_INFO",
+    "COMMISSIONING_VOUCHER_PURPOSE",
     "MANIFEST_ASSERTION_OPERATION",
     "AckClaimGrant",
     "claim_grant_ack_proof_document",
     "claim_grant_collection_proof_document",
+    "derive_voucher_signing_key",
     "AssertDeviceManifest",
     "AckClaimGrantResult",
     "AdmissionListCursor",

@@ -5,6 +5,8 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any, Literal
 
+from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives.kdf.hkdf import HKDF
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from .lifecycle import (
@@ -164,6 +166,46 @@ class CommissioningProof(_Model):
     scheme: Literal["hub-issued-commissioning-voucher-v1", "enrolled-base-key-v1"]
     proof: str = Field(min_length=16, max_length=4096)
     nonce: str = Field(min_length=16, max_length=256)
+
+
+#: Domain separation for the commissioning voucher signing key.
+#:
+#: The Host signs vouchers with a key derived from the management secret it
+#: already holds, rather than a second file nobody would remember to rotate.
+#: This ``info`` is the whole of what stops a management credential — minted
+#: from that same secret for ``ADMISSION_AUDIENCE`` — from being replayed as a
+#: commissioning proof, so it is a security boundary and not a label.
+COMMISSIONING_VOUCHER_KEY_INFO = b"eidolon-commissioning-voucher-v1"
+
+#: The ``purpose`` claim inside the voucher. Equal to the key info by value and
+#: independent of it by meaning: one separates keys, the other is a signed
+#: claim a verifier checks.
+COMMISSIONING_VOUCHER_PURPOSE = "eidolon-commissioning-voucher-v1"
+
+
+def derive_voucher_signing_key(management_secret: bytes) -> bytes:
+    """The voucher signing key, derived once for every Python caller.
+
+    Admin derives this to sign a voucher and Hub derives it to verify one, from
+    the same management secret and never from anything sent between them. So
+    the two never compare intermediate values, and a disagreement about this
+    derivation is not reported as a disagreement: it arrives as a device
+    refused at first commissioning, with a valid signature by the wrong key and
+    no field anywhere naming what differs.
+
+    Both sides are Python and both already import this package, so this is one
+    implementation rather than two that agree. The bytes are pinned in
+    ``golden/commissioning-voucher.json`` against a stated management secret,
+    and this function is what the vector is checked against — so the vector and
+    its callers cannot agree by coincidence.
+    """
+
+    return HKDF(
+        algorithm=hashes.SHA256(),
+        length=32,
+        salt=None,
+        info=COMMISSIONING_VOUCHER_KEY_INFO,
+    ).derive(management_secret)
 
 
 class HandoffPublicKey(_Model):
