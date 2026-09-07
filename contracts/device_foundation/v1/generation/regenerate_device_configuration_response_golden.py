@@ -98,6 +98,19 @@ def main() -> None:
             "https://contracts.eidolon.live/device-foundation/v1/device-control/"
             "schemas.schema.json#/$defs/DeviceConfigurationResult"
         ),
+        # Named because the vector could not say it, and two reasonable Bodies
+        # read it differently. A reader must not refuse a channel because its
+        # own clock says the grant has expired: a device that has not reached
+        # NTP yet — the normal state at boot — would refuse a channel that is
+        # fine, which is a worse failure than the one the check prevents. What
+        # is refusable at parse time is a grant that is not internally coherent,
+        # which is what the `expires_at_ms: 0` refusal case below is.
+        #
+        # The accepted cases are therefore deliberately in the past. A consumer
+        # that judges expiry against the wall clock fails this vector instead of
+        # passing it, the same way the session binding's padding separates the
+        # two base64 alphabets.
+        "expiry_is_not_judged_against": "the reader's clock",
         "request_nonce": REQUEST_NONCE,
         "device_ref": DEVICE_REF,
         "body_states": ["active", "awaiting-channel", "revoked"],

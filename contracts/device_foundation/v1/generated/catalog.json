@@ -39,8 +39,8 @@
     },
     {
       "path": "conformance/run.py",
-      "sha256": "56c73bd7197a5c9bb3efe82c81226b47822c0492e9c20ee1432a0d4b61ddab16",
-      "size": 123326
+      "sha256": "3d948819df006599a48bc771f0269daa20edd0e9c5a11d4a7f04dc6c999b5c53",
+      "size": 124782
     },
     {
       "path": "delivery-port/schemas.schema.json",
@@ -214,8 +214,8 @@
     },
     {
       "path": "golden/device-control-configuration-response.json",
-      "sha256": "2d2b442c3200b022fc99f7aec0a75f3d0039088ce8da3637da825291b44f45cf",
-      "size": 11567
+      "sha256": "f3ba335ae394f61124b06381cd97e620ee01c65f2b645aa9e0c373b6574ec01d",
+      "size": 11623
     },
     {
       "path": "golden/device-control-manifest-assertion-proof.json",
@@ -299,8 +299,8 @@
     },
     {
       "path": "requirements/requirements.json",
-      "sha256": "4f8f36398063f6be4b5151ee011ef2923ba6ddc3abba250e94325e9147a916ef",
-      "size": 56906
+      "sha256": "a339ddc5c1b15c9ce233bc28012cf96674327d70c87537959d4ae31e4ef0a102",
+      "size": 58069
     },
     {
       "path": "state-vectors/commissioning-runtime.json",
@@ -335,5 +335,5 @@
   ],
   "generator": "device-foundation-v1-catalog",
   "generator_version": "1.0",
-  "source_digest": "sha256:1dc093176b475e60e03268c33c89b62d9e4c41364c4f3647b63edbb4354862e1"
+  "source_digest": "sha256:ab363a2140470f09856fd88f36064478e67242d686a5ad2d295b827a45c96945"
 }

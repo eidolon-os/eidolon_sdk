@@ -994,9 +994,9 @@
         "CONFORMANCE::check_livekit_session_binding"
       ],
       "hil_tests": [],
-      "status": "planned",
-      "waiver_reason": null,
-      "waiver_expires_at": null
+      "status": "waived",
+      "waiver_reason": "Not satisfiable as written by a Body whose transport negotiates the rate. Verified in livekit_client 2.8.1: AudioCaptureOptions carries nine members and none is a sample rate or a channel count, and setMicrophoneEnabled accepts nothing else, so neither exit of \"honour or refuse\" is open — there is nothing to set, and refusing on the member denies a channel the Body joins perfectly well. The firmware can honour it because it feeds PCM into the transport itself; the phone cannot. Not split into a second requirement saying a negotiating Body must \"carry nothing and set nothing\", because that is satisfied by code that was never written and by code that forgot, which is the silent success this contract exists to refuse. The open question the expiry forces is where the fact belongs: either audio does not belong in a binding whose transport negotiates it, or a Body must be able to declare which kind it is — and a Body declares that sort of thing in its Manifest, which is a wider change than this requirement should decide as a side effect. Until then the phone's consumer test below pins the behaviour as it is rather than claiming it is met.",
+      "waiver_expires_at": "2027-03-07"
     },
     {
       "requirement_id": "DF-DEVICE-CONTROL-PROOF-001",

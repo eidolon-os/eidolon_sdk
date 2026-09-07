@@ -12,6 +12,7 @@ import json
 import math
 import re
 import sys
+import time
 from pathlib import Path
 from typing import Any
 
@@ -1262,6 +1263,29 @@ def check_device_configuration_response(
     if channel["opaque_binding"] != inner["opaque_binding"]:
         raise ConformanceError("the active case carries a binding the session vector does not")
 
+    # What expiry may and may not be judged against, pinned rather than left to
+    # each parser. A Body must not refuse a channel because its own clock says
+    # the grant is spent: a device that has not reached NTP yet is the normal
+    # state at boot, and refusing a fine channel there is worse than the failure
+    # the check would prevent. So the accepted cases are deliberately already
+    # past, and a consumer that wall-clocks them fails this vector rather than
+    # passing it. The published rule and that property are checked together —
+    # the sentence alone would be a caption.
+    if vector["expiry_is_not_judged_against"] != "the reader's clock":
+        raise ConformanceError("the response vector names an expiry rule this check does not hold")
+    now_ms = int(time.time() * 1000)
+    for case in vector["cases"]:
+        for channel in case["response"]["channels"]:
+            if channel["expires_at_ms"] <= channel["issued_at_ms"]:
+                raise ConformanceError(
+                    f"{case['case_id']}: an accepted grant is not internally coherent"
+                )
+            if channel["expires_at_ms"] >= now_ms:
+                raise ConformanceError(
+                    f"{case['case_id']}: this grant has not expired by the wall clock yet, so a "
+                    "consumer that wrongly judges expiry against its own clock would still pass"
+                )
+
     refusals = vector["must_refuse"]
     if not refusals:
         raise ConformanceError("the response vector carries no refusal case")
@@ -1276,7 +1300,7 @@ def check_device_configuration_response(
         vector,
         golden="device-control-configuration-response",
         validated={
-            "request_nonce", "device_ref",
+            "expiry_is_not_judged_against", "request_nonce", "device_ref",
             "device_ref.device_instance_id", "device_ref.owner_domain_id",
             "device_ref.owner_domain_generation", "device_ref.claim_generation",
             "device_ref.trust_epoch", "body_states", "cases",
