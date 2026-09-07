@@ -303,12 +303,13 @@
     {
       "requirement_id": "DF-CRYPTO-AAD-001",
       "normative_text_ref": "3.12 changing any required ClaimGrant AAD field MUST make opening fail",
-      "owner": "eidolon_sdk+eidolon_hub+eidolon-client-esp32",
+      "owner": "eidolon_sdk+eidolon_hub+eidolon-client-esp32+eidolon_client_mobile",
       "schema_ids": ["common/ClaimGrantAAD"],
       "producer_tests": ["CONFORMANCE::check_claim_grant_aad"],
       "consumer_tests": [
         "P2/P5::claim-grant-aad-negative",
-        "ESP32::TheClaimGrantAadIsTheGoldenVectorBytes"
+        "ESP32::TheClaimGrantAadIsTheGoldenVectorBytes",
+        "MOBILE::test/canonical_json_golden_test.dart::ClaimGrant AAD canonical bytes match the AAD golden"
       ],
       "simulator_vectors": ["DF-CLAIM-GRANT-AAD-001"],
       "integration_tests": ["CONFORMANCE::check_claim_grant_aad"],
@@ -932,7 +933,9 @@
       "consumer_tests": [
         "HUB::test_the_authority_verifies_the_proof_the_vector_publishes",
         "HUB::test_a_proof_over_any_other_document_is_refused",
-        "HUB::test_the_acknowledgement_is_signed_by_the_device_it_names"
+        "HUB::test_the_acknowledgement_is_signed_by_the_device_it_names",
+        "MOBILE::test/admission_proofs_test.dart::the collection proof is the bytes the vector pins",
+        "MOBILE::test/admission_proofs_test.dart::the acknowledgement proof is the bytes the vector pins"
       ],
       "simulator_vectors": [
         "golden/claim-grant-collection-proof.json",
@@ -942,7 +945,7 @@
         "CONFORMANCE::check_claim_grant_proof_vectors"
       ],
       "hil_tests": [],
-      "status": "planned",
+      "status": "covered",
       "waiver_reason": null,
       "waiver_expires_at": null
     },
@@ -957,7 +960,32 @@
         "CHANNEL::test_livekit_session_binding_vector.py::test_the_wire_carries_the_padded_standard_alphabet"
       ],
       "consumer_tests": [
-        "ESP32::TestLiveKitBindingMatchesTheGoldenVector"
+        "ESP32::TestLiveKitBindingMatchesTheGoldenVector",
+        "MOBILE::test/livekit_session_binding_test.dart::the Provider's own binding becomes the room the vector describes",
+        "MOBILE::test/livekit_session_binding_test.dart::the wire form decodes, and the form the vector calls not-it does not"
+      ],
+      "simulator_vectors": [
+        "golden/livekit-session-binding.json"
+      ],
+      "integration_tests": [
+        "CONFORMANCE::check_livekit_session_binding"
+      ],
+      "hil_tests": [],
+      "status": "covered",
+      "waiver_reason": null,
+      "waiver_expires_at": null
+    },
+    {
+      "requirement_id": "DF-CHANNEL-BINDING-AUDIO-001",
+      "normative_text_ref": "纯软件Body准入方案 §4.1 a Body MUST either honour the audio a session binding declares or refuse the binding; this is what golden/livekit-session-binding.json's SAMPLE-RATE-OUT-OF-RANGE and THREE-CHANNELS refusals encode, and it is a separate obligation from pinning the document's shape, which DF-CHANNEL-BINDING-001 covers. Planned, not covered: the firmware refuses both, and the phone neither honours nor refuses — liveKitSessionFromBinding drops the audio member and nothing consumes it, so a rate the Provider chose is accepted and then ignored, which is the silence the vector's own reason names. The MOBILE entry below pins that gap as it is rather than omitting it, and is the test that must change when the capture path honours the rate",
+      "owner": "eidolon_channel+eidolon-client-esp32+eidolon_client_mobile",
+      "schema_ids": [],
+      "producer_tests": [
+        "CHANNEL::test_livekit_session_binding_vector.py::test_the_provider_writes_the_member_set_the_vector_pins"
+      ],
+      "consumer_tests": [
+        "ESP32::TestLiveKitBindingMatchesTheGoldenVector",
+        "MOBILE::test/livekit_session_binding_test.dart::the audio the Provider asks for is not honoured, and not refused"
       ],
       "simulator_vectors": [
         "golden/livekit-session-binding.json"
