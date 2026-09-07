@@ -114,8 +114,12 @@ def test_esp32_topics_header_matches_python_wire_contract() -> None:
     _session_vocabulary.assert_every_name_is_decided(
         client="esp32", mirrored=mirrored, unmirrored=unmirrored
     )
-    for contract_name, cpp_name in mirrored.items():
-        assert strings[cpp_name] == getattr(c, contract_name), contract_name
+    _session_vocabulary.assert_mirrored(
+        client="esp32",
+        declared=strings,
+        mirrored=mirrored,
+        source="eidolon_topics.h",
+    )
 
     assert strings["kClientAudioStateType"] == c.CLIENT_AUDIO_STATE_TYPE
     assert strings["kInputModeAuto"] == c.INPUT_MODE_AUTO

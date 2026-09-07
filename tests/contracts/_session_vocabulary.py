@@ -65,3 +65,32 @@ def assert_every_name_is_decided(
 
     empty = sorted(name for name, reason in unmirrored.items() if not reason.strip())
     assert not empty, f"{client}: {empty} are excused without a reason"
+
+
+def assert_mirrored(
+    *,
+    client: str,
+    declared: dict[str, object],
+    mirrored: dict[str, str],
+    source: str,
+) -> None:
+    """Each mirrored name against the client constant that carries it.
+
+    Missing names are reported before they are compared. A `KeyError` is closed,
+    which is the property that matters, but it is a crash where a sentence would
+    do: it does not say that the file fails to declare the constant, and the
+    next reader meets a traceback instead of a diagnosis. That distinction was
+    pointed out by the mobile working line, whose own checker already said it.
+    """
+
+    absent = sorted(
+        f"{client_name}, named as the mirror of {contract_name}"
+        for contract_name, client_name in mirrored.items()
+        if client_name not in declared
+    )
+    assert not absent, f"{client}: {source} does not declare " + "; ".join(absent)
+    for contract_name, client_name in mirrored.items():
+        assert declared[client_name] == getattr(c, contract_name), (
+            f"{client}: {client_name} is {declared[client_name]!r}, "
+            f"but {contract_name} is {getattr(c, contract_name)!r}"
+        )

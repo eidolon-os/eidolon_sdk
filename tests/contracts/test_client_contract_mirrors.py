@@ -73,8 +73,12 @@ def test_mobile_contract_mirror_matches_sdk() -> None:
     _session_vocabulary.assert_every_name_is_decided(
         client="mobile", mirrored=mirrored, unmirrored=unmirrored
     )
-    for contract_name, dart_name in mirrored.items():
-        assert constants[dart_name] == getattr(c, contract_name), contract_name
+    _session_vocabulary.assert_mirrored(
+        client="mobile",
+        declared=constants,
+        mirrored=mirrored,
+        source="eidolon_protocol.dart",
+    )
 
     assert integers["sessionControlSchemaVersion"] == c.WIRE_SCHEMA_VERSION
 
