@@ -1011,7 +1011,9 @@
       ],
       "consumer_tests": [
         "HUB::tests/unit/device_control/test_device_control_proof_vectors.py::test_the_authority_verifies_the_proof_the_vector_publishes",
-        "HUB::tests/unit/device_control/test_device_control_proof_vectors.py::test_a_proof_over_any_other_document_is_refused"
+        "HUB::tests/unit/device_control/test_device_control_proof_vectors.py::test_a_proof_over_any_other_document_is_refused",
+        "MOBILE::test/device_control_client_test.dart::the signed request is the bytes the vector pins",
+        "MOBILE::test/device_control_client_test.dart::every member the vector says must not move is in the signed bytes"
       ],
       "simulator_vectors": [
         "golden/device-control-configuration-proof.json",
@@ -1021,7 +1023,7 @@
         "CONFORMANCE::check_device_control_proof_vectors"
       ],
       "hil_tests": [],
-      "status": "planned",
+      "status": "covered",
       "waiver_reason": null,
       "waiver_expires_at": null
     },
