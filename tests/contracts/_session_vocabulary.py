@@ -21,14 +21,23 @@ from __future__ import annotations
 
 from eidolon_sdk.biz import contracts as c
 
-#: Prefixes that make a contract constant part of this vocabulary. `WIRE_` is
-#: here because `WIRE_SCHEMA_VERSION` travels in the same envelope and was the
-#: other name the mobile mirror had never asserted.
-_PREFIXES = ("SESSION_", "WIRE_")
-
-
 def names() -> set[str]:
-    return {name for name in dir(c) if name.startswith(_PREFIXES)}
+    """Every constant this contract publishes — no filter.
+
+    It was `SESSION_*` and `WIRE_*` for one day, and a prefix list is the same
+    defect as a roll-call: a name is missed for being spelled differently
+    rather than for being forgotten. `PLAYBACK_STATE_*` and `INPUT_MODE_*`
+    travel during a session and carry no `SESSION_` prefix; measured, the
+    prefix rule was eleven constants short of what a reader would call the
+    session vocabulary. So there is no rule — the module is the scope, and a
+    client that does not participate in a name says so.
+    """
+
+    return {
+        name
+        for name in dir(c)
+        if name.isupper() and not callable(getattr(c, name))
+    }
 
 
 def assert_every_name_is_decided(

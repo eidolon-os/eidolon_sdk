@@ -12,6 +12,15 @@ from eidolon_sdk.biz import contracts as c
 
 import _session_vocabulary
 
+_AGGREGATE = (
+    "an aggregate the Authority enforces on what it receives; a client carries the members it "
+    "participates in as individual constants, and a copy of the set would be a second place "
+    "for membership to drift"
+)
+_SENTINEL = (
+    "a local sentinel for \"this side does not know\", never sent"
+)
+
 
 def _workspace_root() -> Path:
     return Path(__file__).resolve().parents[3]
@@ -60,12 +69,7 @@ _WIRE_CONTRACT_MIRRORS: dict[str, str | None] = {
 #: Names the korvo fork has not taken from the firmware it forked. Values may
 #: never differ; a name may lag, and each lag is listed so that dropping one is
 #: not the same as never having received it.
-_KORVO_LAGS_BEHIND_ON = {
-    "kSessionIntentField": (
-        "added upstream on 2026-09-07 when that firmware stopped spelling the member at the "
-        "read; this fork still spells it inline and has not taken the constant"
-    ),
-}
+_KORVO_LAGS_BEHIND_ON: dict[str, str] = {}
 
 _UNVERIFIED_MIRRORS = {
     "eidolon_client_web": (
@@ -234,17 +238,69 @@ def test_mobile_contract_mirror_matches_sdk() -> None:
         "SESSION_INTENT_USER_INITIATED": "sessionIntentUserInitiated",
         "SESSION_INTENT_PROACTIVE": "sessionIntentProactive",
     }
+    mirrored.update({
+        "CONTROL_TOPIC": "controlTopic",
+        "CONTROL_OP_ROOM_JOIN": "controlOpRoomJoin",
+        "CONTROL_OP_CONFIG_REFRESH": "controlOpConfigRefresh",
+        "CONTROL_OP_DEVICE_IDENTIFY": "controlOpDeviceIdentify",
+        "CLIENT_AUDIO_STATE_TOPIC": "clientAudioStateTopic",
+        "CLIENT_AUDIO_STATE_TYPE": "clientAudioStateType",
+        "COMPANION_UI_STATE_TOPIC": "uiStateTopic",
+        "LIVEKIT_TRANSCRIPTION_TOPIC": "transcriptionTopic",
+        "LIVEKIT_AGENT_SESSION_TOPIC": "agentSessionTopic",
+        "INTERACTION_MODE_FULL_DUPLEX": "interactionModeFullDuplex",
+        "PLAYBACK_STATE_IDLE": "playbackStateIdle",
+        "PLAYBACK_STATE_AGENT_SPEAKING": "playbackStateAgentSpeaking",
+        "SESSION_END_ERROR": "sessionEndError",
+    })
+    _END_REASON_NOT_SHOWN = (
+        "a reason for an ended session that this client does not surface; it shows that the "
+        "session ended, not why. Only the error reason is read, because that one changes "
+        "what the person should do"
+    )
+    _NOT_THIS_CLIENT = (
+        "this client neither sends nor reads it — verified against its own source, not assumed"
+    )
     unmirrored = {
+        # The nine aggregate sets. No client mirrors a set: each carries the
+        # members it participates in as individual constants, and a C++ or Dart
+        # copy of a frozenset would be a second place for membership to drift.
+        # Membership is the Authority's to enforce on what it receives.
+        "CLIENT_AUDIO_STATE_KNOWN_KEYS": _AGGREGATE,
+        "CONTROL_OP_ALIASES": _AGGREGATE,
+        "VALID_CONTROL_OPS": _AGGREGATE,
+        "VALID_INPUT_MODES": _AGGREGATE,
+        "VALID_INTERACTION_MODES": _AGGREGATE,
+        "VALID_PLAYBACK_STATES": _AGGREGATE,
+        "VALID_SESSION_END_REASONS": _AGGREGATE,
+        "VALID_SESSION_INTENTS": _AGGREGATE,
+        "VALID_SESSION_REQUEST_TYPES": _AGGREGATE,
+        "INPUT_MODE_UNKNOWN": _SENTINEL,
+        "PLAYBACK_STATE_UNKNOWN": _SENTINEL,
+        "EVENT_TOPIC": _NOT_THIS_CLIENT,
+        "CONTROL_OP_DEVICE_ROLL_CALL": _NOT_THIS_CLIENT,
+        "CONTROL_OP_PLAYBACK_STOP": _NOT_THIS_CLIENT,
+        "CONTROL_OP_PTT_TURN_STATUS": _NOT_THIS_CLIENT,
+        "CONTROL_OP_GUARD_RUNTIME_SYNC": _NOT_THIS_CLIENT,
+        "CONTROL_OP_GUARD_VISION_BENCHMARK": _NOT_THIS_CLIENT,
+        "CONTROL_OP_GUARD_OWNER_FACE_PROFILE_SYNC": _NOT_THIS_CLIENT,
+        "INPUT_MODE_AUTO": _NOT_THIS_CLIENT,
+        "INPUT_MODE_MANUAL": _NOT_THIS_CLIENT,
+        "INPUT_MODE_PTT": _NOT_THIS_CLIENT,
+        "INTERACTION_MODE_HALF_DUPLEX": _NOT_THIS_CLIENT,
+        "INTERACTION_MODE_PTT": _NOT_THIS_CLIENT,
         "SESSION_INTENT_PRESENCE": (
             "a presence-initiated session is opened by a Body that can sense a room; this "
             "client opens sessions from a tap"
         ),
-        "SESSION_END_ERROR": "the end reasons are read by whoever reports them, and this "
-        "client reports none — it shows the session ended, not why",
-        "SESSION_END_IDLE_NORMAL": "as SESSION_END_ERROR",
-        "SESSION_END_PROACTIVE_DONE": "as SESSION_END_ERROR",
-        "SESSION_END_SUPERSEDED": "as SESSION_END_ERROR",
-        "SESSION_END_USER_LEFT": "as SESSION_END_ERROR",
+        # `SESSION_END_ERROR` moved to the mirrored table: this client gained
+        # `sessionEndError` when the agent began reporting a job that died
+        # before its session. The other four reasons it still does not read —
+        # it shows that the session ended, not why.
+        "SESSION_END_IDLE_NORMAL": _END_REASON_NOT_SHOWN,
+        "SESSION_END_PROACTIVE_DONE": _END_REASON_NOT_SHOWN,
+        "SESSION_END_SUPERSEDED": _END_REASON_NOT_SHOWN,
+        "SESSION_END_USER_LEFT": _END_REASON_NOT_SHOWN,
         "SESSION_FLOW_ID_FIELD": "carried between Host services, never by a client",
         "SESSION_CONVERSATION_ID_MAX_LENGTH": (
             "a bound the Provider enforces on what it receives; a client that enforced it "

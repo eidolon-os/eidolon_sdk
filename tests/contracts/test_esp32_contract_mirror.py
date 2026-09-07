@@ -17,7 +17,17 @@ from eidolon_sdk.biz import contracts as c
 from eidolon_sdk.biz import events
 from eidolon_sdk.biz import guard
 
-import _session_vocabulary
+_AGGREGATE = (
+    "an aggregate the Authority enforces on what it receives; a client carries the members it "
+    "participates in as individual constants, and a copy of the set would be a second place "
+    "for membership to drift"
+)
+_SENTINEL = (
+    "a local sentinel for \"this side does not know\", never sent: the Authority is told a mode "
+    "or a state, not that the device failed to determine one"
+)
+
+import _session_vocabulary  # noqa: E402  (sibling module; pytest puts this directory on the path)
 
 
 def _workspace_root() -> Path:
@@ -105,7 +115,48 @@ def test_esp32_topics_header_matches_python_wire_contract() -> None:
         "SESSION_INTENT_PRESENCE": "kSessionIntentPresence",
         "SESSION_INTENT_PROACTIVE": "kSessionIntentProactive",
     }
+    mirrored.update({
+        "CONTROL_TOPIC": "kControlTopic",
+        "EVENT_TOPIC": "kEventTopic",
+        "CLIENT_AUDIO_STATE_TOPIC": "kClientAudioStateTopic",
+        "CLIENT_AUDIO_STATE_TYPE": "kClientAudioStateType",
+        "COMPANION_UI_STATE_TOPIC": "kUiStateTopic",
+        "LIVEKIT_TRANSCRIPTION_TOPIC": "kTranscriptionTopic",
+        "LIVEKIT_AGENT_SESSION_TOPIC": "kAgentSessionTopic",
+        "CONTROL_OP_ROOM_JOIN": "kControlOpRoomJoin",
+        "CONTROL_OP_CONFIG_REFRESH": "kControlOpConfigRefresh",
+        "CONTROL_OP_DEVICE_IDENTIFY": "kControlOpDeviceIdentify",
+        "CONTROL_OP_DEVICE_ROLL_CALL": "kControlOpDeviceRollCall",
+        "CONTROL_OP_PLAYBACK_STOP": "kControlOpPlaybackStop",
+        "CONTROL_OP_PTT_TURN_STATUS": "kControlOpPttTurnStatus",
+        "CONTROL_OP_GUARD_RUNTIME_SYNC": "kControlOpGuardRuntimeSync",
+        "CONTROL_OP_GUARD_VISION_BENCHMARK": "kControlOpGuardVisionBenchmark",
+        "CONTROL_OP_GUARD_OWNER_FACE_PROFILE_SYNC": "kControlOpGuardOwnerFaceProfileSync",
+        "INPUT_MODE_AUTO": "kInputModeAuto",
+        "INPUT_MODE_MANUAL": "kInputModeManual",
+        "INPUT_MODE_PTT": "kInputModePtt",
+        "INTERACTION_MODE_FULL_DUPLEX": "kInteractionModeFullDuplex",
+        "INTERACTION_MODE_HALF_DUPLEX": "kInteractionModeHalfDuplex",
+        "INTERACTION_MODE_PTT": "kInteractionModePtt",
+        "PLAYBACK_STATE_IDLE": "kPlaybackStateIdle",
+        "PLAYBACK_STATE_AGENT_SPEAKING": "kPlaybackStateAgentSpeaking",
+    })
     unmirrored = {
+        # The nine aggregate sets. No client mirrors a set: each carries the
+        # members it participates in as individual constants, and a C++ or Dart
+        # copy of a frozenset would be a second place for membership to drift.
+        # Membership is the Authority's to enforce on what it receives.
+        "CLIENT_AUDIO_STATE_KNOWN_KEYS": _AGGREGATE,
+        "CONTROL_OP_ALIASES": _AGGREGATE,
+        "VALID_CONTROL_OPS": _AGGREGATE,
+        "VALID_INPUT_MODES": _AGGREGATE,
+        "VALID_INTERACTION_MODES": _AGGREGATE,
+        "VALID_PLAYBACK_STATES": _AGGREGATE,
+        "VALID_SESSION_END_REASONS": _AGGREGATE,
+        "VALID_SESSION_INTENTS": _AGGREGATE,
+        "VALID_SESSION_REQUEST_TYPES": _AGGREGATE,
+        "INPUT_MODE_UNKNOWN": _SENTINEL,
+        "PLAYBACK_STATE_UNKNOWN": _SENTINEL,
         "SESSION_FLOW_ID_FIELD": (
             "this firmware carries the flow id in the X-Device-Session-Flow-Id header, not "
             "as a payload member, and kSessionFlowIdHeader is that header's name rather than "
