@@ -58,11 +58,16 @@ def canonical_bytes(value: Any) -> bytes:
 
 from eidolon_sdk.device_foundation.v1 import (  # noqa: E402
     ADMISSION_AUDIENCE,
+    DEVICE_CONTROL_CONFIGURATION_OPERATION,
+    MANIFEST_ASSERTION_OPERATION,
+    AssertDeviceManifest,
+    ManifestDocument,
     COMMISSIONING_VOUCHER_KEY_INFO,
     COMMISSIONING_VOUCHER_PURPOSE,
     claim_grant_ack_proof_document,
     claim_grant_collection_proof_document,
     derive_voucher_signing_key,
+    device_control_configuration_proof_document,
     AdmissionCredential,
     AdmissionCredentialError,
     BusinessOwnerId,
@@ -983,61 +988,25 @@ def check_claim_grant_proof_vectors() -> int:
     disagreement changes.
     """
 
-    checks = 0
-    builders = {
-        "claim-grant-collection-proof.json": lambda document: (
-            claim_grant_collection_proof_document(
-                enrollment_id=document["enrollment_id"],
-                proposal_revision=document["proposal_revision"],
-                collection_challenge=document["collection_challenge"],
-            )
+    collection = load_json(ROOT / "golden" / "claim-grant-collection-proof.json")
+    checks = _check_signed_document_vector(
+        "claim-grant-collection-proof.json",
+        claim_grant_collection_proof_document(
+            enrollment_id=collection["document"]["enrollment_id"],
+            proposal_revision=collection["document"]["proposal_revision"],
+            collection_challenge=collection["document"]["collection_challenge"],
         ),
-        "claim-grant-ack-proof.json": lambda document: (
-            claim_grant_ack_proof_document(
-                enrollment_id=document["enrollment_id"],
-                grant_id=document["grant_id"],
-                device_ref=DeviceRef.model_validate(document["device_ref"]),
-            )
-        ),
-    }
-    for name, build in builders.items():
-        vector = load_json(ROOT / "golden" / name)
-        document = vector["document"]
-        canonical = canonical_bytes(document)
-        if canonical.decode("utf-8") != vector["canonical_utf8"]:
-            raise ConformanceError(f"{name}: canonical_utf8 is not RFC 8785 of its own document")
-        if "sha256:" + hashlib.sha256(canonical).hexdigest() != vector["canonical_sha256"]:
-            raise ConformanceError(f"{name}: canonical digest does not describe the document")
-        # The vector and the only Python implementation of the rule, held
-        # together. Without this the vector would be a second authority that
-        # happens to agree today, which is the arrangement it exists to end.
-        if canonical_bytes(build(document)) != canonical:
-            raise ConformanceError(f"{name}: the canonical builder no longer emits these bytes")
-        if vector["signature_algorithm"] != "ES256":
-            raise ConformanceError(f"{name}: names a signature algorithm this check does not use")
-        if vector["signature_encoding"] != "64-byte-r-concat-s-base64url-no-padding":
-            raise ConformanceError(f"{name}: names a signature encoding this check does not use")
-        if (
-            "sha256:" + hashlib.sha256(_b64url_decode(vector["public_key_spki"])).hexdigest()
-            != vector["key_id"]
-        ):
-            raise ConformanceError(f"{name}: key_id does not describe the published key")
-        if not _verify_raw_p256(vector["public_key_spki"], document, vector["signature"]):
-            raise ConformanceError(f"{name}: the published signature does not verify")
-        checks += 1
-        # Derived from the document rather than restated, so a member added to
-        # the document and forgotten here cannot be a member whose mutation
-        # nobody proves is rejected.
-        if sorted(vector["mutate_each_field_must_fail"]) != _leaf_paths(document):
-            raise ConformanceError(f"{name}: the negative matrix is not the document's own members")
-        for member in vector["mutate_each_field_must_fail"]:
-            if _verify_raw_p256(
-                vector["public_key_spki"], _mutate_leaf(document, member), vector["signature"]
-            ):
-                raise ConformanceError(f"{name}: mutating {member} did not invalidate the proof")
-            checks += 1
-
+    )
     acknowledgement = load_json(ROOT / "golden" / "claim-grant-ack-proof.json")
+    checks += _check_signed_document_vector(
+        "claim-grant-ack-proof.json",
+        claim_grant_ack_proof_document(
+            enrollment_id=acknowledgement["document"]["enrollment_id"],
+            grant_id=acknowledgement["document"]["grant_id"],
+            device_ref=DeviceRef.model_validate(acknowledgement["document"]["device_ref"]),
+        ),
+    )
+
     # The acknowledgement is the named device speaking about itself. A proof by
     # any other key would be some device activating a Claim it is not the
     # subject of, and the two halves of that statement live in one document.
@@ -1051,7 +1020,7 @@ def check_claim_grant_proof_vectors() -> int:
     checks += 1
 
     require_field_inventory(
-        load_json(ROOT / "golden" / "claim-grant-collection-proof.json"),
+        collection,
         golden="claim-grant-collection-proof",
         validated={
             "document", "document.contract", "document.enrollment_id",
@@ -1079,6 +1048,139 @@ def check_claim_grant_proof_vectors() -> int:
         },
         descriptive={"vector_id", "description", "signing_key"},
     )
+    return checks
+
+
+def _check_signed_document_vector(name: str, rebuilt: Any) -> int:
+    """One signing-document vector, against the bytes and the builder both.
+
+    Shared by the ClaimGrant proofs and the Device Control proofs because they
+    are one shape: a document neither side sends, rebuilt independently at each
+    end, compared only through a signature. `rebuilt` is what the canonical
+    Python definition produces from the vector's own inputs — without that
+    comparison the vector would be a second authority that happens to agree
+    today, which is the arrangement it exists to end.
+    """
+
+    vector = load_json(ROOT / "golden" / name)
+    document = vector["document"]
+    canonical = canonical_bytes(document)
+    if canonical.decode("utf-8") != vector["canonical_utf8"]:
+        raise ConformanceError(f"{name}: canonical_utf8 is not RFC 8785 of its own document")
+    if "sha256:" + hashlib.sha256(canonical).hexdigest() != vector["canonical_sha256"]:
+        raise ConformanceError(f"{name}: canonical digest does not describe the document")
+    if canonical_bytes(rebuilt) != canonical:
+        raise ConformanceError(f"{name}: the canonical builder no longer emits these bytes")
+    if vector["signature_algorithm"] != "ES256":
+        raise ConformanceError(f"{name}: names a signature algorithm this check does not use")
+    if vector["signature_encoding"] != "64-byte-r-concat-s-base64url-no-padding":
+        raise ConformanceError(f"{name}: names a signature encoding this check does not use")
+    if (
+        "sha256:" + hashlib.sha256(_b64url_decode(vector["public_key_spki"])).hexdigest()
+        != vector["key_id"]
+    ):
+        raise ConformanceError(f"{name}: key_id does not describe the published key")
+    if not _verify_raw_p256(vector["public_key_spki"], document, vector["signature"]):
+        raise ConformanceError(f"{name}: the published signature does not verify")
+    checks = 1
+    if sorted(vector["mutate_each_field_must_fail"]) != _leaf_paths(document):
+        raise ConformanceError(f"{name}: the negative matrix is not the document's own members")
+    for member in vector["mutate_each_field_must_fail"]:
+        if _verify_raw_p256(
+            vector["public_key_spki"], _mutate_leaf(document, member), vector["signature"]
+        ):
+            raise ConformanceError(f"{name}: mutating {member} did not invalidate the proof")
+        checks += 1
+    return checks
+
+
+def check_device_control_proof_vectors() -> int:
+    """The two documents a device signs on the Device Control edge.
+
+    The ClaimGrant proofs one step later, and with a worse symptom. These are
+    the request behind `configuration:pull`, which is how a Body is handed its
+    channel: a device that spells the document differently holds a Claim the
+    Authority reports as active and is never given a room — and "active with no
+    channel" is a state the product already cannot tell apart from waiting.
+
+    Both were unpinned while all three implementations already existed: a dict
+    in the Authority, a hand-concatenated string in the firmware, and an inline
+    map in the phone.
+    """
+
+    configuration = load_json(ROOT / "golden" / "device-control-configuration-proof.json")
+    checks = _check_signed_document_vector(
+        "device-control-configuration-proof.json",
+        device_control_configuration_proof_document(
+            device_ref=DeviceRef.model_validate(configuration["document"]["device_ref"]),
+            nonce=configuration["document"]["nonce"],
+        ),
+    )
+    if configuration["document"]["operation_type"] != DEVICE_CONTROL_CONFIGURATION_OPERATION:
+        raise ConformanceError("the configuration proof names an operation this contract does not")
+
+    assertion = load_json(ROOT / "golden" / "device-control-manifest-assertion-proof.json")
+    asserted = assertion["document"]
+    # The digest the assertion signs must be a Manifest this contract already
+    # publishes the bytes of. Otherwise the vector asserts a document nobody
+    # can produce, and the two goldens could drift apart while both stay green.
+    manifest_cases = load_json(ROOT / "golden" / "device-manifest.json")["cases"]
+    asserted_case = next(
+        (case for case in manifest_cases if case["digest"] == asserted["manifest_digest"]),
+        None,
+    )
+    if asserted_case is None:
+        raise ConformanceError(
+            "the manifest assertion signs a digest no Manifest vector publishes"
+        )
+    checks += _check_signed_document_vector(
+        "device-control-manifest-assertion-proof.json",
+        AssertDeviceManifest(
+            device_ref=DeviceRef.model_validate(asserted["device_ref"]),
+            manifest=ManifestDocument(
+                manifest_id="manifest_01",
+                revision=1,
+                digest=asserted["manifest_digest"],
+                document=json.loads(asserted_case["canonical_utf8"]),
+            ),
+            nonce=asserted["nonce"],
+            public_key_spki=assertion["public_key_spki"],
+            device_signature=assertion["signature"],
+        ).signing_document(),
+    )
+    if asserted["operation_type"] != MANIFEST_ASSERTION_OPERATION:
+        raise ConformanceError("the manifest assertion names an operation this contract does not")
+
+    # Both are the named device speaking about itself, as the acknowledgement is.
+    for name, vector in (
+        ("device-control-configuration-proof.json", configuration),
+        ("device-control-manifest-assertion-proof.json", assertion),
+    ):
+        named = vector["document"]["device_ref"]["device_instance_id"]
+        derived = derive_device_instance_id(vector["public_key_spki"])
+        if named != derived:
+            raise ConformanceError(
+                f"{name}: signed by a key that is not the device_ref it names: {named} vs {derived}"
+            )
+        checks += 1
+        require_field_inventory(
+            vector,
+            golden=name.removesuffix(".json"),
+            validated={
+                "document", "document.device_ref",
+                "document.device_ref.device_instance_id",
+                "document.device_ref.owner_domain_id",
+                "document.device_ref.owner_domain_generation",
+                "document.device_ref.claim_generation",
+                "document.device_ref.trust_epoch",
+                "document.nonce", "document.operation_type",
+                *(("document.manifest_digest",) if "manifest_digest" in vector["document"] else ()),
+                "canonical_utf8", "canonical_sha256", "public_key_spki", "key_id",
+                "signature", "signature_algorithm", "signature_encoding",
+                "mutate_each_field_must_fail",
+            },
+            descriptive={"vector_id", "description", "signing_key"},
+        )
     return checks
 
 
@@ -2196,6 +2298,7 @@ def run() -> dict[str, int]:
         "claim_grant_aad_checks": check_claim_grant_aad(),
         "claim_grant_wire_checks": check_claim_grant_wire_envelope(),
         "claim_grant_proof_checks": check_claim_grant_proof_vectors(),
+        "device_control_proof_checks": check_device_control_proof_vectors(),
         "livekit_session_binding_checks": check_livekit_session_binding(),
         "claim_event_stream_vectors": check_admission_event_stream(),
         "protocomm_vectors": check_protocomm_framing(),

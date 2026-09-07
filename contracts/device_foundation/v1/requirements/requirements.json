@@ -931,9 +931,9 @@
         "ESP32::TheSignedProofBytesAreTheGoldenVectorBytes"
       ],
       "consumer_tests": [
-        "HUB::test_the_authority_verifies_the_proof_the_vector_publishes",
-        "HUB::test_a_proof_over_any_other_document_is_refused",
-        "HUB::test_the_acknowledgement_is_signed_by_the_device_it_names",
+        "HUB::tests/unit/admission/test_claim_grant_proof_vectors.py::test_the_authority_verifies_the_proof_the_vector_publishes",
+        "HUB::tests/unit/admission/test_claim_grant_proof_vectors.py::test_a_proof_over_any_other_document_is_refused",
+        "HUB::tests/unit/admission/test_claim_grant_proof_vectors.py::test_the_acknowledgement_is_signed_by_the_device_it_names",
         "MOBILE::test/admission_proofs_test.dart::the collection proof is the bytes the vector pins",
         "MOBILE::test/admission_proofs_test.dart::the acknowledgement proof is the bytes the vector pins"
       ],
@@ -992,6 +992,33 @@
       ],
       "integration_tests": [
         "CONFORMANCE::check_livekit_session_binding"
+      ],
+      "hil_tests": [],
+      "status": "planned",
+      "waiver_reason": null,
+      "waiver_expires_at": null
+    },
+    {
+      "requirement_id": "DF-DEVICE-CONTROL-PROOF-001",
+      "normative_text_ref": "纯软件Body准入方案 §4.1 the documents a device signs to pull its configuration and to assert its Manifest MUST have one definition per language and one vector every implementation is held to. Same shape as DF-CLAIM-GRANT-PROOF-001 one step later, and a worse symptom: configuration:pull is how a Body is handed its channel, so a device that spells the document differently holds a Claim the Authority reports active and is never given a room — which the product cannot tell apart from waiting",
+      "owner": "eidolon_sdk+eidolon_hub+eidolon-client-esp32+eidolon_client_mobile",
+      "schema_ids": [
+        "device-control/AssertDeviceManifest"
+      ],
+      "producer_tests": [
+        "ESP32::TheConfigurationProofBytesAreTheGoldenVectorBytes",
+        "ESP32::TheManifestAssertionProofBytesAreTheGoldenVectorBytes"
+      ],
+      "consumer_tests": [
+        "HUB::tests/unit/device_control/test_device_control_proof_vectors.py::test_the_authority_verifies_the_proof_the_vector_publishes",
+        "HUB::tests/unit/device_control/test_device_control_proof_vectors.py::test_a_proof_over_any_other_document_is_refused"
+      ],
+      "simulator_vectors": [
+        "golden/device-control-configuration-proof.json",
+        "golden/device-control-manifest-assertion-proof.json"
+      ],
+      "integration_tests": [
+        "CONFORMANCE::check_device_control_proof_vectors"
       ],
       "hil_tests": [],
       "status": "planned",

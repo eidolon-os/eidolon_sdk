@@ -44,6 +44,10 @@ from .admission_credential import (
     issue_admission_credential,
     read_admission_credential,
 )
+from .device_control import (
+    DEVICE_CONTROL_CONFIGURATION_OPERATION,
+    device_control_configuration_proof_document,
+)
 from .admission import (
     CLAIM_GRANT_ACK_PROOF_CONTRACT,
     CLAIM_GRANT_COLLECTION_PROOF_CONTRACT,
@@ -134,6 +138,8 @@ from .setup_descriptor import (
 )
 
 __all__ = [
+    "DEVICE_CONTROL_CONFIGURATION_OPERATION",
+    "device_control_configuration_proof_document",
     "CLAIM_GRANT_ACK_PROOF_CONTRACT",
     "CLAIM_GRANT_COLLECTION_PROOF_CONTRACT",
     "COMMISSIONING_VOUCHER_KEY_INFO",
