@@ -29,10 +29,20 @@ def _esp32_topics_header() -> Path:
 
 
 def _esp32_source(relative: str) -> str:
-    path = _workspace_root() / "eidolon-client-esp32" / relative
-    if not path.exists():
+    """As `_source` in test_client_contract_mirrors: absent repository skips,
+    absent file inside a present repository fails. A mirror that goes on
+    skipping after the file it mirrors was renamed is green over nothing."""
+
+    repository = _workspace_root() / "eidolon-client-esp32"
+    path = repository / relative
+    if path.exists():
+        return path.read_text(encoding="utf-8")
+    if not repository.exists():
         pytest.skip("ESP32 client checkout is not present beside eidolon_sdk")
-    return path.read_text(encoding="utf-8")
+    raise AssertionError(
+        f"eidolon-client-esp32 is present but does not carry {relative} — the mirrored file "
+        "moved, and a mirror that skips after a rename never goes red again"
+    )
 
 
 def _cpp_string_constants(header: str) -> dict[str, str]:
@@ -55,11 +65,7 @@ def _cpp_int_constants(header: str) -> dict[str, int]:
 
 
 def test_esp32_topics_header_matches_python_wire_contract() -> None:
-    header_path = _esp32_topics_header()
-    if not header_path.exists():
-        pytest.skip("ESP32 client checkout is not present beside eidolon_sdk")
-
-    header = header_path.read_text(encoding="utf-8")
+    header = _esp32_source("main/eidolon/eidolon_topics.h")
     strings = _cpp_string_constants(header)
     ints = _cpp_int_constants(header)
 
