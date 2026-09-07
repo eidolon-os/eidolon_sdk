@@ -284,8 +284,8 @@
     },
     {
       "path": "requirements/requirements.json",
-      "sha256": "bb7e6dab92752fd0541606e0b49d0cd7f35d49d261f0b381d9da6e79bd4f402e",
-      "size": 50910
+      "sha256": "14955c1ad9c6361f4749fae678038aeafd42aeb50e13f7b91e5e30cee20fbf1a",
+      "size": 50983
     },
     {
       "path": "state-vectors/commissioning-runtime.json",
@@ -320,5 +320,5 @@
   ],
   "generator": "device-foundation-v1-catalog",
   "generator_version": "1.0",
-  "source_digest": "sha256:a349f139e390cd3a52c812db44dcdcbdddc97b9b952c14c7e6ad1eedff593e33"
+  "source_digest": "sha256:918ead2616e7b83e5aa28778c176575b5733cc53cb8604719c4eb1c49daf1630"
 }

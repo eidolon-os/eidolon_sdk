@@ -306,7 +306,10 @@
       "owner": "eidolon_sdk+eidolon_hub+eidolon-client-esp32",
       "schema_ids": ["common/ClaimGrantAAD"],
       "producer_tests": ["CONFORMANCE::check_claim_grant_aad"],
-      "consumer_tests": ["P2/P5::claim-grant-aad-negative"],
+      "consumer_tests": [
+        "P2/P5::claim-grant-aad-negative",
+        "ESP32::TheClaimGrantAadIsTheGoldenVectorBytes"
+      ],
       "simulator_vectors": ["DF-CLAIM-GRANT-AAD-001"],
       "integration_tests": ["CONFORMANCE::check_claim_grant_aad"],
       "hil_tests": [],
