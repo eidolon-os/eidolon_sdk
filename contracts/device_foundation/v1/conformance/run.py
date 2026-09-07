@@ -62,11 +62,15 @@ from eidolon_sdk.device_foundation.v1 import (  # noqa: E402
     MANIFEST_ASSERTION_OPERATION,
     AssertDeviceManifest,
     ManifestDocument,
+    COMMISSIONING_VOUCHER_CLAIM_NAMES,
+    COMMISSIONING_VOUCHER_HEADER,
     COMMISSIONING_VOUCHER_KEY_INFO,
     COMMISSIONING_VOUCHER_PURPOSE,
     claim_grant_ack_proof_document,
     claim_grant_collection_proof_document,
+    commissioning_voucher_claims,
     derive_voucher_signing_key,
+    sign_commissioning_voucher,
     device_control_configuration_proof_document,
     AdmissionCredential,
     AdmissionCredentialError,
@@ -1930,6 +1934,28 @@ def check_commissioning_voucher() -> int:
         raise ConformanceError("voucher claims disagree with the vector's own fields")
     if claims["purpose"] != COMMISSIONING_VOUCHER_PURPOSE:
         raise ConformanceError("voucher purpose claim drifted")
+    # Rebuilt by the function Admin, Hub and the Kernel e2e all call, rather
+    # than compared against a restatement of the claim set here. Nothing sends
+    # these members between the two ends — the issuer signs its own copy and the
+    # verifier requires the set it independently believes in — so a claim added,
+    # renamed or dropped is otherwise reported as a bad signature at a device.
+    if commissioning_voucher_claims(
+        device_base_id=vector["device_base_id"],
+        owner_domain_id=vector["owner_domain_id"],
+        operational_spki_sha256=vector["operational_spki_sha256"],
+        jti=voucher["jti"],
+        expires_at_unix=voucher["expires_at_unix"],
+        provenance=vector["base_identity_provenance"],
+    ) != claims:
+        raise ConformanceError(
+            "voucher claims are not what the canonical builder produces"
+        )
+    if set(claims) != COMMISSIONING_VOUCHER_CLAIM_NAMES:
+        raise ConformanceError("voucher claim member set drifted")
+    if voucher["claim_names"] != sorted(COMMISSIONING_VOUCHER_CLAIM_NAMES):
+        raise ConformanceError("published claim_names disagree with the claim set")
+    if voucher["header"] != COMMISSIONING_VOUCHER_HEADER:
+        raise ConformanceError("voucher header drifted")
     # Derived by the function Admin and Hub both call, not by a second spelling
     # of it here. A vector checked against its own restatement of the
     # derivation would stay green while every real caller moved underneath it.
@@ -1959,13 +1985,42 @@ def check_commissioning_voucher() -> int:
     )
     if signing_input != voucher["signing_input"]:
         raise ConformanceError("voucher signing input framing drifted")
-    signature = base64.urlsafe_b64encode(
-        hmac.new(signing_key, signing_input.encode(), hashlib.sha256).digest()
-    ).rstrip(b"=").decode()
-    if voucher["compact"] != f"{signing_input}.{signature}":
+    # Signed by the canonical framing rather than a reconstruction of it, for
+    # the same reason: the compact form is a contract, and a verifier that
+    # re-derives it rejects any other member order.
+    if voucher["compact"] != sign_commissioning_voucher(
+        claims=claims, signing_key=signing_key
+    ):
         raise ConformanceError("voucher signature drifted")
     if voucher["nonce_rule"] != "commissioning_proof.nonce MUST equal the voucher jti":
         raise ConformanceError("voucher nonce rule drifted")
+
+    # The other accepted provenance. Unpinned, a verifier could quietly stop
+    # accepting `derived-from-controller` and every suite would stay green while
+    # no removed Body could ever return as itself.
+    continuation = vector["voucher_derived_from_controller"]
+    continuation_claims = continuation["claims"]
+    if continuation_claims["base_identity_provenance"] != "derived-from-controller":
+        raise ConformanceError("continuation voucher is not the other provenance")
+    if continuation_claims != commissioning_voucher_claims(
+        device_base_id=vector["device_base_id"],
+        owner_domain_id=vector["owner_domain_id"],
+        operational_spki_sha256=vector["operational_spki_sha256"],
+        jti=continuation["jti"],
+        expires_at_unix=voucher["expires_at_unix"],
+        provenance="derived-from-controller",
+    ):
+        raise ConformanceError(
+            "continuation voucher claims are not what the canonical builder produces"
+        )
+    if canonical_bytes(continuation_claims).decode() != continuation["claims_canonical_utf8"]:
+        raise ConformanceError("continuation voucher claims JCS bytes drifted")
+    if continuation["compact"] != sign_commissioning_voucher(
+        claims=continuation_claims, signing_key=signing_key
+    ):
+        raise ConformanceError("continuation voucher signature drifted")
+    if continuation["jti"] == voucher["jti"]:
+        raise ConformanceError("the two vouchers must not share a one-shot jti")
 
     base_key = vector["enrolled_base_key"]
     if base_key["scheme"] != "enrolled-base-key-v1":
@@ -1998,6 +2053,8 @@ def check_commissioning_voucher() -> int:
         "device reports a device_base_id the Hub never issued",
         "second base identity offered for an already bound operational key",
         "enrolled-base-key-v1 presented by a Revoked or Rejected base identity",
+        "voucher whose base_identity_provenance is any other value",
+        "voucher carrying a claim outside claim_names, or missing one",
     ]:
         raise ConformanceError("the refusals this vector exists to name drifted")
 
@@ -2056,6 +2113,19 @@ def check_commissioning_voucher() -> int:
             "voucher.jti",
             "voucher.expires_at_unix",
             "voucher.nonce_rule",
+            "voucher.claim_names",
+            "voucher_derived_from_controller",
+            "voucher_derived_from_controller.claims",
+            "voucher_derived_from_controller.claims.base_identity_provenance",
+            "voucher_derived_from_controller.claims.device_base_id",
+            "voucher_derived_from_controller.claims.exp",
+            "voucher_derived_from_controller.claims.jti",
+            "voucher_derived_from_controller.claims.operational_spki_sha256",
+            "voucher_derived_from_controller.claims.owner_domain_id",
+            "voucher_derived_from_controller.claims.purpose",
+            "voucher_derived_from_controller.claims_canonical_utf8",
+            "voucher_derived_from_controller.compact",
+            "voucher_derived_from_controller.jti",
             "enrolled_base_key",
             "enrolled_base_key.scheme",
             "enrolled_base_key.signing_document",
@@ -2075,6 +2145,7 @@ def check_commissioning_voucher() -> int:
             "why",
             "device_operational_scalar_hex",
             "voucher.signing_key_derivation",
+            "voucher_derived_from_controller.why",
             "enrolled_base_key.when",
         },
     )
