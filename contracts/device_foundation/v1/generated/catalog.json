@@ -204,8 +204,8 @@
     },
     {
       "path": "golden/commissioning-voucher.json",
-      "sha256": "53072e86b2592f8cd2aa6d1e49e1a8bbb2079bbd0dd1014fa763ccd1ebc65a65",
-      "size": 8381
+      "sha256": "af23b3321c5a302f8334469212d2ecf1a0534424725a75649f93ab0dd47edc2a",
+      "size": 10954
     },
     {
       "path": "golden/device-control-configuration-proof.json",
@@ -335,5 +335,5 @@
   ],
   "generator": "device-foundation-v1-catalog",
   "generator_version": "1.0",
-  "source_digest": "sha256:540c0169de3189820a81ca5189dbcd13b2ac921d620a082553edd93c9785343d"
+  "source_digest": "sha256:8d35de77e94467ba7fc65d16cadfd60e5fbed4e5f4b1f5141b75955de543808f"
 }
