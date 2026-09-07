@@ -9,6 +9,8 @@ import pytest
 
 from eidolon_sdk.biz import contracts as c
 
+import _session_vocabulary
+
 
 def _workspace_root() -> Path:
     return Path(__file__).resolve().parents[3]
@@ -22,29 +24,59 @@ def _source(relative: str) -> str:
 
 
 def test_mobile_contract_mirror_matches_sdk() -> None:
+    """Every session name this contract publishes, decided one way or the other.
+
+    A roll-call could not catch the name that had just been added, and this
+    mirror is where that cost twelve days — see `_session_vocabulary`.
+    """
+
     source = _source("eidolon_client_mobile/lib/src/protocol/eidolon_protocol.dart")
     constants = dict(re.findall(r"const\s+(\w+)\s*=\s*'([^']*)';", source))
+    integers = {
+        name: int(value)
+        for name, value in re.findall(r"const\s+(\w+)\s*=\s*(\d+);", source)
+    }
 
     assert constants["controlOpRoomJoin"] == c.CONTROL_OP_ROOM_JOIN
-    assert constants["sessionIntentField"] == c.SESSION_INTENT_FIELD
-    assert constants["sessionIntentUserInitiated"] == c.SESSION_INTENT_USER_INITIATED
-    assert constants["sessionIntentProactive"] == c.SESSION_INTENT_PROACTIVE
-    # What a client says to be heard at all. Drift here is silent: the request
-    # is published successfully and simply never recognised as one.
-    assert constants["sessionControlTopic"] == c.SESSION_CONTROL_TOPIC
-    assert constants["sessionOpenType"] == c.SESSION_OPEN_TYPE
-    assert constants["sessionCloseType"] == c.SESSION_CLOSE_TYPE
-    # The two the ESP32 mirror already asserts and this one did not. Their
-    # absence cost twelve days: `SESSION_CONVERSATION_ID_FIELD` was added to the
-    # SDK on 2026-08-26, the firmware followed the same day because its mirror
-    # went red, and this one stayed green while the phone published
-    # `{schema_v, type}` — a request the Provider drops rather than refuses,
-    # because `normalize_conversation_id` returns null for an absent member. On
-    # hardware that is a microphone in a room with nobody asked to answer, and
-    # no log line on either side.
-    assert constants["sessionConversationIdField"] == c.SESSION_CONVERSATION_ID_FIELD
-    integers = dict(re.findall(r"const\s+(\w+)\s*=\s*(\d+);", source))
-    assert int(integers["sessionControlSchemaVersion"]) == c.WIRE_SCHEMA_VERSION
+
+    mirrored = {
+        # What a client says to be heard at all. Drift here is silent: the
+        # request is published successfully and simply never recognised as one.
+        "SESSION_CONTROL_TOPIC": "sessionControlTopic",
+        "SESSION_OPEN_TYPE": "sessionOpenType",
+        "SESSION_CLOSE_TYPE": "sessionCloseType",
+        "SESSION_CONVERSATION_ID_FIELD": "sessionConversationIdField",
+        "SESSION_STARTED_TYPE": "sessionStartedType",
+        "SESSION_END_TYPE": "sessionEndType",
+        "SESSION_INTENT_FIELD": "sessionIntentField",
+        "SESSION_INTENT_USER_INITIATED": "sessionIntentUserInitiated",
+        "SESSION_INTENT_PROACTIVE": "sessionIntentProactive",
+    }
+    unmirrored = {
+        "SESSION_INTENT_PRESENCE": (
+            "a presence-initiated session is opened by a Body that can sense a room; this "
+            "client opens sessions from a tap"
+        ),
+        "SESSION_END_ERROR": "the end reasons are read by whoever reports them, and this "
+        "client reports none — it shows the session ended, not why",
+        "SESSION_END_IDLE_NORMAL": "as SESSION_END_ERROR",
+        "SESSION_END_PROACTIVE_DONE": "as SESSION_END_ERROR",
+        "SESSION_END_SUPERSEDED": "as SESSION_END_ERROR",
+        "SESSION_END_USER_LEFT": "as SESSION_END_ERROR",
+        "SESSION_FLOW_ID_FIELD": "carried between Host services, never by a client",
+        "SESSION_CONVERSATION_ID_MAX_LENGTH": (
+            "a bound the Provider enforces on what it receives; a client that enforced it "
+            "too would refuse an id the Provider would have accepted"
+        ),
+        "WIRE_SCHEMA_VERSION": "mirrored as an integer, asserted below rather than as a string",
+    }
+    _session_vocabulary.assert_every_name_is_decided(
+        client="mobile", mirrored=mirrored, unmirrored=unmirrored
+    )
+    for contract_name, dart_name in mirrored.items():
+        assert constants[dart_name] == getattr(c, contract_name), contract_name
+
+    assert integers["sessionControlSchemaVersion"] == c.WIRE_SCHEMA_VERSION
 
 
 def test_mobile_mission_control_mirror_matches_sdk() -> None:

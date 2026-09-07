@@ -17,6 +17,8 @@ from eidolon_sdk.biz import contracts as c
 from eidolon_sdk.biz import events
 from eidolon_sdk.biz import guard
 
+import _session_vocabulary
+
 
 def _workspace_root() -> Path:
     return Path(__file__).resolve().parents[3]
@@ -72,19 +74,48 @@ def test_esp32_topics_header_matches_python_wire_contract() -> None:
     )
     assert strings["kClientAudioStateTopic"] == c.CLIENT_AUDIO_STATE_TOPIC
     assert strings["kUiStateTopic"] == c.COMPANION_UI_STATE_TOPIC
-    assert strings["kSessionControlTopic"] == c.SESSION_CONTROL_TOPIC
     assert strings["kTranscriptionTopic"] == c.LIVEKIT_TRANSCRIPTION_TOPIC
     assert strings["kAgentSessionTopic"] == c.LIVEKIT_AGENT_SESSION_TOPIC
 
     # What a device says to be heard at all. Drift here is silent: the request
-    # is published successfully and simply never recognised as one.
-    assert strings["kSessionOpenType"] == c.SESSION_OPEN_TYPE
-    assert strings["kSessionCloseType"] == c.SESSION_CLOSE_TYPE
-    assert strings["kSessionStartedType"] == c.SESSION_STARTED_TYPE
-    assert (
-        strings["kSessionConversationIdField"]
-        == c.SESSION_CONVERSATION_ID_FIELD
+    # is published successfully and simply never recognised as one. Decided as
+    # a whole vocabulary rather than named one at a time — a roll-call cannot
+    # catch the name that was just added, which is what it cost the other
+    # client's mirror. See `_session_vocabulary`.
+    mirrored = {
+        "SESSION_CONTROL_TOPIC": "kSessionControlTopic",
+        "SESSION_OPEN_TYPE": "kSessionOpenType",
+        "SESSION_CLOSE_TYPE": "kSessionCloseType",
+        "SESSION_STARTED_TYPE": "kSessionStartedType",
+        "SESSION_CONVERSATION_ID_FIELD": "kSessionConversationIdField",
+        "SESSION_END_TYPE": "kSessionEndType",
+        "SESSION_END_ERROR": "kSessionEndError",
+        "SESSION_END_IDLE_NORMAL": "kSessionEndIdleNormal",
+        "SESSION_END_PROACTIVE_DONE": "kSessionEndProactiveDone",
+        "SESSION_END_SUPERSEDED": "kSessionEndSuperseded",
+        "SESSION_END_USER_LEFT": "kSessionEndUserLeft",
+        "SESSION_INTENT_FIELD": "kSessionIntentField",
+        "SESSION_INTENT_USER_INITIATED": "kSessionIntentUserInitiated",
+        "SESSION_INTENT_PRESENCE": "kSessionIntentPresence",
+        "SESSION_INTENT_PROACTIVE": "kSessionIntentProactive",
+    }
+    unmirrored = {
+        "SESSION_FLOW_ID_FIELD": (
+            "this firmware carries the flow id in the X-Device-Session-Flow-Id header, not "
+            "as a payload member, and kSessionFlowIdHeader is that header's name rather than "
+            "a mirror of this one"
+        ),
+        "SESSION_CONVERSATION_ID_MAX_LENGTH": (
+            "a bound the Provider enforces on what it receives; a device that enforced it too "
+            "would refuse an id the Provider would have accepted"
+        ),
+        "WIRE_SCHEMA_VERSION": "mirrored as an integer, asserted above rather than as a string",
+    }
+    _session_vocabulary.assert_every_name_is_decided(
+        client="esp32", mirrored=mirrored, unmirrored=unmirrored
     )
+    for contract_name, cpp_name in mirrored.items():
+        assert strings[cpp_name] == getattr(c, contract_name), contract_name
 
     assert strings["kClientAudioStateType"] == c.CLIENT_AUDIO_STATE_TYPE
     assert strings["kInputModeAuto"] == c.INPUT_MODE_AUTO
