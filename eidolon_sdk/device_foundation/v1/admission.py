@@ -2,9 +2,13 @@
 
 from __future__ import annotations
 
+import base64
+import hashlib
+import hmac
 from datetime import datetime
-from typing import Any, Literal
+from typing import Any, Final, Literal
 
+import rfc8785
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.hkdf import HKDF
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
@@ -206,6 +210,119 @@ def derive_voucher_signing_key(management_secret: bytes) -> bytes:
         salt=None,
         info=COMMISSIONING_VOUCHER_KEY_INFO,
     ).derive(management_secret)
+
+
+#: The JOSE header every commissioning voucher is signed under.
+#:
+#: Part of the signed bytes rather than decoration: the verifier requires this
+#: mapping exactly, so an added ``kid`` or a changed ``alg`` on the issuing side
+#: is refused with no mention of a header.
+COMMISSIONING_VOUCHER_HEADER: Final[dict[str, str]] = {"alg": "HS256", "typ": "JWT"}
+
+#: How the base identity in a voucher came to exist. ``minted`` is a first
+#: commissioning; ``derived-from-controller`` re-signs an identity this Owner
+#: Domain already issued to this very key, which is what lets a removed Body
+#: come back as itself rather than as a stranger.
+COMMISSIONING_VOUCHER_PROVENANCE: Final = frozenset(
+    {"minted", "derived-from-controller"}
+)
+
+#: The complete claim set. A verifier holds a voucher to exactly these members,
+#: so a claim added on the issuing side is refused as a member-set mismatch —
+#: which is why this is one frozenset and not a list on each side.
+COMMISSIONING_VOUCHER_CLAIM_NAMES: Final = frozenset(
+    {
+        "base_identity_provenance",
+        "device_base_id",
+        "exp",
+        "jti",
+        "operational_spki_sha256",
+        "owner_domain_id",
+        "purpose",
+    }
+)
+
+
+def commissioning_voucher_claims(
+    *,
+    device_base_id: str,
+    owner_domain_id: str,
+    operational_spki_sha256: str,
+    jti: str,
+    expires_at_unix: int,
+    provenance: str = "minted",
+) -> dict[str, Any]:
+    """The claims a commissioning voucher carries, built once for every caller.
+
+    Nothing compares these member-for-member across the wire. Admin assembles
+    them, signs the RFC 8785 bytes and sends a compact token; Hub decodes it and
+    requires the member set to equal what it independently believes the set to
+    be. So a claim added, renamed or dropped on one side is never reported as a
+    claim problem — it is a device refused at the first commissioning it cannot
+    retry past, with the refusal naming a signature or nothing at all.
+
+    That is why this is a function and not a convention. The Host's own policy
+    — how ``jti`` is minted, how long the window is, whether a base identity is
+    new — stays with the caller; the shape of what gets signed does not.
+
+    ``operational_spki_sha256`` binds the voucher to one operational key and is
+    the whole of its value: without it, anything that read the token once could
+    exchange it for standing under a key of its own.
+    """
+
+    if provenance not in COMMISSIONING_VOUCHER_PROVENANCE:
+        raise ValueError(
+            f"unknown base identity provenance {provenance!r}; "
+            f"expected one of {sorted(COMMISSIONING_VOUCHER_PROVENANCE)}"
+        )
+    claims = {
+        "base_identity_provenance": provenance,
+        "device_base_id": device_base_id,
+        "exp": int(expires_at_unix),
+        "jti": jti,
+        "operational_spki_sha256": operational_spki_sha256,
+        "owner_domain_id": owner_domain_id,
+        "purpose": COMMISSIONING_VOUCHER_PURPOSE,
+    }
+    # The member set a verifier enforces and the members built here are two
+    # statements of one fact, so they are checked against each other rather
+    # than left to agree. Only a change to one of the two constants above can
+    # trip this, and the alternative to tripping is a voucher every verifier
+    # refuses for a reason none of them can name.
+    if set(claims) != COMMISSIONING_VOUCHER_CLAIM_NAMES:
+        raise AssertionError(
+            "commissioning voucher claim set disagrees with "
+            "COMMISSIONING_VOUCHER_CLAIM_NAMES: built "
+            f"{sorted(claims)}, declared {sorted(COMMISSIONING_VOUCHER_CLAIM_NAMES)}"
+        )
+    return claims
+
+
+def sign_commissioning_voucher(*, claims: dict[str, Any], signing_key: bytes) -> str:
+    """The compact voucher: ``b64(header).b64(claims).b64(HMAC)``.
+
+    Both segments are RFC 8785, because a verifier that re-derives the
+    canonical form — as Hub does — rejects any other member order, and a JSON
+    Schema cannot pin member order at all. That makes the framing a contract
+    and not an implementation detail, which is why it lives here rather than
+    being hand-concatenated at each producer.
+
+    Deliberately takes a key rather than a management secret, and does not
+    validate ``claims``: a caller that needs a deliberately malformed voucher —
+    a verifier's own negative tests — must be able to build one, and a caller
+    that needs a well-formed one has ``commissioning_voucher_claims`` above.
+    """
+
+    signing_input = "{}.{}".format(
+        _b64url(rfc8785.dumps(COMMISSIONING_VOUCHER_HEADER)),
+        _b64url(rfc8785.dumps(claims)),
+    )
+    signature = hmac.new(signing_key, signing_input.encode(), hashlib.sha256).digest()
+    return f"{signing_input}.{_b64url(signature)}"
+
+
+def _b64url(raw: bytes) -> str:
+    return base64.urlsafe_b64encode(raw).rstrip(b"=").decode()
 
 
 class HandoffPublicKey(_Model):

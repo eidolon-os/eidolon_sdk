@@ -16,7 +16,6 @@ from __future__ import annotations
 
 import base64
 import hashlib
-import hmac
 import json
 from pathlib import Path
 
@@ -26,9 +25,11 @@ from cryptography.hazmat.primitives.asymmetric import ec
 from cryptography.hazmat.primitives.asymmetric.utils import decode_dss_signature
 
 from eidolon_sdk.device_foundation.v1 import (
+    COMMISSIONING_VOUCHER_HEADER,
     COMMISSIONING_VOUCHER_KEY_INFO,
-    COMMISSIONING_VOUCHER_PURPOSE,
+    commissioning_voucher_claims,
     derive_voucher_signing_key,
+    sign_commissioning_voucher,
 )
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -40,6 +41,7 @@ DEVICE_BASE_ID = "device-base-" + "4f3b" * 16
 SOFTWARE_BASE_ID = "software-body-" + "a71c" * 10
 OWNER_DOMAIN_ID = "owner-domain_01"
 JTI = "jti-0f3a91c4d25b47e8a6031f7c8b9d2e50"
+CONTINUATION_JTI = "jti-7b2c48e05d9f14a3c6b28e70f1d5a394"
 EXPIRES_AT_UNIX = 1788000000
 BASE_KEY_NONCE = "commissioning-nonce-golden-enrolled"
 
@@ -86,21 +88,35 @@ def main() -> None:
     # bytes below cannot be a second spelling of the derivation.
     voucher_key = derive_voucher_signing_key(bytes.fromhex(MANAGEMENT_SECRET_HEX))
 
-    header = {"alg": "HS256", "typ": "JWT"}
-    claims = {
-        "base_identity_provenance": "minted",
-        "device_base_id": DEVICE_BASE_ID,
-        "exp": EXPIRES_AT_UNIX,
-        "jti": JTI,
-        "operational_spki_sha256": "sha256:" + spki_sha256,
-        "owner_domain_id": OWNER_DOMAIN_ID,
-        "purpose": COMMISSIONING_VOUCHER_PURPOSE,
-    }
+    # Built and signed by the functions Admin, Hub and the Kernel e2e all call,
+    # so the vector cannot be a second spelling of the claim set or the framing.
+    header = COMMISSIONING_VOUCHER_HEADER
+    claims = commissioning_voucher_claims(
+        device_base_id=DEVICE_BASE_ID,
+        owner_domain_id=OWNER_DOMAIN_ID,
+        operational_spki_sha256="sha256:" + spki_sha256,
+        jti=JTI,
+        expires_at_unix=EXPIRES_AT_UNIX,
+    )
+    voucher = sign_commissioning_voucher(claims=claims, signing_key=voucher_key)
     header_canonical = rfc8785.dumps(header).decode()
     claims_canonical = rfc8785.dumps(claims).decode()
-    signing_input = f"{b64u(header_canonical.encode())}.{b64u(claims_canonical.encode())}"
-    voucher_signature = hmac.new(voucher_key, signing_input.encode(), hashlib.sha256).digest()
-    voucher = f"{signing_input}.{b64u(voucher_signature)}"
+    signing_input = voucher.rsplit(".", 1)[0]
+
+    # The other accepted provenance. Without a vector for it, a verifier could
+    # drop `derived-from-controller` from the values it accepts and every suite
+    # would stay green, while a removed Body could never come back as itself.
+    continuation_claims = commissioning_voucher_claims(
+        device_base_id=DEVICE_BASE_ID,
+        owner_domain_id=OWNER_DOMAIN_ID,
+        operational_spki_sha256="sha256:" + spki_sha256,
+        jti=CONTINUATION_JTI,
+        expires_at_unix=EXPIRES_AT_UNIX,
+        provenance="derived-from-controller",
+    )
+    continuation_voucher = sign_commissioning_voucher(
+        claims=continuation_claims, signing_key=voucher_key
+    )
 
     base_key_document = {
         "contract": "eidolon.device-foundation.enrolled-base-key-v1",
@@ -165,6 +181,20 @@ def main() -> None:
             "jti": JTI,
             "expires_at_unix": EXPIRES_AT_UNIX,
             "nonce_rule": "commissioning_proof.nonce MUST equal the voucher jti",
+            "claim_names": sorted(claims),
+        },
+        "voucher_derived_from_controller": {
+            "why": (
+                "The second accepted base_identity_provenance. The Hub re-signs a "
+                "base identity it already issued to this very key, which is what "
+                "lets a removed Body come back as itself rather than as a stranger. "
+                "A verifier that accepted only `minted` would refuse every such "
+                "return with no suite going red."
+            ),
+            "claims": continuation_claims,
+            "claims_canonical_utf8": rfc8785.dumps(continuation_claims).decode(),
+            "compact": continuation_voucher,
+            "jti": CONTINUATION_JTI,
         },
         "enrolled_base_key": {
             "scheme": "enrolled-base-key-v1",
@@ -198,6 +228,20 @@ def main() -> None:
             {
                 "case": "enrolled-base-key-v1 presented by a Revoked or Rejected base identity",
                 "why": "re-entry requires a fresh Controller-witnessed voucher",
+            },
+            {
+                "case": "voucher whose base_identity_provenance is any other value",
+                "why": (
+                    "only `minted` and `derived-from-controller` exist; a device may "
+                    "not describe how its own identity came to be"
+                ),
+            },
+            {
+                "case": "voucher carrying a claim outside claim_names, or missing one",
+                "why": (
+                    "the member set is part of the signed bytes and a verifier "
+                    "requires it exactly, so an added claim is not a compatible change"
+                ),
             },
         ],
     }

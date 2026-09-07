@@ -1184,6 +1184,116 @@ def check_device_control_proof_vectors() -> int:
     return checks
 
 
+def check_device_configuration_response(
+    schemas: dict[str, dict[str, Any]], registry: Registry
+) -> int:
+    """The answer a Body gets, and what it must conclude from each one.
+
+    The outer object had four readers or writers and no contract. Its danger is
+    not a parse failure — a missing member fails loudly enough — it is that
+    `lifecycle_state` and the presence of a channel are separate facts and
+    nothing said so. "Approved, no channel yet" is the Authority holding the
+    Claim while the Channel has not answered; a Body that reads it as failure
+    abandons an enrolment that is fine, and one that reads it as active joins a
+    room that does not exist. `纯软件Body准入方案.md` §4.3 records the product
+    already collapsing that distinction, so the vector states the conclusion
+    rather than leaving each parser to reach its own.
+    """
+
+    vector = load_json(ROOT / "golden" / "device-control-configuration-response.json")
+    schema_id = (
+        "https://contracts.eidolon.live/device-foundation/v1/device-control/schemas.schema.json"
+    )
+    validator = Draft202012Validator(
+        {"$ref": f"{schema_id}#/$defs/DeviceConfigurationResult"},
+        registry=registry,
+        format_checker=FORMAT_CHECKER,
+    )
+
+    declared = list(vector["body_states"])
+    seen: list[str] = []
+    for case in vector["cases"]:
+        case_id = case["case_id"]
+        response = case["response"]
+        canonical = canonical_bytes(response)
+        if canonical.decode("utf-8") != case["canonical_utf8"]:
+            raise ConformanceError(f"{case_id}: canonical_utf8 is not RFC 8785 of its response")
+        if "sha256:" + hashlib.sha256(canonical).hexdigest() != case["canonical_sha256"]:
+            raise ConformanceError(f"{case_id}: digest does not describe the response")
+        errors = sorted(validator.iter_errors(response), key=lambda item: list(item.path))
+        if errors:
+            raise ConformanceError(f"{case_id}: the vector's own response is not admissible: "
+                                   f"{errors[0].message}")
+        if case["body_state"] not in declared:
+            raise ConformanceError(f"{case_id}: states a conclusion this vector does not declare")
+        if not case["why"]:
+            raise ConformanceError(f"{case_id}: a case with no reason teaches nothing")
+        seen.append(case["body_state"])
+        if response["nonce"] != vector["request_nonce"]:
+            raise ConformanceError(f"{case_id}: does not echo the nonce it answers")
+        if response["device_ref"] != vector["device_ref"]:
+            raise ConformanceError(f"{case_id}: answers about a different device")
+
+    # Every declared conclusion has a case, exactly once. The awaiting-channel
+    # case is the one worth having, so a vector that quietly lost it — or that
+    # grew a second spelling of one state — must not pass.
+    if sorted(seen) != sorted(declared) or len(seen) != len(set(seen)):
+        raise ConformanceError(
+            f"the response vector covers {sorted(seen)}, not its own declared {sorted(declared)}"
+        )
+
+    # The outer object and the document inside it, held together: the active
+    # case carries the binding the session vector publishes, not a lookalike.
+    inner = load_json(ROOT / "golden" / "livekit-session-binding.json")
+    active = next(case for case in vector["cases"] if case["body_state"] == "active")
+    channel = active["response"]["channels"][0]
+    if channel["binding_format"] != inner["binding_format"]:
+        raise ConformanceError("the active case names a binding format the session vector does not")
+    if channel["opaque_binding"] != inner["opaque_binding"]:
+        raise ConformanceError("the active case carries a binding the session vector does not")
+
+    refusals = vector["must_refuse"]
+    if not refusals:
+        raise ConformanceError("the response vector carries no refusal case")
+    for case in refusals:
+        case_id = case["case_id"]
+        if not case["why"]:
+            raise ConformanceError(f"{case_id}: a refusal without a reason teaches nothing")
+        if not sorted(validator.iter_errors(case["response"]), key=lambda item: list(item.path)):
+            raise ConformanceError(f"{case_id}: the refused response is admissible")
+
+    require_field_inventory(
+        vector,
+        golden="device-control-configuration-response",
+        validated={
+            "request_nonce", "device_ref",
+            "device_ref.device_instance_id", "device_ref.owner_domain_id",
+            "device_ref.owner_domain_generation", "device_ref.claim_generation",
+            "device_ref.trust_epoch", "body_states", "cases",
+            *(f"cases[{index}]" for index in range(len(vector["cases"]))),
+            *(f"cases[{index}].{member}"
+              for index in range(len(vector["cases"]))
+              for member in ("case_id", "body_state", "response",
+                             "canonical_utf8", "canonical_sha256")),
+            "must_refuse",
+            *(f"must_refuse[{index}]" for index in range(len(refusals))),
+            *(f"must_refuse[{index}].{member}"
+              for index in range(len(refusals))
+              for member in ("case_id", "response")),
+        },
+        descriptive={
+            "vector_id", "description", "schema",
+            *(f"cases[{index}].why" for index in range(len(vector["cases"]))),
+            *(f"must_refuse[{index}].why" for index in range(len(refusals))),
+        },
+        opaque={
+            *(f"cases[{index}].response" for index in range(len(vector["cases"]))),
+            *(f"must_refuse[{index}].response" for index in range(len(refusals))),
+        },
+    )
+    return len(vector["cases"]) + len(refusals)
+
+
 def check_livekit_session_binding() -> int:
     """The inside of `ChannelBinding.opaque_binding`, which two ends parse alone.
 
@@ -2300,6 +2410,9 @@ def run() -> dict[str, int]:
         "claim_grant_proof_checks": check_claim_grant_proof_vectors(),
         "device_control_proof_checks": check_device_control_proof_vectors(),
         "livekit_session_binding_checks": check_livekit_session_binding(),
+        "device_configuration_response_checks": check_device_configuration_response(
+            schemas, registry
+        ),
         "claim_event_stream_vectors": check_admission_event_stream(),
         "protocomm_vectors": check_protocomm_framing(),
         "commissioning_voucher": check_commissioning_voucher(),
