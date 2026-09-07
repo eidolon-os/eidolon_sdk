@@ -20,11 +20,10 @@ from __future__ import annotations
 
 import hashlib
 import json
-from pathlib import Path
 
 import rfc8785
 
-ROOT = Path(__file__).resolve().parents[1]
+from _vector_helpers import ROOT, save
 
 REQUEST_NONCE = "Y29uZmlndXJhdGlvbi1ub25jZQ"
 DEVICE_REF = {
@@ -176,9 +175,7 @@ def main() -> None:
             },
         ],
     }
-    path = ROOT / "golden" / "device-control-configuration-response.json"
-    path.write_text(json.dumps(vector, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-    print(f"wrote golden/{path.name}")
+    save("device-control-configuration-response.json", vector)
 
 
 if __name__ == "__main__":

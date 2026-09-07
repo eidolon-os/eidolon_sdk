@@ -15,17 +15,17 @@ publishes — the assertion is about that document, so the two move together.
 
 from __future__ import annotations
 
-import base64
 import hashlib
 import json
-from pathlib import Path
 
-import rfc8785
-from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import ec
-from cryptography.hazmat.primitives.asymmetric.utils import decode_dss_signature
 
-ROOT = Path(__file__).resolve().parents[1]
+from _vector_helpers import (
+    ROOT,
+    save,
+    signed_document_vector,
+    spki,
+)
 
 #: The operational key of the device the erase, delivery and acknowledgement
 #: goldens all act on.
@@ -37,32 +37,8 @@ ASSERTION_NONCE = "bWFuaWZlc3QtYXNzZXJ0aW9uLW5vbmNl"
 ASSERTED_BOARD = "esp32-s3-touch-amoled-2.06"
 
 
-def b64u(value: bytes) -> str:
-    return base64.urlsafe_b64encode(value).rstrip(b"=").decode()
 
 
-def spki(key: ec.EllipticCurvePrivateKey) -> bytes:
-    return key.public_key().public_bytes(
-        serialization.Encoding.DER, serialization.PublicFormat.SubjectPublicKeyInfo
-    )
-
-
-def raw_signature(key: ec.EllipticCurvePrivateKey, document: object) -> str:
-    der = key.sign(
-        rfc8785.dumps(document),
-        ec.ECDSA(hashes.SHA256(), deterministic_signing=True),
-    )
-    r, s = decode_dss_signature(der)
-    return b64u(r.to_bytes(32, "big") + s.to_bytes(32, "big"))
-
-
-def leaf_paths(value: object, prefix: str = "") -> list[str]:
-    if isinstance(value, dict):
-        paths: list[str] = []
-        for key, item in value.items():
-            paths.extend(leaf_paths(item, f"{prefix}.{key}" if prefix else str(key)))
-        return sorted(paths)
-    return [prefix]
 
 
 def asserted_manifest_digest() -> str:
@@ -75,35 +51,6 @@ def asserted_manifest_digest() -> str:
     raise RuntimeError(f"golden/device-manifest.json publishes no case for {ASSERTED_BOARD}")
 
 
-def vector(
-    *,
-    vector_id: str,
-    description: str,
-    key: ec.EllipticCurvePrivateKey,
-    document: dict,
-) -> dict:
-    canonical = rfc8785.dumps(document)
-    return {
-        "vector_id": vector_id,
-        "description": description,
-        "signing_key": "operational",
-        "signature_algorithm": "ES256",
-        "signature_encoding": "64-byte-r-concat-s-base64url-no-padding",
-        "document": document,
-        "canonical_utf8": canonical.decode("utf-8"),
-        "canonical_sha256": "sha256:" + hashlib.sha256(canonical).hexdigest(),
-        "public_key_spki": b64u(spki(key)),
-        "key_id": "sha256:" + hashlib.sha256(spki(key)).hexdigest(),
-        "signature": raw_signature(key, document),
-        "mutate_each_field_must_fail": leaf_paths(document),
-    }
-
-
-def save(name: str, value: dict) -> None:
-    (ROOT / "golden" / name).write_text(
-        json.dumps(value, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
-    )
-    print(f"wrote golden/{name}")
 
 
 def main() -> None:
@@ -119,7 +66,7 @@ def main() -> None:
 
     save(
         "device-control-configuration-proof.json",
-        vector(
+        signed_document_vector(
             vector_id="DF-DEVICE-CONTROL-CONFIGURATION-PROOF-001",
             description=(
                 "What a device signs to ask the Authority what it should be — the request "
@@ -130,6 +77,7 @@ def main() -> None:
                 "hold an active Claim and never be given a room, which is a state the product "
                 "already cannot tell apart from waiting."
             ),
+            signing_key="operational",
             key=operational,
             document={
                 "device_ref": device_ref,
@@ -141,7 +89,7 @@ def main() -> None:
 
     save(
         "device-control-manifest-assertion-proof.json",
-        vector(
+        signed_document_vector(
             vector_id="DF-DEVICE-CONTROL-MANIFEST-ASSERTION-PROOF-001",
             description=(
                 "What a device signs to tell the Authority what it can do. The signed member "
@@ -151,6 +99,7 @@ def main() -> None:
                 f"{ASSERTED_BOARD} without a camera, so the assertion and the document it "
                 "asserts move together."
             ),
+            signing_key="operational",
             key=operational,
             document={
                 "device_ref": device_ref,
