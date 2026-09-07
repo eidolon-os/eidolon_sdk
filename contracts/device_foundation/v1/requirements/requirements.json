@@ -1038,7 +1038,9 @@
         "HUB::tests/unit/device_control/test_configuration_response_vector.py::test_the_three_states_this_authority_can_answer_are_the_three_the_vector_declares"
       ],
       "consumer_tests": [
-        "ESP32::TestConfigurationResponseMatchesTheGoldenVector"
+        "ESP32::TestConfigurationResponseMatchesTheGoldenVector",
+        "MOBILE::test/device_control_client_test.dart::each answer the vector pins leads to the conclusion it names",
+        "MOBILE::test/device_control_client_test.dart::every answer the vector says must be refused is refused"
       ],
       "simulator_vectors": [
         "golden/device-control-configuration-response.json",
@@ -1051,7 +1053,7 @@
         "CONFORMANCE::check_fixtures"
       ],
       "hil_tests": [],
-      "status": "planned",
+      "status": "covered",
       "waiver_reason": null,
       "waiver_expires_at": null
     }
