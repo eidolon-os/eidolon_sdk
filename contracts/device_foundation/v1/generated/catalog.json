@@ -39,8 +39,8 @@
     },
     {
       "path": "conformance/run.py",
-      "sha256": "bdbe1884310a6ac7807cb06d6aeabcadd69c268c6e11ab5309f6ba794334a266",
-      "size": 92249
+      "sha256": "bf5957da375e08cdcf5bf82915ba78543f4f1241301f6e06fb0b1cdafc6d19aa",
+      "size": 106023
     },
     {
       "path": "delivery-port/schemas.schema.json",
@@ -183,6 +183,16 @@
       "size": 1467
     },
     {
+      "path": "golden/claim-grant-ack-proof.json",
+      "sha256": "545b79ab0428659d04a2d0981a715d6942164d5fe8f5deda1a686ab95d73a42d",
+      "size": 2074
+    },
+    {
+      "path": "golden/claim-grant-collection-proof.json",
+      "sha256": "3beaaec5dc93bbc336b302a05f9786a2c7de3028fe7b3a471a09ea601c957947",
+      "size": 1671
+    },
+    {
       "path": "golden/claim-grant-wire-envelope.json",
       "sha256": "431afb7f831e3f58616bdcdf11b349cb68929e920eaee993e3174999a6c58772",
       "size": 2278
@@ -223,6 +233,11 @@
       "size": 1233
     },
     {
+      "path": "golden/livekit-session-binding.json",
+      "sha256": "21c9a40aeb0621259e043502ecb7a352eda30ddb64cd5bc5e24b2481dbaff107",
+      "size": 6608
+    },
+    {
       "path": "golden/owner-domain-descriptor.json",
       "sha256": "a1601efa5bf3dd10d8e061c0d474696226c1f0c591e493b0d39f2c70594a3cfa",
       "size": 2299
@@ -259,8 +274,8 @@
     },
     {
       "path": "requirements/consumer-matrix.json",
-      "sha256": "ce1dd1a5e99970f2e68902712a52756d5859496bd18ec933bdb42b96f3efb62e",
-      "size": 2709
+      "sha256": "ca37310025e4ccf891d4a4124015e14096f1de37118ad575dc2d7af8afae26d5",
+      "size": 2737
     },
     {
       "path": "requirements/ph2b0-consumer-restart-manifest.json",
@@ -269,8 +284,8 @@
     },
     {
       "path": "requirements/requirements.json",
-      "sha256": "203831d0e9f0895a858058edb426d5e7fa0a850347647a18195d8da6253763ef",
-      "size": 48396
+      "sha256": "bb7e6dab92752fd0541606e0b49d0cd7f35d49d261f0b381d9da6e79bd4f402e",
+      "size": 50910
     },
     {
       "path": "state-vectors/commissioning-runtime.json",
@@ -305,5 +320,5 @@
   ],
   "generator": "device-foundation-v1-catalog",
   "generator_version": "1.0",
-  "source_digest": "sha256:5fa8a9b96b30280afa3172c2d3104a00183e733e40802995cdaefc6ff0a5b502"
+  "source_digest": "sha256:89c7fa74c1f6a221202847db5ad2b4b38dee00943820792bf77f96efc76d11a2"
 }

@@ -914,6 +914,58 @@
       "status": "covered",
       "waiver_reason": null,
       "waiver_expires_at": null
+    },
+    {
+      "requirement_id": "DF-CLAIM-GRANT-PROOF-001",
+      "normative_text_ref": "纯软件Body准入方案 §4.1 the documents a device signs to collect and to acknowledge a ClaimGrant MUST have one definition per language and one vector every implementation is held to; the entry contract types both proofs as an opaque string, so the rule cannot live there",
+      "owner": "eidolon_sdk+eidolon_hub+eidolon-client-esp32+eidolon_client_mobile",
+      "schema_ids": [
+        "admission/CollectClaimGrant",
+        "admission/AckClaimGrant"
+      ],
+      "producer_tests": [
+        "ESP32::TheSignedProofBytesAreTheGoldenVectorBytes"
+      ],
+      "consumer_tests": [
+        "HUB::test_the_authority_verifies_the_proof_the_vector_publishes",
+        "HUB::test_a_proof_over_any_other_document_is_refused",
+        "HUB::test_the_acknowledgement_is_signed_by_the_device_it_names"
+      ],
+      "simulator_vectors": [
+        "golden/claim-grant-collection-proof.json",
+        "golden/claim-grant-ack-proof.json"
+      ],
+      "integration_tests": [
+        "CONFORMANCE::check_claim_grant_proof_vectors"
+      ],
+      "hil_tests": [],
+      "status": "planned",
+      "waiver_reason": null,
+      "waiver_expires_at": null
+    },
+    {
+      "requirement_id": "DF-CHANNEL-BINDING-001",
+      "normative_text_ref": "纯软件Body准入方案 §4.1 the document inside ChannelBinding.opaque_binding MUST be pinned by a vector the Provider and every Body read — its member set, its canonical bytes, its base64 form and the binding_format that names its version — while staying opaque to the Authority, which only relays it",
+      "owner": "eidolon_sdk+eidolon_channel+eidolon-client-esp32+eidolon_client_mobile",
+      "schema_ids": [],
+      "producer_tests": [
+        "CHANNEL::test_livekit_session_binding_vector.py::test_the_provider_writes_the_member_set_the_vector_pins",
+        "CHANNEL::test_livekit_session_binding_vector.py::test_the_binding_format_is_the_string_the_vector_names",
+        "CHANNEL::test_livekit_session_binding_vector.py::test_the_wire_carries_the_padded_standard_alphabet"
+      ],
+      "consumer_tests": [
+        "ESP32::TestLiveKitBindingMatchesTheGoldenVector"
+      ],
+      "simulator_vectors": [
+        "golden/livekit-session-binding.json"
+      ],
+      "integration_tests": [
+        "CONFORMANCE::check_livekit_session_binding"
+      ],
+      "hil_tests": [],
+      "status": "planned",
+      "waiver_reason": null,
+      "waiver_expires_at": null
     }
   ]
 }

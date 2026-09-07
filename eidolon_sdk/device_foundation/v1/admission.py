@@ -250,6 +250,62 @@ class DecideEnrollmentResult(_Model):
         return _aware_datetime(value)
 
 
+#: The document a device signs with its handoff key to collect its ClaimGrant.
+CLAIM_GRANT_COLLECTION_PROOF_CONTRACT = "eidolon.device-foundation.claim-grant-collection"
+
+#: The document a device signs with its operational key to acknowledge it.
+CLAIM_GRANT_ACK_PROOF_CONTRACT = "eidolon.device-foundation.claim-grant-ack"
+
+
+def claim_grant_collection_proof_document(
+    *,
+    enrollment_id: str,
+    proposal_revision: int,
+    collection_challenge: str,
+) -> dict[str, Any]:
+    """What the handoff key signs, built once for every Python caller.
+
+    Neither end sends this document: the Authority rebuilds it from the
+    Proposal it holds and verifies a signature over its RFC 8785 bytes, so the
+    two implementations discover a disagreement only as an unverifiable proof —
+    a device refused at the one step it cannot retry its way out of, with
+    nothing anywhere saying the two spelled the same thing differently. Which
+    is why the bytes are a golden (``golden/claim-grant-collection-proof.json``)
+    rather than a schema: nothing validates this on a wire, and a schema could
+    not pin member order in any case.
+    """
+
+    return {
+        "contract": CLAIM_GRANT_COLLECTION_PROOF_CONTRACT,
+        "enrollment_id": enrollment_id,
+        "proposal_revision": proposal_revision,
+        "collection_challenge": collection_challenge,
+    }
+
+
+def claim_grant_ack_proof_document(
+    *,
+    enrollment_id: str,
+    grant_id: str,
+    device_ref: DeviceRef,
+) -> dict[str, Any]:
+    """What the operational key signs to make the Claim active.
+
+    The signing key is the key ``device_ref.device_instance_id`` is derived
+    from, so this is the named device speaking about itself. Takes the
+    ``DeviceRef`` model rather than a mapping: the nested member set is part of
+    the signed bytes, and a caller that assembled it by hand would be the
+    second definition this function exists to remove.
+    """
+
+    return {
+        "contract": CLAIM_GRANT_ACK_PROOF_CONTRACT,
+        "enrollment_id": enrollment_id,
+        "grant_id": grant_id,
+        "device_ref": device_ref.model_dump(mode="json"),
+    }
+
+
 class CollectClaimGrant(_Model):
     enrollment_id: str = Field(min_length=3, max_length=128)
     proposal_revision: int = Field(ge=1)

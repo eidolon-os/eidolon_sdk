@@ -40,7 +40,7 @@
     },
     {
       "repo": "eidolon_channel",
-      "roles": ["delivery-adapter-consumer"],
+      "roles": ["delivery-adapter-consumer", "session-binding-producer"],
       "contracts": ["common", "delivery-port"],
       "p0_change": false
     },

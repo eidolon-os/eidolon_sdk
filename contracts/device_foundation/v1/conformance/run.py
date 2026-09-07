@@ -59,6 +59,8 @@ def canonical_bytes(value: Any) -> bytes:
 
 from eidolon_sdk.device_foundation.v1 import (  # noqa: E402
     ADMISSION_AUDIENCE,
+    claim_grant_ack_proof_document,
+    claim_grant_collection_proof_document,
     AdmissionCredential,
     AdmissionCredentialError,
     BusinessOwnerId,
@@ -913,6 +915,266 @@ def check_claim_grant_wire_envelope() -> int:
         descriptive={"vector_id"},
     )
     return 1 + len(expected)
+
+
+def _leaf_paths(value: Any, prefix: str = "") -> list[str]:
+    """Every position in a document that carries a value, dotted."""
+
+    if isinstance(value, dict):
+        found: list[str] = []
+        for key, item in value.items():
+            found.extend(_leaf_paths(item, f"{prefix}.{key}" if prefix else str(key)))
+        return sorted(found)
+    return [prefix]
+
+
+def _mutate_leaf(document: Any, path: str) -> Any:
+    mutated = copy.deepcopy(document)
+    target = mutated
+    *parents, last = path.split(".")
+    for step in parents:
+        target = target[step]
+    value = target[last]
+    if isinstance(value, bool) or not isinstance(value, (str, int)):
+        raise ConformanceError(f"{path}: nothing sensible to mutate at a non-scalar leaf")
+    target[last] = value + 1 if isinstance(value, int) else value + "-mutated"
+    return mutated
+
+
+def _verify_raw_p256(public_key_spki: str, document: Any, signature: str) -> bool:
+    raw = _b64url_decode(signature)
+    if len(raw) != 64:
+        raise ConformanceError("proof signature is not 64-byte R||S")
+    key = serialization.load_der_public_key(_b64url_decode(public_key_spki))
+    try:
+        key.verify(
+            encode_dss_signature(int.from_bytes(raw[:32], "big"), int.from_bytes(raw[32:], "big")),
+            canonical_bytes(document),
+            ec.ECDSA(hashes.SHA256()),
+        )
+    except InvalidSignature:
+        return False
+    return True
+
+
+def check_claim_grant_proof_vectors() -> int:
+    """The two documents a device signs to take possession of a Claim.
+
+    Neither is ever sent. The Authority rebuilds each one from the Proposal it
+    holds and verifies a signature over its RFC 8785 bytes, so two ends that
+    spell the document differently do not get an error naming the difference —
+    they get an unverifiable proof, at the one step of enrolment a device
+    cannot retry its way out of. Until these vectors the rule lived in a Python
+    dict inside the Authority and in a hand-concatenated string inside the
+    firmware, with nothing comparing them; the entry schema typed both proofs
+    as `{"type": "string", "minLength": 16}`, which is true of any 16 bytes.
+
+    Checked here rather than schema'd, deliberately: a JSON Schema cannot pin
+    member order, and member order is exactly what a canonicalisation
+    disagreement changes.
+    """
+
+    checks = 0
+    builders = {
+        "claim-grant-collection-proof.json": lambda document: (
+            claim_grant_collection_proof_document(
+                enrollment_id=document["enrollment_id"],
+                proposal_revision=document["proposal_revision"],
+                collection_challenge=document["collection_challenge"],
+            )
+        ),
+        "claim-grant-ack-proof.json": lambda document: (
+            claim_grant_ack_proof_document(
+                enrollment_id=document["enrollment_id"],
+                grant_id=document["grant_id"],
+                device_ref=DeviceRef.model_validate(document["device_ref"]),
+            )
+        ),
+    }
+    for name, build in builders.items():
+        vector = load_json(ROOT / "golden" / name)
+        document = vector["document"]
+        canonical = canonical_bytes(document)
+        if canonical.decode("utf-8") != vector["canonical_utf8"]:
+            raise ConformanceError(f"{name}: canonical_utf8 is not RFC 8785 of its own document")
+        if "sha256:" + hashlib.sha256(canonical).hexdigest() != vector["canonical_sha256"]:
+            raise ConformanceError(f"{name}: canonical digest does not describe the document")
+        # The vector and the only Python implementation of the rule, held
+        # together. Without this the vector would be a second authority that
+        # happens to agree today, which is the arrangement it exists to end.
+        if canonical_bytes(build(document)) != canonical:
+            raise ConformanceError(f"{name}: the canonical builder no longer emits these bytes")
+        if vector["signature_algorithm"] != "ES256":
+            raise ConformanceError(f"{name}: names a signature algorithm this check does not use")
+        if vector["signature_encoding"] != "64-byte-r-concat-s-base64url-no-padding":
+            raise ConformanceError(f"{name}: names a signature encoding this check does not use")
+        if (
+            "sha256:" + hashlib.sha256(_b64url_decode(vector["public_key_spki"])).hexdigest()
+            != vector["key_id"]
+        ):
+            raise ConformanceError(f"{name}: key_id does not describe the published key")
+        if not _verify_raw_p256(vector["public_key_spki"], document, vector["signature"]):
+            raise ConformanceError(f"{name}: the published signature does not verify")
+        checks += 1
+        # Derived from the document rather than restated, so a member added to
+        # the document and forgotten here cannot be a member whose mutation
+        # nobody proves is rejected.
+        if sorted(vector["mutate_each_field_must_fail"]) != _leaf_paths(document):
+            raise ConformanceError(f"{name}: the negative matrix is not the document's own members")
+        for member in vector["mutate_each_field_must_fail"]:
+            if _verify_raw_p256(
+                vector["public_key_spki"], _mutate_leaf(document, member), vector["signature"]
+            ):
+                raise ConformanceError(f"{name}: mutating {member} did not invalidate the proof")
+            checks += 1
+
+    acknowledgement = load_json(ROOT / "golden" / "claim-grant-ack-proof.json")
+    # The acknowledgement is the named device speaking about itself. A proof by
+    # any other key would be some device activating a Claim it is not the
+    # subject of, and the two halves of that statement live in one document.
+    named = acknowledgement["document"]["device_ref"]["device_instance_id"]
+    derived = derive_device_instance_id(acknowledgement["public_key_spki"])
+    if named != derived:
+        raise ConformanceError(
+            "the acknowledgement is signed by a key that is not the device_ref it names: "
+            f"{named} vs {derived}"
+        )
+    checks += 1
+
+    require_field_inventory(
+        load_json(ROOT / "golden" / "claim-grant-collection-proof.json"),
+        golden="claim-grant-collection-proof",
+        validated={
+            "document", "document.contract", "document.enrollment_id",
+            "document.proposal_revision", "document.collection_challenge",
+            "canonical_utf8", "canonical_sha256", "public_key_spki", "key_id",
+            "signature", "signature_algorithm", "signature_encoding",
+            "mutate_each_field_must_fail",
+        },
+        descriptive={"vector_id", "description", "signing_key"},
+    )
+    require_field_inventory(
+        acknowledgement,
+        golden="claim-grant-ack-proof",
+        validated={
+            "document", "document.contract", "document.enrollment_id",
+            "document.grant_id", "document.device_ref",
+            "document.device_ref.device_instance_id",
+            "document.device_ref.owner_domain_id",
+            "document.device_ref.owner_domain_generation",
+            "document.device_ref.claim_generation",
+            "document.device_ref.trust_epoch",
+            "canonical_utf8", "canonical_sha256", "public_key_spki", "key_id",
+            "signature", "signature_algorithm", "signature_encoding",
+            "mutate_each_field_must_fail",
+        },
+        descriptive={"vector_id", "description", "signing_key"},
+    )
+    return checks
+
+
+def check_livekit_session_binding() -> int:
+    """The inside of `ChannelBinding.opaque_binding`, which two ends parse alone.
+
+    The Authority relays this blob and its format string without reading
+    either, and that opacity is correct — what a room is belongs to the
+    Channel. It is not opaque to the pair that uses it. The Channel Provider
+    writes the document and every Body parses it, and each of them held its own
+    hand-written copy of the shape; `schema_version: 2` is the record of that
+    having already gone wrong once, with nothing that would have said so.
+
+    It has no canonical schema on purpose. `check_host_independence` refuses
+    `room_name` as a key and `livekit` as a substring in every schema and valid
+    example, because a Body's addressing must not be expressible in the
+    vocabulary every Body shares. So the agreement lives in a vector, where
+    naming a transport is what the artifact is for.
+    """
+
+    vector = load_json(ROOT / "golden" / "livekit-session-binding.json")
+    binding = vector["binding"]
+    canonical = canonical_bytes(binding)
+    if canonical.decode("utf-8") != vector["canonical_utf8"]:
+        raise ConformanceError("the LiveKit binding's canonical bytes are not RFC 8785 of it")
+    if "sha256:" + hashlib.sha256(canonical).hexdigest() != vector["canonical_sha256"]:
+        raise ConformanceError("the LiveKit binding's digest does not describe it")
+    if sorted(vector["member_paths"]) != _leaf_paths(binding):
+        raise ConformanceError("the LiveKit binding's member set is not the document's own")
+    # Pinned whole, here, on purpose. `endswith` below ties the version to the
+    # document, but a vector free to rename the media type could move the
+    # agreement without anything deliberate happening; this document has moved
+    # once already. Bumping it is meant to cost an edit in this file, which is
+    # then a change every consumer's suite reports.
+    if vector["binding_format"] != "application/vnd.eidolon.livekit-session+json;v=2":
+        raise ConformanceError(
+            "the LiveKit binding format string moved without this check moving with it"
+        )
+    if not vector["binding_format"].endswith(f";v={binding['schema_version']}"):
+        raise ConformanceError("the binding format names a version the document does not carry")
+    # The encoding, and the encoding it is not. Everything else base64 in this
+    # contract — keys, signatures, proofs — is URL-safe and unpadded, so a
+    # producer reaching for the house idiom here emits something no Body can
+    # decode, and this is the pair of strings that says so.
+    if vector["opaque_binding_encoding"] != "base64-standard-with-padding":
+        raise ConformanceError("the vector names an encoding this check does not perform")
+    if base64.b64encode(canonical).decode("ascii") != vector["opaque_binding"]:
+        raise ConformanceError("the opaque binding is not standard base64 of the canonical bytes")
+    if not vector["opaque_binding"].endswith("="):
+        raise ConformanceError(
+            "the opaque binding carries no padding, so it cannot separate the padded encoding "
+            "from the unpadded one this contract uses everywhere else"
+        )
+    unpadded = vector["not_the_opaque_binding"]["base64url_no_padding"]
+    if base64.urlsafe_b64encode(canonical).rstrip(b"=").decode("ascii") != unpadded:
+        raise ConformanceError("the named wrong encoding is not the encoding it is named as")
+    if unpadded == vector["opaque_binding"]:
+        raise ConformanceError("the two encodings coincide, so this vector separates nothing")
+    if base64.b64decode(vector["opaque_binding"], validate=True) != canonical:
+        raise ConformanceError("the opaque binding does not decode to the canonical bytes")
+
+    refusals = vector["must_refuse"]
+    if not refusals:
+        raise ConformanceError("the LiveKit binding vector carries no refusal case")
+    seen: set[str] = set()
+    for case in refusals:
+        case_id = case["case_id"]
+        if case_id in seen:
+            raise ConformanceError(f"duplicate LiveKit binding refusal case {case_id}")
+        seen.add(case_id)
+        if not case["why"]:
+            raise ConformanceError(f"{case_id}: a refusal without a reason teaches nothing")
+        # A refusal case that is already the accepted document refuses nothing,
+        # and a case whose members differ from the accepted one is testing the
+        # member set rather than the value it claims to be about.
+        if case["binding"] == binding:
+            raise ConformanceError(f"{case_id}: the refused document is the accepted one")
+        if case_id.endswith("NO-TOKEN"):
+            continue
+        if _leaf_paths(case["binding"]) != _leaf_paths(binding):
+            raise ConformanceError(f"{case_id}: refuses a different shape, not a different value")
+
+    require_field_inventory(
+        vector,
+        golden="livekit-session-binding",
+        validated={
+            "binding", "binding.schema_version", "binding.session",
+            "binding.session.server_url", "binding.session.token",
+            "binding.session.identity", "binding.session.room_name",
+            "binding.audio", "binding.audio.sample_rate", "binding.audio.channels",
+            "binding_format", "canonical_utf8", "canonical_sha256", "member_paths",
+            "opaque_binding", "opaque_binding_encoding",
+            "not_the_opaque_binding", "not_the_opaque_binding.base64url_no_padding",
+            "must_refuse",
+            *(f"must_refuse[{index}]" for index in range(len(refusals))),
+            *(f"must_refuse[{index}].binding" for index in range(len(refusals))),
+            *(f"must_refuse[{index}].case_id" for index in range(len(refusals))),
+        },
+        descriptive={
+            "vector_id", "description", "no_schema_because",
+            *(f"must_refuse[{index}].why" for index in range(len(refusals))),
+        },
+        opaque={f"must_refuse[{index}].binding" for index in range(len(refusals))},
+    )
+    return 1 + len(refusals)
 
 
 def check_admission_event_stream() -> int:
@@ -1913,6 +2175,8 @@ def run() -> dict[str, int]:
         "hpke_vectors": check_hpke_vector(),
         "claim_grant_aad_checks": check_claim_grant_aad(),
         "claim_grant_wire_checks": check_claim_grant_wire_envelope(),
+        "claim_grant_proof_checks": check_claim_grant_proof_vectors(),
+        "livekit_session_binding_checks": check_livekit_session_binding(),
         "claim_event_stream_vectors": check_admission_event_stream(),
         "protocomm_vectors": check_protocomm_framing(),
         "commissioning_voucher": check_commissioning_voucher(),

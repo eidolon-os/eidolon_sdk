@@ -45,6 +45,8 @@ from .admission_credential import (
     read_admission_credential,
 )
 from .admission import (
+    CLAIM_GRANT_ACK_PROOF_CONTRACT,
+    CLAIM_GRANT_COLLECTION_PROOF_CONTRACT,
     AckClaimGrant,
     AckClaimGrantResult,
     AdmissionListCursor,
@@ -76,6 +78,8 @@ from .admission import (
     HandoffPublicKey,
     HardwareIdentityEvidence,
     OperationalPublicKey,
+    claim_grant_ack_proof_document,
+    claim_grant_collection_proof_document,
 )
 from .body_mesh import (
     AssignmentCondition,
@@ -127,8 +131,12 @@ from .setup_descriptor import (
 )
 
 __all__ = [
+    "CLAIM_GRANT_ACK_PROOF_CONTRACT",
+    "CLAIM_GRANT_COLLECTION_PROOF_CONTRACT",
     "MANIFEST_ASSERTION_OPERATION",
     "AckClaimGrant",
+    "claim_grant_ack_proof_document",
+    "claim_grant_collection_proof_document",
     "AssertDeviceManifest",
     "AckClaimGrantResult",
     "AdmissionListCursor",
