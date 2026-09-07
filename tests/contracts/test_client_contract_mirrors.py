@@ -34,6 +34,17 @@ def test_mobile_contract_mirror_matches_sdk() -> None:
     assert constants["sessionControlTopic"] == c.SESSION_CONTROL_TOPIC
     assert constants["sessionOpenType"] == c.SESSION_OPEN_TYPE
     assert constants["sessionCloseType"] == c.SESSION_CLOSE_TYPE
+    # The two the ESP32 mirror already asserts and this one did not. Their
+    # absence cost twelve days: `SESSION_CONVERSATION_ID_FIELD` was added to the
+    # SDK on 2026-08-26, the firmware followed the same day because its mirror
+    # went red, and this one stayed green while the phone published
+    # `{schema_v, type}` — a request the Provider drops rather than refuses,
+    # because `normalize_conversation_id` returns null for an absent member. On
+    # hardware that is a microphone in a room with nobody asked to answer, and
+    # no log line on either side.
+    assert constants["sessionConversationIdField"] == c.SESSION_CONVERSATION_ID_FIELD
+    integers = dict(re.findall(r"const\s+(\w+)\s*=\s*(\d+);", source))
+    assert int(integers["sessionControlSchemaVersion"]) == c.WIRE_SCHEMA_VERSION
 
 
 def test_mobile_mission_control_mirror_matches_sdk() -> None:
