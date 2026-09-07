@@ -39,8 +39,8 @@
     },
     {
       "path": "conformance/run.py",
-      "sha256": "bf5957da375e08cdcf5bf82915ba78543f4f1241301f6e06fb0b1cdafc6d19aa",
-      "size": 106023
+      "sha256": "eead528d88b262fcfbb710b7c29c4afd14bc3fd2bcd3963d98307f6a2aa1458b",
+      "size": 106475
     },
     {
       "path": "delivery-port/schemas.schema.json",
@@ -179,8 +179,8 @@
     },
     {
       "path": "golden/claim-grant-aad.json",
-      "sha256": "b7b17253f549c7bd0a39852b42de403c41974dafeb842bfa5f71e46540a6407e",
-      "size": 1467
+      "sha256": "0fa64032f0830a382ed81ea53afac3558de5d3593518d0160f2ad03c1cc794a9",
+      "size": 2164
     },
     {
       "path": "golden/claim-grant-ack-proof.json",
@@ -320,5 +320,5 @@
   ],
   "generator": "device-foundation-v1-catalog",
   "generator_version": "1.0",
-  "source_digest": "sha256:89c7fa74c1f6a221202847db5ad2b4b38dee00943820792bf77f96efc76d11a2"
+  "source_digest": "sha256:a349f139e390cd3a52c812db44dcdcbdddc97b9b952c14c7e6ad1eedff593e33"
 }

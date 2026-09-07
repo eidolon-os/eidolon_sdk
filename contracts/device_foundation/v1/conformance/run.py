@@ -796,6 +796,12 @@ def check_hpke_vector() -> int:
 def check_claim_grant_aad() -> int:
     vector = load_json(ROOT / "golden" / "claim-grant-aad.json")
     aad = canonical_bytes(vector["aad"])
+    # The bytes, then their digest. A consumer that has to build this AAD needs
+    # the string: the digest can only tell it that it disagrees, and every such
+    # consumer would otherwise need a hash implementation in whatever suite
+    # builds the bytes just to read this vector at all.
+    if aad.decode() != vector["canonical_aad_utf8"]:
+        raise ConformanceError("ClaimGrant AAD canonical bytes drifted")
     if hashlib.sha256(aad).hexdigest() != vector["canonical_aad_sha256"]:
         raise ConformanceError("ClaimGrant AAD canonical digest mismatch")
     # The AEAD is named by the vector and decrypted with AES-GCM below. Left
@@ -842,7 +848,8 @@ def check_claim_grant_aad() -> int:
             "aad.manifest_ref.digest", "aad.owner_domain_id",
             "aad.owner_domain_generation", "aad.claim_generation",
             "aad.trust_epoch", "aad.grant_id",
-            "canonical_aad_sha256", "test_aead", "test_key", "test_nonce",
+            "canonical_aad_utf8", "canonical_aad_sha256",
+            "test_aead", "test_key", "test_nonce",
             "plaintext", "ciphertext", "mutate_each_field_must_fail",
         },
         descriptive={"vector_id"},

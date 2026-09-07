@@ -75,6 +75,12 @@ def main() -> None:
 
     aad = load("claim-grant-aad.json")
     encoded = rfc8785.dumps(aad["aad"])
+    # The bytes as well as their digest, from the one encoding of them. A digest
+    # can only tell a consumer that it disagrees; the string is what a consumer
+    # has to produce, and comparing it names the member that differs. Every
+    # other vector in this family publishes both, and this one is the AAD, which
+    # no side ever sends: a disagreement here surfaces as an AEAD tag failure.
+    aad["canonical_aad_utf8"] = encoded.decode()
     aad["canonical_aad_sha256"] = hashlib.sha256(encoded).hexdigest()
     aad["ciphertext"] = AESGCM(bytes.fromhex(aad["test_key"])).encrypt(
         bytes.fromhex(aad["test_nonce"]), bytes.fromhex(aad["plaintext"]), encoded
