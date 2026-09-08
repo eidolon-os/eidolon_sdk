@@ -17,6 +17,7 @@ introduce an import cycle.
 
 Shape of one utterance, in order:
 
+    server → {"type": "connected", "protocol_version": 1, "model_id": ...}
     client → {"type": "start_utterance", "stream_id": ..., "utterance_id": ...}
     server → {"type": "utterance_started", ...}
     client → binary WebSocket frames: raw PCM, 16 kHz, mono, signed 16-bit LE
@@ -74,12 +75,23 @@ CLIENT_MESSAGE_TYPES: Final = frozenset(
 
 # -- what the server sends ---------------------------------------------------
 
+#: Sent unprompted the moment a stream opens, before the client says anything.
+#: Carries `protocol_version` and which models this Host is listening with, so
+#: a client learns both on the connection it is about to use rather than from a
+#: separate readiness request that could describe a different process.
+CONNECTED: Final = "connected"
+
 UTTERANCE_STARTED: Final = "utterance_started"
 TRANSCRIPT: Final = "transcript"
 PONG: Final = "pong"
 ERROR: Final = "error"
 
-SERVER_MESSAGE_TYPES: Final = frozenset({UTTERANCE_STARTED, TRANSCRIPT, PONG, ERROR})
+SERVER_MESSAGE_TYPES: Final = frozenset(
+    {CONNECTED, UTTERANCE_STARTED, TRANSCRIPT, PONG, ERROR}
+)
+
+#: The field the greeting states the served version in.
+PROTOCOL_VERSION_FIELD: Final = "protocol_version"
 
 #: Distinguishes an answer that may still change from the one that will not.
 IS_FINAL_FIELD: Final = "is_final"
