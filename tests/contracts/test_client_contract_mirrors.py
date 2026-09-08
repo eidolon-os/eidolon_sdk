@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import os
 import re
 from pathlib import Path
@@ -59,11 +60,19 @@ def _source(relative: str) -> str:
 #:
 #: A value of None means the mirror is known and unverified, with the reason
 #: recorded. That is worse than verified and much better than invisible.
+#:
+#: `eidolon_client_web` was the None entry until 2026-09-08 and is now verified
+#: where it should be — in its own repository. It carries
+#: `wire_contract_mirror.json` and a `npm test` check that compares every value,
+#: the arrangement the mobile line already had; the test named here asserts that
+#: the ledger exists and decides this whole vocabulary, rather than repeating
+#: the value comparison. A third hand-written roll-call in this file is the one
+#: thing the history above says not to add.
 _WIRE_CONTRACT_MIRRORS: dict[str, str | None] = {
     "eidolon_client_mobile": "test_mobile_contract_mirror_matches_sdk",
     "eidolon-client-esp32": "test_esp32_topics_header_matches_python_wire_contract",
     "eidolon-client-esp32-korvo-1": "test_korvo_firmware_agrees_with_the_firmware_that_is_mirrored",
-    "eidolon_client_web": None,
+    "eidolon_client_web": "test_web_client_carries_its_own_wire_contract_ledger",
 }
 
 #: Names the korvo fork has not taken from the firmware it forked. Values may
@@ -71,15 +80,11 @@ _WIRE_CONTRACT_MIRRORS: dict[str, str | None] = {
 #: not the same as never having received it.
 _KORVO_LAGS_BEHIND_ON: dict[str, str] = {}
 
-_UNVERIFIED_MIRRORS = {
-    "eidolon_client_web": (
-        "src/lib/contracts.ts mirrors this vocabulary by hand and nothing compares it. Not "
-        "given a roll-call here on purpose: a third hand-maintained list would repeat the "
-        "fault the other two are being moved off. It is waiting on the per-client ledger "
-        "the mobile line already carries, where the contract is enumerated and each name "
-        "must be decided."
-    ),
-}
+#: Empty, and kept rather than deleted: it is the column a newly found client
+#: goes in before somebody has time to write its mirror, and the roster test
+#: below is what makes landing there loud instead of comfortable. Its last
+#: occupant was `eidolon_client_web`, which now has the ledger it was waiting on.
+_UNVERIFIED_MIRRORS: dict[str, str] = {}
 
 #: Distinctive enough that finding one in a repository means that repository is
 #: spelling this vocabulary. `SESSION_END_ERROR` is "error" and
@@ -168,6 +173,60 @@ def test_every_client_that_mirrors_this_contract_is_accounted_for() -> None:
 
     for repository, reason in _UNVERIFIED_MIRRORS.items():
         assert reason.strip(), f"{repository} is excused without a reason"
+
+
+def test_web_client_carries_its_own_wire_contract_ledger() -> None:
+    """The web client's ledger exists, and decides this whole session vocabulary.
+
+    The values are compared in `eidolon_client_web` itself, by a `npm test`
+    check against `wire_contract_mirror.json`, whose scope is every module-level
+    constant this contract publishes. Repeating that comparison here would be
+    the third hand-written roll-call, which is the fault the mirrors above are
+    being moved off — so this asserts the two things the client's own suite
+    structurally cannot.
+
+    First, that the delegation is real. `_WIRE_CONTRACT_MIRRORS` names this test
+    as what covers that client; if the ledger or its check were deleted, the
+    roster would go on claiming a verified mirror. `_source` fails rather than
+    skips when the repository is present and the file is not, which is the same
+    rename trap the mirrors above were losing to.
+
+    Second, that the ledger decides this whole contract module, derived from
+    this package rather than from the client's own list. A ledger is still a
+    file somebody edits, and the failure mode being guarded is a name silently
+    absent from it. This is the check that has to live on the contract's side
+    of the boundary, because a client cannot notice a name its own file never
+    mentioned.
+    """
+
+    check = "eidolon_client_web/tests/wireContractMirror.test.ts"
+    ledger = json.loads(_source("eidolon_client_web/wire_contract_mirror.json"))
+    source = _source(check)
+    assert "wire_contract_mirror.json" in source, (
+        f"{check} no longer reads the ledger, so the decisions in it are not held to anything"
+    )
+
+    decisions = ledger["constants"]
+    assert decisions, "the ledger decides nothing, so it would demand nothing"
+
+    # No filter. An earlier draft passed only the `SESSION_*`/`WIRE_*` names,
+    # which was correct for the one day the vocabulary was a prefix list and is
+    # now both dead and harmful: `names()` is the whole module, so filtering
+    # would silently drop a ledger entry for a constant this package no longer
+    # publishes instead of reporting it.
+    mirrored = {
+        name: decision["ts"]
+        for name, decision in decisions.items()
+        if decision.get("ts")
+    }
+    unmirrored = {
+        name: decision.get("not_mirrored", "")
+        for name, decision in decisions.items()
+        if not decision.get("ts")
+    }
+    _session_vocabulary.assert_every_name_is_decided(
+        client="web", mirrored=mirrored, unmirrored=unmirrored
+    )
 
 
 def test_korvo_firmware_agrees_with_the_firmware_that_is_mirrored() -> None:
