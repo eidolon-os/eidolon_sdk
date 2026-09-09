@@ -29,6 +29,34 @@ The two-pass shape is the point and is why a local Host can do something a
 provider cannot: the interim answers come from a streaming model as the words
 arrive, and the final one is re-decoded by an offline model and punctuated. A
 client renders the interims and replaces them with the final.
+
+Who ends an utterance
+---------------------
+
+**The client does, and nothing else will.** The service segments *within* an
+utterance — that is where the interims come from — but it never decides that
+one has ended. A `transcript` with `is_final` is sent in answer to
+`end_utterance` and at no other time.
+
+Spelled out because its absence cost a working Host. A provider plugin ends an
+utterance when the speech-recognition framework tells it the speaker stopped;
+this protocol's first client assumed the same signal existed, it did not, and
+the consequence was not a missing final but a silent one: audio kept arriving,
+one utterance stayed open for a whole session, and the Host answered every turn
+with "I did not catch that" while looking healthy. The two guards below are
+what that failure ran into rather than what caught it.
+
+So a client that speaks this protocol owes it two things:
+
+* An `end_utterance` for every `start_utterance`, driven by whatever tells that
+  client the speaker stopped — a voice activity detector, a push-to-talk
+  release, a turn boundary. If nothing tells it, it may not use this protocol
+  without deciding the boundary itself.
+* Audio at `AUDIO_SAMPLE_RATE`, resampled if its source differs. The service
+  counts an utterance's length in bytes at that rate, so audio at another rate
+  is not merely mis-transcribed — it exhausts `ERROR_UTTERANCE_TOO_LONG`
+  proportionally early, and 24 kHz sent as 16 kHz reached a 60-second cap in 40
+  seconds.
 """
 
 from __future__ import annotations
