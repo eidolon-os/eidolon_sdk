@@ -18,7 +18,8 @@ Shape of one request, in order:
     server → {"type": "synthesis_started", "request_id": ...}
     server → binary WebSocket frames: raw PCM, 24 kHz, mono, signed 16-bit LE
     server → {"type": "synthesis_finished", "request_id": ...,
-              "audio_seconds": ..., "pcm_bytes": ...}
+              "audio_seconds": ..., "pcm_bytes": ...,
+              "minimum_buffer_ms": ..., "late_chunks": ..., ...}
 
 The audio is the reverse direction of `local_asr` and the same kind of stream:
 it starts arriving before the utterance is finished, because a Host that waited
@@ -37,6 +38,33 @@ It does not guarantee the Host stops computing it: the engine synthesizes an
 utterance to completion, so a cancelled request keeps the NPU until it ends
 (a few seconds at most). Stated because it is visible — the next request waits
 on it — and because a client must not read "cancelled" as "the Host is free".
+
+Reading the finish report
+-------------------------
+
+`synthesis_finished` carries the Host's own measurements of how the synthesis
+went. They are here because they are the one class of fact a client cannot
+observe for itself: whether the Host stayed ahead of playback.
+
+**`minimum_buffer_ms` is the one that says whether anything was audible.** It
+is how much unplayed audio was left at the worst moment; below zero means the
+listener heard a gap, and at or above zero means they did not, however
+uncomfortable the number looks.
+
+**`late_chunks` is not that, and must not be read as that.** It counts chunks
+that arrived after their own deadline, measured from the moment the first one
+was ready — which assumes playback starts with zero buffer. For a producer
+near real time that is almost every chunk by construction, so it tracks the
+*length of the audio*, not the listener's experience: 17 seconds of speech
+with nothing audible wrong reports about 17 late chunks. It is kept because it
+locates *which* chunk was slow, and named for what it counts because the name
+it had before — `underruns` — made three separate readers report dropouts that
+never happened.
+
+Every field below `pcm_bytes` is optional: the Host omits one it did not
+measure, and an older Host omits ones it did not have. So a client must
+distinguish absent from zero — `minimum_buffer_ms` missing means "not
+reported", which is not the same as "no gap".
 """
 
 from __future__ import annotations
@@ -107,6 +135,37 @@ PROTOCOL_VERSION_FIELD: Final = "protocol_version"
 #: rather than attributed to the request that followed it.
 REQUEST_ID_FIELD: Final = "request_id"
 
+# -- what `synthesis_finished` reports --------------------------------------
+#
+# Named here rather than left as string literals on each side, which is this
+# package's whole reason to exist: renaming `underruns` to `late_chunks` in
+# the service silently disabled the client's only quality warning, because
+# nothing checked that the two ends still agreed on the word.
+
+#: Always present.
+PCM_BYTES_FIELD: Final = "pcm_bytes"
+
+#: How long the audio is. Present whenever the Host measured it.
+AUDIO_SECONDS_FIELD: Final = "audio_seconds"
+
+#: Unplayed audio left at the worst moment, in milliseconds. Below zero is an
+#: audible gap; absent means the Host did not report one, not that there was
+#: none. This is the field to judge a synthesis by.
+MINIMUM_BUFFER_MS_FIELD: Final = "minimum_buffer_ms"
+
+#: How many chunks arrived after their own deadline. See the module note: this
+#: is a locator, not a verdict, and reading it as a dropout count is wrong.
+LATE_CHUNKS_FIELD: Final = "late_chunks"
+
+#: Time to the first PCM frame, in milliseconds.
+TTFT_MS_FIELD: Final = "ttft_ms"
+
+#: Synthesis time over audio time once the stream is running.
+STEADY_RTF_FIELD: Final = "steady_rtf"
+
+#: Time spent preparing the voice profile, in milliseconds.
+PROFILE_MS_FIELD: Final = "profile_ms"
+
 # -- the audio the stream carries -------------------------------------------
 
 #: The engine's own rate. Not negotiable here: the HiFT decoder produces this,
@@ -153,6 +212,36 @@ RETRYABLE_ERROR_CODES: Final = frozenset(
 #: already spent the NPU on it. Sentence-splitting belongs to the client, which
 #: knows where a turn can be broken.
 MAX_TEXT_CHARACTERS: Final = 400
+
+#: What this Host will say in one request *without the audio breaking up*.
+#:
+#: A different question from `MAX_TEXT_CHARACTERS`, and the gap between them is
+#: the trap: a request of 200 characters is accepted, answered, and reported as
+#: `status=PASS`, and the listener hears a gap in the middle of it. Refusal and
+#: audibility are two limits, so they are two constants.
+#:
+#: Measured on RK3588 by the buffer floor the service reports as
+#: `minimum_buffer_ms` — a chunk arriving after its own deadline is harmless
+#: while the buffer stays positive, so the floor is the only quantity that says
+#: whether anything was heard:
+#:
+#:     44 chars   9.80 s   +447 ms
+#:     60 chars  13.20 s   +504 ms   <- this value, held over 20 rounds
+#:     80 chars  16.88 s   +209 ms
+#:    126 chars  26.20 s   -246..-372 ms   <- gaps, every run
+#:
+#: Past an rtf of 1 the deficit accumulates at about 43 ms per second of audio,
+#: and 26 seconds is where it consumes the whole buffer. 60 rather than 80
+#: because 80 leaves only 209 ms.
+#:
+#: Stated here rather than only served over `/v1/info` so a client can check it
+#: when it is configured instead of after it is running: exceeding this is not
+#: an error the service can return — it comes out as audio the user cannot
+#: follow. Splitting on sentence boundaries belongs to the client, which knows
+#: where a turn can be broken.
+#:
+#: Raising this requires new measurements of the buffer floor, not an argument.
+SAFE_TEXT_CHARACTERS: Final = 60
 
 
 class LocalTtsProtocolError(ValueError):
