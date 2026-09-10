@@ -149,6 +149,25 @@ def main() -> None:
             "that is what made the gap look closed for as long as it did."
         ),
     }
+    first = document["session"]["server_url"]
+    second = "wss://livekit-secondary.owner.test:7880"
+    vector["routing"] = {
+        "description": "Optional additive v2 server_urls are ordered, nonempty, unique strings. "
+        "The first equals server_url. Omission is the legacy single route. All candidates belong "
+        "to the same authenticated binding, token and room. Failed transports are retired before "
+        "trying another; exhausted routes require a fresh binding, never re-enrollment. "
+        "Routes are observations, not Host/Owner identity, and must not be globally pinned.",
+        "accept": [
+            {"case_id": "legacy", "session": document["session"]},
+            {"case_id": "multiple", "session": {**document["session"], "server_urls": [first, second]}},
+        ],
+        "refuse": [
+            {"case_id": name, "session": {**document["session"], "server_urls": value}}
+            for name, value in [("empty", []), ("null", None), ("not-list", first),
+                                ("duplicate", [first, first]), ("empty-url", [first, ""]),
+                                ("not-string", [first, 42]), ("wrong-primary", [second, first])]
+        ],
+    }
     save("livekit-session-binding.json", vector)
 
 

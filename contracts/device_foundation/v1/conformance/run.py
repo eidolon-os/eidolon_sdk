@@ -1416,10 +1416,29 @@ def check_livekit_session_binding() -> int:
         if _leaf_paths(case["binding"]) != _leaf_paths(binding):
             raise ConformanceError(f"{case_id}: refuses a different shape, not a different value")
 
+    routing = vector["routing"]
+    if set(routing) != {"description", "accept", "refuse"} or not routing["description"]:
+        raise ConformanceError("routing vector has no declared contract")
+    if not routing["accept"] or not routing["refuse"]:
+        raise ConformanceError("routing acceptance/refusal cases cannot be empty")
+    for kind in ("accept", "refuse"):
+        for case in routing[kind]:
+            if set(case) != {"case_id", "session"} or not case["case_id"]:
+                raise ConformanceError("invalid routing case")
+            session = case["session"]
+            urls = session.get("server_urls")
+            valid = ("server_urls" not in session or
+                     (isinstance(urls, list) and bool(urls) and
+                      all(isinstance(url, str) and bool(url) for url in urls) and
+                      urls[0] == session["server_url"] and len(set(urls)) == len(urls)))
+            if valid != (kind == "accept"):
+                raise ConformanceError("routing case disagrees with its contract: " + case["case_id"])
+
     require_field_inventory(
         vector,
         golden="livekit-session-binding",
         validated={
+            "routing",
             "binding", "binding.schema_version", "binding.session",
             "binding.session.server_url", "binding.session.token",
             "binding.session.identity", "binding.session.room_name",
@@ -1440,7 +1459,7 @@ def check_livekit_session_binding() -> int:
             *(f"{key}[{index}].why" for key in ("must_refuse", "may_refuse")
               for index in range(len(vector[key]))),
         },
-        opaque={
+        opaque={"routing"} | {
             f"{key}[{index}].binding" for key in ("must_refuse", "may_refuse")
             for index in range(len(vector[key]))
         },

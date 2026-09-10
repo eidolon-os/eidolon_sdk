@@ -39,8 +39,8 @@
     },
     {
       "path": "conformance/run.py",
-      "sha256": "ddb9653088acb60a226d0ae9637d32d5e776ea7203fb48a94df20ed10b87b93c",
-      "size": 125771
+      "sha256": "5f84f0053aeb07c8a7d2f833a8787aa98e1e3d71e89bdaca87ffeac4cfa63b98",
+      "size": 126873
     },
     {
       "path": "delivery-port/schemas.schema.json",
@@ -249,8 +249,8 @@
     },
     {
       "path": "golden/livekit-session-binding.json",
-      "sha256": "20bf749b9a6c598c78087ae2f2f1ffe5c1e4f80b1180266cd0ea68bc4ba07c82",
-      "size": 6944
+      "sha256": "cf7079a8a12363aadbec3afb7e5345c11ca625108f94228cc9e15ea7b83b7542",
+      "size": 12691
     },
     {
       "path": "golden/owner-domain-descriptor.json",
@@ -335,5 +335,5 @@
   ],
   "generator": "device-foundation-v1-catalog",
   "generator_version": "1.0",
-  "source_digest": "sha256:cb09a9e29c3ead73e9d5681fcd28b75761d075653a4c709c207e078fc7295603"
+  "source_digest": "sha256:7e7eb6374980bc2f1e2ee5d1eab2e8f9c9101d404e89f8376b488a4b8620c676"
 }
