@@ -112,8 +112,6 @@ def test_what_a_person_wrote_survives_the_build_verbatim() -> None:
         voice_portrait="短句，不用感叹号",
         values=["诚实"],
         boundaries=["不替他做决定"],
-        commitments=["每周问一次他睡得好不好"],
-        pinned_facts=["他有一只叫阿力的猫"],
         safety_boundaries=["不提他父亲"],
         behavior_guidance=["先问再答"],
         dialogue_examples=["「今天怎么样？」"],
@@ -128,8 +126,6 @@ def test_what_a_person_wrote_survives_the_build_verbatim() -> None:
     assert genome.constitution.boundaries == ["不替他做决定"]
     assert genome.character.portrait == "安静，话不多，但记得住"
     assert genome.relationship.narrative == "我们是从一次很长的深夜对话开始的"
-    assert genome.relationship.commitments == ["每周问一次他睡得好不好"]
-    assert genome.relationship.pinned_facts == ["他有一只叫阿力的猫"]
     assert genome.relationship.safety_boundaries == ["不提他父亲"]
     assert genome.expression.voice_portrait == "短句，不用感叹号"
     assert genome.expression.behavior_guidance == ["先问再答"]
@@ -141,9 +137,7 @@ def test_authoring_says_so_in_the_provenance() -> None:
     same fact, and the record has to be able to tell them apart later."""
 
     authored = build_persona_genome_from_draft(
-        PersonaAuthoringDraft.for_companion(
-            PersonaAuthoring(self_concept="我记得"), name="小南"
-        ),
+        PersonaAuthoringDraft.for_companion(PersonaAuthoring(self_concept="我记得"), name="小南"),
         origin="owner_authored",
     )
     assert authored.provenance.origin == "owner_authored"
@@ -164,8 +158,6 @@ def test_what_somebody_wrote_reads_back_as_what_they_wrote() -> None:
         voice_portrait="短句，不用感叹号",
         values=["诚实"],
         boundaries=["不替他做决定"],
-        commitments=["每周问一次"],
-        pinned_facts=["他有一只猫"],
         safety_boundaries=["不提他父亲"],
         behavior_guidance=["先问再答"],
         dialogue_examples=["「今天怎么样？」"],
@@ -173,14 +165,10 @@ def test_what_somebody_wrote_reads_back_as_what_they_wrote() -> None:
     )
 
     back = persona_authoring_of(
-        build_persona_genome_from_draft(
-            PersonaAuthoringDraft.for_companion(written, name="小南")
-        )
+        build_persona_genome_from_draft(PersonaAuthoringDraft.for_companion(written, name="小南"))
     )
 
-    assert back.model_dump(exclude={"traits"}) == written.model_dump(
-        exclude={"traits"}
-    )
+    assert back.model_dump(exclude={"traits"}) == written.model_dump(exclude={"traits"})
 
 
 def test_reading_and_saving_without_changing_anything_changes_nothing() -> None:
@@ -193,15 +181,11 @@ def test_reading_and_saving_without_changing_anything_changes_nothing() -> None:
     """
 
     genome = build_persona_genome_from_draft(
-        PersonaAuthoringDraft.for_companion(
-            PersonaAuthoring(self_concept="我记得"), name="小南"
-        )
+        PersonaAuthoringDraft.for_companion(PersonaAuthoring(self_concept="我记得"), name="小南")
     )
     once = persona_authoring_of(genome)
     twice = persona_authoring_of(
-        build_persona_genome_from_draft(
-            PersonaAuthoringDraft.for_companion(once, name="小南")
-        )
+        build_persona_genome_from_draft(PersonaAuthoringDraft.for_companion(once, name="小南"))
     )
 
     assert twice == once
@@ -217,10 +201,31 @@ def test_reading_a_genome_back_leaves_its_machinery_where_it_is() -> None:
     a request body a client can rewrite.
     """
 
-    authoring = persona_authoring_of(
-        build_default_persona_genome(name="小南", origin="template")
-    )
+    authoring = persona_authoring_of(build_default_persona_genome(name="小南", origin="template"))
 
     for machinery in ("provenance", "evolution_policy", "memory_policy", "name"):
         assert machinery not in PersonaAuthoring.model_fields, machinery
     assert authoring.character_portrait, "but what a person wrote does come back"
+
+
+def test_persona_does_not_accept_memory_facts_or_task_promises():
+    import pytest
+    from pydantic import ValidationError
+    from eidolon_sdk.biz.persona import (
+        PersonaAuthoring,
+        build_default_persona_genome,
+        normalize_persona_genome,
+    )
+
+    for field, value in [
+        ("commitments", ["task"]),
+        ("pinned_facts", ["fact"]),
+        ("owner_preferences", {"tea": True}),
+    ]:
+        with pytest.raises(ValidationError):
+            PersonaAuthoring.model_validate({field: value})
+        raw = build_default_persona_genome(name="Test").model_dump()
+        raw["relationship"][field] = value
+        with pytest.raises(ValidationError):
+            normalize_persona_genome(raw)
+    assert not build_default_persona_genome(name="Test").evolution_policy.auto_apply_low_risk

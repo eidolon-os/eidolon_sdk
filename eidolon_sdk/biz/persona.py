@@ -83,9 +83,6 @@ class PersonaRelationship(BaseModel):
 
     stage: RelationshipStage = "new"
     narrative: str = ""
-    commitments: list[str] = Field(default_factory=list)
-    pinned_facts: list[str] = Field(default_factory=list)
-    owner_preferences: dict[str, Any] = Field(default_factory=dict)
     safety_boundaries: list[str] = Field(default_factory=list)
 
 
@@ -116,7 +113,7 @@ class PersonaEvolutionPolicy(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     enabled: bool = True
-    auto_apply_low_risk: bool = True
+    auto_apply_low_risk: bool = False
     max_delta_per_commit: float = Field(0.05, ge=0.0, le=1.0)
     review_required_traits: list[str] = Field(default_factory=list)
 
@@ -178,8 +175,6 @@ class PersonaAuthoring(BaseModel):
     voice_portrait: str = "温暖、清晰、具体，不用空泛语言填补回应。"
     values: list[str] = Field(default_factory=lambda: list(DEFAULT_PERSONA_VALUES))
     boundaries: list[str] = Field(default_factory=lambda: list(DEFAULT_PERSONA_BOUNDARIES))
-    commitments: list[str] = Field(default_factory=list)
-    pinned_facts: list[str] = Field(default_factory=list)
     safety_boundaries: list[str] = Field(default_factory=list)
     behavior_guidance: list[str] = Field(
         default_factory=lambda: list(DEFAULT_PERSONA_BEHAVIOR_GUIDANCE)
@@ -201,6 +196,8 @@ class ConversationPreferences(BaseModel):
 class PersonaEditSnapshot(BaseModel):
     model_config = ConfigDict(extra="forbid")
     genome_id: str
+    display_name: str = ""
+    companion_revision: int = 1
     persona: PersonaAuthoring
     preferences: ConversationPreferences = Field(default_factory=ConversationPreferences)
     preference_revision: int = Field(default=1, ge=1)
@@ -213,6 +210,25 @@ class PersonaEditRequest(BaseModel):
     operation_id: str = Field(min_length=1, max_length=128)
     persona: PersonaAuthoring
     preferences: ConversationPreferences | None = None
+    action: Literal["edit", "rename", "restore"] = "edit"
+    display_name: str | None = Field(default=None, min_length=1, max_length=128)
+    restore_genome_id: str | None = Field(default=None, min_length=1, max_length=64)
+
+    @model_validator(mode="after")
+    def _check_action(self):
+        if self.action == "rename":
+            if not self.display_name or not self.display_name.strip() or self.restore_genome_id:
+                raise ValueError("rename requires a nonblank display_name only")
+        elif self.action == "restore":
+            if not self.restore_genome_id or self.display_name:
+                raise ValueError("restore requires restore_genome_id only")
+        elif self.display_name is not None or self.restore_genome_id is not None:
+            raise ValueError("edit cannot rename or restore")
+        if self.action != "edit" and (
+            self.persona.model_fields_set or self.preferences is not None
+        ):
+            raise ValueError("rename and restore cannot also edit persona or preferences")
+        return self
 
 
 def apply_persona_authoring(
@@ -232,8 +248,6 @@ def apply_persona_authoring(
         "character_portrait": ("character", "portrait"),
         "traits": ("character", "traits"),
         "relationship_narrative": ("relationship", "narrative"),
-        "commitments": ("relationship", "commitments"),
-        "pinned_facts": ("relationship", "pinned_facts"),
         "safety_boundaries": ("relationship", "safety_boundaries"),
         "voice_portrait": ("expression", "voice_portrait"),
         "behavior_guidance": ("expression", "behavior_guidance"),
@@ -390,7 +404,7 @@ def build_default_persona_genome(
         ),
         evolution_policy=PersonaEvolutionPolicy(
             enabled=True,
-            auto_apply_low_risk=True,
+            auto_apply_low_risk=False,
             max_delta_per_commit=0.05,
             review_required_traits=["core.intimacy", "core.vulnerability"],
         ),
@@ -429,8 +443,6 @@ def build_persona_genome_from_draft(
             ),
             "relationship": PersonaRelationship(
                 narrative=draft.relationship_narrative.strip(),
-                commitments=list(draft.commitments),
-                pinned_facts=list(draft.pinned_facts),
                 safety_boundaries=list(draft.safety_boundaries),
             ),
             "expression": PersonaExpression(
@@ -470,8 +482,6 @@ def persona_authoring_of(genome: PersonaGenome) -> PersonaAuthoring:
         character_portrait=genome.character.portrait,
         traits=dict(genome.character.traits),
         relationship_narrative=genome.relationship.narrative,
-        commitments=list(genome.relationship.commitments),
-        pinned_facts=list(genome.relationship.pinned_facts),
         safety_boundaries=list(genome.relationship.safety_boundaries),
         voice_portrait=genome.expression.voice_portrait,
         behavior_guidance=list(genome.expression.behavior_guidance),
@@ -552,6 +562,8 @@ PersonaConflictCode = Literal[
 ]
 
 __all__ = [
+    "PersonaPreviewRequest",
+    "PersonaPreviewResponse",
     "PersonaPreset",
     "PersonaPresetCatalog",
     "persona_preset_catalog",
@@ -675,9 +687,7 @@ def validate_persona_evolution(
     before_relation = current.relationship.model_dump(exclude={"stage"})
     after_relation = candidate.relationship.model_dump(exclude={"stage"})
     if before_relation != after_relation:
-        raise ValueError(
-            "memory-driven evolution cannot rewrite owner facts or relationship agreements"
-        )
+        raise ValueError("memory-driven evolution cannot rewrite relationship agreements")
     if candidate.character.traits.keys() != current.character.traits.keys():
         raise ValueError("persona evolution cannot add or remove traits")
     for key, before in current.character.traits.items():
@@ -690,3 +700,30 @@ def validate_persona_evolution(
     delta = stages.index(candidate.relationship.stage) - stages.index(current.relationship.stage)
     if delta < 0 or delta > 1:
         raise ValueError("relationship stage evolution must move forward one step at most")
+
+
+class PersonaPreviewRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    companion_id: str | None = None
+    base_genome_id: str | None = None
+    name: str = Field(min_length=1, max_length=128)
+    persona: PersonaAuthoring
+    preferences: ConversationPreferences = Field(default_factory=ConversationPreferences)
+    text: str = Field(min_length=1, max_length=2000)
+    modality: Literal["voice", "text"] = "voice"
+
+    @model_validator(mode="after")
+    def _valid_draft(self):
+        if bool(self.companion_id) != bool(self.base_genome_id):
+            raise ValueError("companion_id and base_genome_id must be supplied together")
+        if not self.name.strip() or not self.text.strip():
+            raise ValueError("preview name and text cannot be blank")
+        return self
+
+
+class PersonaPreviewResponse(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    draft_digest: str
+    reply: str
+    finish_reason: str
+    truncated: bool = False
