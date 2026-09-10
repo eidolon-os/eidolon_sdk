@@ -30,7 +30,7 @@ DEFAULT_PERSONA_BOUNDARIES = (
     "明确遵守安全与隐私边界",
 )
 DEFAULT_PERSONA_BEHAVIOR_GUIDANCE = (
-    "先回应 owner 当前的意图，再补充建议。",
+    "直接回应 owner 当前的意图，说够就停；不默认补建议或追问。",
     "让记忆形成连续性，但不编造记忆。",
 )
 
@@ -187,6 +187,64 @@ class PersonaAuthoring(BaseModel):
     dialogue_examples: list[str] = Field(default_factory=list)
     modality_notes: dict[str, str] = Field(default_factory=dict)
     traits: dict[str, PersonaTraitState] = Field(default_factory=dict)
+
+
+class ConversationPreferences(BaseModel):
+    """Explicit owner choices, stored outside the immutable genome."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+    response_length: Literal["brief", "balanced", "detailed"] = "brief"
+    advice: Literal["when_asked", "proactive"] = "when_asked"
+    follow_up: Literal["when_needed", "conversational"] = "when_needed"
+
+
+class PersonaEditSnapshot(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    genome_id: str
+    persona: PersonaAuthoring
+    preferences: ConversationPreferences = Field(default_factory=ConversationPreferences)
+    preference_revision: int = Field(default=1, ge=1)
+
+
+class PersonaEditRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    expected_base_genome_id: str = Field(min_length=1, max_length=64)
+    expected_preference_revision: int = Field(ge=1)
+    operation_id: str = Field(min_length=1, max_length=128)
+    persona: PersonaAuthoring
+    preferences: ConversationPreferences | None = None
+
+
+def apply_persona_authoring(
+    base: PersonaGenome, authored: PersonaAuthoring, *, base_genome_id: str
+) -> PersonaGenome:
+    """Apply explicitly supplied authored fields to the full snapshot.
+
+    Omission preserves a value; an empty list/string clears it. Runtime and
+    evolution state never round-trips through a form. Validate the full result.
+    """
+    payload = base.model_dump(mode="json")
+    paths = {
+        "archetype": ("constitution", "archetype"),
+        "self_concept": ("constitution", "self_concept"),
+        "values": ("constitution", "values"),
+        "boundaries": ("constitution", "boundaries"),
+        "character_portrait": ("character", "portrait"),
+        "traits": ("character", "traits"),
+        "relationship_narrative": ("relationship", "narrative"),
+        "commitments": ("relationship", "commitments"),
+        "pinned_facts": ("relationship", "pinned_facts"),
+        "safety_boundaries": ("relationship", "safety_boundaries"),
+        "voice_portrait": ("expression", "voice_portrait"),
+        "behavior_guidance": ("expression", "behavior_guidance"),
+        "dialogue_examples": ("expression", "dialogue_examples"),
+        "modality_notes": ("expression", "modality_notes"),
+    }
+    for field, value in authored.model_dump(mode="json", exclude_unset=True).items():
+        section, key = paths[field]
+        payload[section][key] = value.strip() if isinstance(value, str) else value
+    payload["provenance"].update(origin="owner_authored", base_genome_id=base_genome_id)
+    return PersonaGenome.model_validate(payload)
 
 
 class PersonaAuthoringDraft(PersonaAuthoring):
@@ -400,9 +458,8 @@ def persona_authoring_of(genome: PersonaGenome) -> PersonaAuthoring:
     it. Round-tripping them through a form would let a screen edit machinery it
     has no business touching.
 
-    Not lossless in the other direction, and deliberately so: reading, editing
-    and saving replaces only what the form covers, while the genome's own
-    apparatus is rebuilt from the same defaults it always was.
+    Apply edits with apply_persona_authoring against the full stored snapshot;
+    build_persona_genome_from_draft is for creation only.
     """
 
     return PersonaAuthoring(
@@ -470,6 +527,8 @@ def runtime_manifest_hash(manifest: str) -> str:
 #: Agent, whose evolution path drives these commands, and by anything that later
 #: relays a refusal to a person.
 PersonaConflictCode = Literal[
+    "operation_conflict",
+    "preferences_changed",
     #: The proposal was written against a genome that is no longer current. The
     #: work is not wrong, it is just out of date — re-read and propose again.
     "base_not_current",
@@ -493,6 +552,14 @@ PersonaConflictCode = Literal[
 ]
 
 __all__ = [
+    "PersonaPreset",
+    "PersonaPresetCatalog",
+    "persona_preset_catalog",
+    "validate_persona_evolution",
+    "ConversationPreferences",
+    "PersonaEditSnapshot",
+    "PersonaEditRequest",
+    "apply_persona_authoring",
     "PERSONA_GENOME_SCHEMA",
     "PersonaConflictCode",
     "PERSONA_REALIZER",
@@ -518,3 +585,108 @@ __all__ = [
     "persona_genome_to_json",
     "runtime_manifest_hash",
 ]
+
+
+class PersonaPreset(BaseModel):
+    model_config = ConfigDict(extra="forbid", frozen=True)
+    preset_id: str
+    revision: str = "1"
+    title: str
+    persona: PersonaAuthoring
+    examples: list[str]
+
+
+class PersonaPresetCatalog(BaseModel):
+    model_config = ConfigDict(extra="forbid", frozen=True)
+    presets: list[PersonaPreset]
+
+
+def persona_preset_catalog() -> PersonaPresetCatalog:
+    """Data publishes these authoring snapshots; clients do not invent defaults."""
+    default = PersonaAuthoring()
+    definitions = [
+        (
+            "gentle",
+            "温和陪伴",
+            default,
+            [
+                "你：你好。\nTA：嗨，很高兴见到你。",
+                "你：今天有点累。\nTA：辛苦了，先歇一会儿。我在。",
+                "你：帮我做个选择。\nTA：你在考虑哪两个选项？",
+            ],
+        ),
+        (
+            "direct",
+            "直接务实",
+            default.model_copy(
+                update={
+                    "character_portrait": "直接、踏实，尊重 owner 自己的判断。",
+                    "voice_portrait": "用具体的短句回答；需要解释时清楚展开。",
+                }
+            ),
+            [
+                "你：你好。\nTA：你好，我在。",
+                "你：今天有点累。\nTA：听起来今天消耗很大。先缓一缓。",
+                "你：帮我做个选择。\nTA：有哪些选项，你最看重什么？",
+            ],
+        ),
+        (
+            "playful",
+            "活泼有趣",
+            default.model_copy(
+                update={
+                    "character_portrait": "活泼、好奇，有轻盈的幽默感，也能安静听人说话。",
+                    "voice_portrait": "自然轻快，偶尔幽默；不把每句话都变成表演。",
+                }
+            ),
+            [
+                "你：你好。\nTA：嗨，我来啦。",
+                "你：今天有点累。\nTA：今天的电量见底了吧。我陪你缓一缓。",
+                "你：帮我做个选择。\nTA：把候选选手告诉我，我们一起看看。",
+            ],
+        ),
+    ]
+    return PersonaPresetCatalog(
+        presets=[
+            PersonaPreset(preset_id=key, title=title, persona=persona, examples=examples)
+            for key, title, persona, examples in definitions
+        ]
+    )
+
+
+def validate_persona_evolution(
+    current: PersonaGenome, proposal: PersonaEvolutionProposalEvent
+) -> None:
+    """Shared validation, enforced again by Data before recording/approving proposals.
+
+    Explicit owner settings are edited through authoring, never inferred from memory.
+    All accepted proposals still require the existing explicit approval command.
+    """
+    candidate = proposal.proposed_genome
+    if not current.evolution_policy.enabled:
+        raise ValueError("persona evolution is disabled")
+    if not proposal.rationale.strip() or not proposal.evidence_refs:
+        raise ValueError("persona evolution requires rationale and evidence")
+    if candidate.constitution != current.constitution:
+        raise ValueError("memory-driven evolution cannot rewrite the constitution")
+    for field in ("memory_policy", "evolution_policy"):
+        if getattr(candidate, field) != getattr(current, field):
+            raise ValueError(f"memory-driven evolution cannot rewrite {field}")
+    before_relation = current.relationship.model_dump(exclude={"stage"})
+    after_relation = candidate.relationship.model_dump(exclude={"stage"})
+    if before_relation != after_relation:
+        raise ValueError(
+            "memory-driven evolution cannot rewrite owner facts or relationship agreements"
+        )
+    if candidate.character.traits.keys() != current.character.traits.keys():
+        raise ValueError("persona evolution cannot add or remove traits")
+    for key, before in current.character.traits.items():
+        if (
+            abs(candidate.character.traits[key].value - before.value)
+            > current.evolution_policy.max_delta_per_commit
+        ):
+            raise ValueError(f"persona trait delta exceeds max_delta_per_commit: {key}")
+    stages = ("new", "familiar", "trusted", "deep")
+    delta = stages.index(candidate.relationship.stage) - stages.index(current.relationship.stage)
+    if delta < 0 or delta > 1:
+        raise ValueError("relationship stage evolution must move forward one step at most")
