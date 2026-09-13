@@ -28,14 +28,15 @@ class TurnDoneStatus(str, Enum):
 class TerminationCause(str, Enum):
     """DONE.data.termination_cause — WHY the turn ended.
 
-    ``USER_STOP`` means the brain classified the utterance itself as a stop
-    command and never invoked the LLM; upstream should circuit-break TTS and
-    rendering for the turn. ``CLIENT_CANCEL`` acknowledges a CancelTurn
-    frame; ``RPC_CANCEL`` means the transport went away mid-turn.
+    ``CLIENT_CANCEL`` acknowledges a CancelTurn frame; ``RPC_CANCEL`` means the
+    transport went away mid-turn.
+
+    There is deliberately no cause for "the brain decided this was a stop": the
+    channel owns the interruption verdict, and the agent validates its typed
+    commitment rather than classifying control text of its own.
     """
 
     NORMAL = "normal"
-    USER_STOP = "user_stop"
     CLIENT_CANCEL = "client_cancel"
     RPC_CANCEL = "rpc_cancel"
     GUARDRAIL = "guardrail"

@@ -110,19 +110,14 @@ message PushSignalInline {
 //   CITATION     { ... }
 //   USAGE        { tokens_in: number, tokens_out: number }
 //   DONE         { status: "ok" | "cancelled" | "errored" | "handed_off",
-//                  termination_cause?: "normal" | "user_stop" | "client_cancel"
-//                    | "rpc_cancel" | "guardrail" | "error",
-//                  control_intent?: "hard_stop" | "topic_switch" | ... }
+//                  termination_cause?: "normal" | "client_cancel"
+//                    | "rpc_cancel" | "guardrail" | "error" }
 //                  - termination_cause distinguishes WHY the turn ended.
-//                    "user_stop" means the agent classified the utterance
-//                    itself as a stop command (no LLM was invoked; upstream
-//                    should circuit-break TTS/rendering for this turn).
 //                    "client_cancel" acknowledges a CancelTurn frame;
 //                    "rpc_cancel" means the transport went away.
-//                  - control_intent carries the agent-side classification of
-//                    the user utterance (shared taxonomy:
-//                    eidolon_sdk.biz.dialogue_control.InterruptIntent) so the
-//                    channel can reconcile its fast-path Tier0 decision.
+//                  - the agent classifies no control intent of its own: the
+//                    channel owns the interruption verdict and the agent only
+//                    validates its typed commitment.
 //   ERROR        { code: string, message: string, fatal?: bool }
 //   ACK          { cancelled_turn_id: string, already_done: bool }
 //                  - emitted in response to a CancelTurn frame so the client
