@@ -8,11 +8,13 @@ from typing import Any
 
 from eidolon_sdk.biz.audit import AuditEnvelope
 
+from .stream import AUDIT_SUBJECT_PREFIX, audit_subject, ensure_audit_stream
+
 
 @dataclass(frozen=True)
 class AuditNatsPublisherSettings:
     url: str = "nats://127.0.0.1:4222"
-    subject_prefix: str = "eidolon.audit.v1"
+    subject_prefix: str = AUDIT_SUBJECT_PREFIX
     connect_timeout_seconds: float = 2.0
     reconnect_attempts: int = 3
     reconnect_wait_seconds: float = 0.25
@@ -21,7 +23,11 @@ class AuditNatsPublisherSettings:
 
 
 class JetStreamAuditPublisher:
-    """Publish batches without owning stream retention or consumer policy."""
+    """Publish batches without owning consumer policy.
+
+    It does ensure the stream exists — see :mod:`.stream` for why that is a
+    publisher's job and not only a consumer's.
+    """
 
     def __init__(
         self,
@@ -48,8 +54,14 @@ class JetStreamAuditPublisher:
             max_reconnect_attempts=self.settings.reconnect_attempts,
             reconnect_time_wait=self.settings.reconnect_wait_seconds,
         )
+        jetstream = connection.jetstream()
+        try:
+            await ensure_audit_stream(jetstream)
+        except Exception:
+            await connection.close()
+            raise
         self._connection = connection
-        self._jetstream = connection.jetstream()
+        self._jetstream = jetstream
 
     async def close(self) -> None:
         connection = self._connection
@@ -72,7 +84,7 @@ class JetStreamAuditPublisher:
         semaphore = asyncio.Semaphore(concurrency)
 
         async def _publish(item: AuditEnvelope) -> str:
-            subject = f"{self.settings.subject_prefix}.{_subject_token(item.producer)}"
+            subject = audit_subject(item.producer)
             async with semaphore:
                 await jetstream.publish(
                     subject,
@@ -85,9 +97,24 @@ class JetStreamAuditPublisher:
         return set(await asyncio.gather(*(_publish(item) for item in events)))
 
 
-def _subject_token(value: str) -> str:
-    normalized = "".join(char if char.isalnum() or char in "_-" else "_" for char in value)
-    return normalized or "unknown"
+def require_audit_transport() -> None:
+    """Fail now if this process cannot publish, rather than once per batch.
+
+    An authority that was given an audit URL has claimed it can reach the global
+    stream. Without the ``audit`` extra installed it cannot, and the only place
+    that used to say so was the exception from the first publish — which the
+    dispatcher catches and writes to ``last_error``, a column no operator reads.
+    One Host retried 5336 times over six days that way, answering /health with
+    200 and logging nothing.
+
+    So the claim is checked where it is made: at startup, before the dispatcher
+    exists. A missing dependency is a broken deployment, not a passing outage,
+    and refusing to start names it while somebody is still watching. A bus that
+    is merely *down* is the opposite and must stay tolerated — the rows wait,
+    and their Owner can still read them.
+    """
+
+    _nats_module()
 
 
 def _nats_module():

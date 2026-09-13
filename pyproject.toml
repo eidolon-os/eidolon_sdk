@@ -57,6 +57,11 @@ dev = [
     "grpcio-tools==1.73.1",
     "hatchling>=1.25",
     "jsonschema>=4.21",
+    # The audit publisher's tests exercise stream creation, which needs the
+    # real `nats.js` error and config types. Declared rather than inherited
+    # from whatever else happens to be installed — an undeclared test
+    # dependency is how `eidolon_data` shipped without a publisher at all.
+    "nats-py>=2.9",
     "pytest>=8.0",
     "pytest-asyncio>=0.24",
     "pyyaml>=6.0",
