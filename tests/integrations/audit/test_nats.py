@@ -9,9 +9,12 @@ from nats.js.errors import NotFoundError
 from eidolon_sdk.biz.audit import AuditEnvelope
 from eidolon_sdk.integrations.audit import (
     AUDIT_STREAM_NAME,
+    FAILURE_REPORT_EVERY,
     AuditNatsPublisherSettings,
+    AuditPublishError,
     JetStreamAuditPublisher,
     require_audit_transport,
+    should_report_publish_failure,
 )
 
 
@@ -26,7 +29,10 @@ class _JetStream:
 
     async def stream_info(self, name):
         if self._stream_exists:
-            return SimpleNamespace(config=SimpleNamespace(name=name))
+            return SimpleNamespace(
+                config=SimpleNamespace(name=name),
+                state=SimpleNamespace(messages=0, last_seq=0),
+            )
         raise NotFoundError()
 
     async def add_stream(self, config):
@@ -157,3 +163,138 @@ def test_a_host_that_cannot_publish_says_so_before_it_serves(monkeypatch) -> Non
 
     with pytest.raises(RuntimeError, match=r"eidolon-sdk\[audit\]"):
         require_audit_transport()
+
+
+class _RefusingJetStream(_JetStream):
+    """A broker that describes the stream and will not store into it.
+
+    Exactly what a stream whose directory was removed under a running server
+    does: `stream_info` answers, every publish times out, and the reason is in
+    the broker's own log — which it publishes to no subject at all.
+    """
+
+    async def publish(self, subject, payload, **kwargs):
+        raise TimeoutError("nats: timeout")
+
+
+async def test_a_publish_failure_names_what_the_broker_did_and_did_not_do(
+    monkeypatch,
+) -> None:
+    connection = _Connection()
+    connection.js = _RefusingJetStream(stream_exists=True)
+
+    async def _connect(url, **kwargs):
+        return connection
+
+    monkeypatch.setattr(
+        "eidolon_sdk.integrations.audit.nats._nats_module",
+        lambda: SimpleNamespace(connect=_connect),
+    )
+    publisher = JetStreamAuditPublisher(AuditNatsPublisherSettings())
+    event = AuditEnvelope(
+        event_id="audit-1",
+        producer="eidolon-system-data",
+        producer_seq=1,
+        category="governance",
+        subject_type="owner",
+        subject_id="owner-1",
+        action="owner.created",
+        occurred_at=datetime.now(UTC),
+    )
+
+    with pytest.raises(AuditPublishError) as raised:
+        await publisher.publish_many([event])
+
+    message = str(raised.value)
+    # `nats: timeout` on its own named nothing — not the stream, not the
+    # subject, not whether the broker knew about either.
+    assert AUDIT_STREAM_NAME in message
+    assert "eidolon.audit.v1.eidolon-system-data" in message
+    assert "nats: timeout" in message
+    # And the one inference a client can actually make, which points at the
+    # only place the real reason exists.
+    assert "still describes" in message
+    assert "broker's own log" in message
+    assert isinstance(raised.value.__cause__, TimeoutError)
+    await publisher.close()
+
+
+async def test_a_broker_that_answers_nothing_says_that_instead(monkeypatch) -> None:
+    """A stream it cannot describe either is a different fault, named differently."""
+
+    class _MuteJetStream(_RefusingJetStream):
+        async def stream_info(self, name):
+            raise TimeoutError("nats: timeout")
+
+    connection = _Connection()
+    connection.js = _MuteJetStream()
+
+    async def _connect(url, **kwargs):
+        return connection
+
+    monkeypatch.setattr(
+        "eidolon_sdk.integrations.audit.nats._nats_module",
+        lambda: SimpleNamespace(connect=_connect),
+    )
+    # connect() ensures the stream, which this broker also refuses to answer.
+    publisher = JetStreamAuditPublisher(AuditNatsPublisherSettings())
+    with pytest.raises(TimeoutError):
+        await publisher.connect()
+
+
+def test_a_failure_is_reported_once_and_then_rarely() -> None:
+    """Silence and noise are the same defect wearing different hats.
+
+    5336 failures produced zero log lines. Logging all 5336 would be no better.
+    The first one says when it started; roughly hourly after that says it has
+    not stopped.
+    """
+
+    assert should_report_publish_failure(1) is True
+    assert should_report_publish_failure(2) is False
+    assert should_report_publish_failure(59) is False
+    assert should_report_publish_failure(FAILURE_REPORT_EVERY) is True
+    assert should_report_publish_failure(FAILURE_REPORT_EVERY * 2) is True
+    assert should_report_publish_failure(FAILURE_REPORT_EVERY * 2 + 1) is False
+
+
+async def test_the_diagnosis_never_replaces_the_fault_it_explains(monkeypatch) -> None:
+    """A probe that raises must not become the error the caller sees.
+
+    The first cut read `info.state` outside the guard that asked for it, so a
+    broker answering an unexpected shape turned a publish timeout into an
+    AttributeError from the diagnostic — losing the fault it was added to name.
+    """
+
+    class _OddJetStream(_RefusingJetStream):
+        async def stream_info(self, name):
+            return SimpleNamespace()  # answers, but not with anything usable
+
+    connection = _Connection()
+    connection.js = _OddJetStream()
+
+    async def _connect(url, **kwargs):
+        return connection
+
+    monkeypatch.setattr(
+        "eidolon_sdk.integrations.audit.nats._nats_module",
+        lambda: SimpleNamespace(connect=_connect),
+    )
+    publisher = JetStreamAuditPublisher(AuditNatsPublisherSettings())
+    event = AuditEnvelope(
+        event_id="audit-1",
+        producer="eidolon-system-data",
+        producer_seq=1,
+        category="governance",
+        subject_type="owner",
+        subject_id="owner-1",
+        action="owner.created",
+        occurred_at=datetime.now(UTC),
+    )
+
+    with pytest.raises(AuditPublishError) as raised:
+        await publisher.publish_many([event])
+
+    assert "nats: timeout" in str(raised.value)
+    assert isinstance(raised.value.__cause__, TimeoutError)
+    await publisher.close()

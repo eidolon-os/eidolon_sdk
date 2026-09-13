@@ -8,7 +8,45 @@ from typing import Any
 
 from eidolon_sdk.biz.audit import AuditEnvelope
 
-from .stream import AUDIT_SUBJECT_PREFIX, audit_subject, ensure_audit_stream
+from .stream import (
+    AUDIT_STREAM_NAME,
+    AUDIT_SUBJECT_PREFIX,
+    audit_subject,
+    ensure_audit_stream,
+)
+
+
+class AuditPublishError(RuntimeError):
+    """A publish that failed, described well enough to act on.
+
+    Carries the original as ``__cause__``; what it adds is the context the
+    transport's own message leaves out.
+    """
+
+
+#: One failure in how many is worth a log line.
+#:
+#: The dispatchers' backoff caps at sixty seconds, so an attempt count is very
+#: nearly a minute count and this is very nearly hourly. The first failure is
+#: always reported — the thing worth knowing is *when it started*, and a Host
+#: that recovers on its second attempt should still have said so once.
+FAILURE_REPORT_EVERY = 60
+
+
+def should_report_publish_failure(attempt_count: int) -> bool:
+    """Whether this attempt is one to log, rather than only to record.
+
+    A dispatcher catches transport failures into its outbox on purpose: a bus
+    that is down must not take an authority with it. But catching and hiding are
+    different, and this had been both — 5336 failures over six days produced
+    exactly zero log lines, because the only record was a column no operator
+    reads. Logging every attempt would replace silence with noise, which is the
+    same defect wearing the other hat.
+    """
+
+    if attempt_count <= 1:
+        return True
+    return attempt_count % FAILURE_REPORT_EVERY == 0
 
 
 @dataclass(frozen=True)
@@ -94,7 +132,50 @@ class JetStreamAuditPublisher:
                 )
             return item.event_id
 
-        return set(await asyncio.gather(*(_publish(item) for item in events)))
+        try:
+            return set(await asyncio.gather(*(_publish(item) for item in events)))
+        except Exception as error:
+            raise AuditPublishError(
+                await self._describe_failure(error, events[0].producer)
+            ) from error
+
+    async def _describe_failure(self, error: Exception, producer: str) -> str:
+        """Turn a transport error into a line somebody can act on.
+
+        ``nats: timeout`` names nothing — not the stream, not the subject, not
+        whether the broker even knows about either — and it is the whole of what
+        one Host had to go on while a publish failed every minute for six days.
+
+        The broker does not publish its own storage failures anywhere a client
+        can subscribe: they go to its log and nowhere else. What a client *can*
+        do is say which of its own questions the broker answered. A broker that
+        describes the stream but will not store into it is a specific, findable
+        state — a stream whose directory was removed under a running server
+        behaves exactly that way — and saying so points at the broker's log
+        instead of leaving a timeout to look like a network problem.
+        """
+
+        detail = f"{type(error).__name__}: {error}"
+        described = f"publishing to {AUDIT_STREAM_NAME} as {audit_subject(producer)} failed — {detail}"
+        jetstream = self._jetstream
+        if jetstream is None:
+            return described
+        try:
+            info = await jetstream.stream_info(AUDIT_STREAM_NAME)
+            state = f"messages={info.state.messages}, last_seq={info.state.last_seq}"
+        except Exception as probe_error:  # noqa: BLE001 - diagnosis, never a new failure
+            # Reading the answer is inside the guard along with asking for it. A
+            # diagnostic that raises replaces the fault it was called to explain,
+            # which is worse than the opaque message it set out to improve on.
+            return (
+                f"{described}; the broker could not describe {AUDIT_STREAM_NAME} either "
+                f"({type(probe_error).__name__}: {probe_error})"
+            )
+        return (
+            f"{described}; the broker still describes {AUDIT_STREAM_NAME} ({state}) but "
+            "did not store this one — the reason is in the broker's own log, which it "
+            "does not publish to any subject"
+        )
 
 
 def require_audit_transport() -> None:
