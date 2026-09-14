@@ -6,7 +6,9 @@ from pydantic import ValidationError
 from eidolon_sdk.biz.persona import (
     PersonaAuthoring,
     PersonaAuthoringDraft,
+    PersonaEditRequest,
     PersonaGenome,
+    PersonaPreviewRequest,
     PersonaTraitState,
     build_default_persona_genome,
     build_persona_genome_from_draft,
@@ -229,3 +231,111 @@ def test_persona_does_not_accept_memory_facts_or_task_promises():
         with pytest.raises(ValidationError):
             normalize_persona_genome(raw)
     assert not build_default_persona_genome(name="Test").evolution_policy.auto_apply_low_risk
+
+
+# --------------------------------------------------------------------------- #
+# Stored documents and authored input are read under different rules.
+# --------------------------------------------------------------------------- #
+
+
+def test_a_genome_written_before_a_field_was_removed_still_loads():
+    """The RK3588 failure of 2026-09-14, as data.
+
+    `relationship` carried three keys a later release had dropped. All three
+    were empty, so nothing was lost by dropping them — but refusing to read
+    them made a spoken turn answer nothing at all.
+    """
+
+    stored = {
+        "schema_version": "eidolon.persona_genome",
+        "constitution": {"name": "Ada"},
+        "relationship": {
+            "stage": "new",
+            "narrative": "",
+            "commitments": [],
+            "pinned_facts": [],
+            "owner_preferences": {},
+            "safety_boundaries": [],
+        },
+    }
+
+    genome = PersonaGenome.model_validate(stored)
+
+    assert genome.relationship.stage == "new"
+    assert genome.relationship.safety_boundaries == []
+    # Dropped, not smuggled in: a key this version does not model must not
+    # reappear on the object or in what gets written back.
+    assert not hasattr(genome.relationship, "commitments")
+    assert set(genome.relationship.model_dump()) == {
+        "stage",
+        "narrative",
+        "safety_boundaries",
+    }
+
+
+def test_a_genome_written_before_a_field_was_added_still_loads():
+    """The other direction, which defaults already cover."""
+
+    genome = PersonaGenome.model_validate(
+        {"schema_version": "eidolon.persona_genome", "constitution": {"name": "Ada"}}
+    )
+
+    assert genome.relationship.stage == "new"
+    assert genome.character.traits == {}
+
+
+def test_authored_input_still_refuses_a_key_nobody_recognises():
+    """Strictness belongs where a person can be wrong.
+
+    A request body, a preset, an edit someone typed: an unknown key there is a
+    mistake worth refusing while it can still be corrected.
+    """
+
+    for model in (PersonaPreviewRequest, PersonaEditRequest):
+        with pytest.raises(ValidationError):
+            model.model_validate({"comitments": []})
+
+
+def test_the_genome_still_refuses_what_it_actually_requires():
+    """Tolerating unknown keys is not tolerating a missing identity."""
+
+    with pytest.raises(ValidationError):
+        PersonaGenome.model_validate({"schema_version": "eidolon.persona_genome"})
+    with pytest.raises(ValidationError):
+        PersonaGenome.model_validate(
+            {"schema_version": "eidolon.persona_genome", "constitution": {"name": "  "}}
+        )
+
+
+def test_a_retired_key_that_still_carries_something_is_refused():
+    """Emptiness is what makes the drop lossless, and nothing else is dropped.
+
+    A genome arriving with someone's promise in it is a genome claiming to hold
+    something persona has no home for. Ignoring it would delete it silently,
+    which is worse than refusing to load.
+    """
+
+    base = {"schema_version": "eidolon.persona_genome", "constitution": {"name": "Ada"}}
+    for field, value in (
+        ("commitments", ["task"]),
+        ("pinned_facts", ["fact"]),
+        ("owner_preferences", {"tea": True}),
+    ):
+        with pytest.raises(ValidationError):
+            PersonaGenome.model_validate(
+                {**base, "relationship": {"stage": "new", field: value}}
+            )
+
+
+def test_zero_and_false_are_answers_not_absences():
+    """A retired numeric that a Host actually set to 0 must not be mistaken for
+    a field nobody filled in."""
+
+    with pytest.raises(ValidationError):
+        PersonaGenome.model_validate(
+            {
+                "schema_version": "eidolon.persona_genome",
+                "constitution": {"name": "Ada"},
+                "relationship": {"stage": "new", "retired_count": 0},
+            }
+        )

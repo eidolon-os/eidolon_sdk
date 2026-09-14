@@ -35,10 +35,66 @@ DEFAULT_PERSONA_BEHAVIOR_GUIDANCE = (
 )
 
 
-class PersonaTraitState(BaseModel):
-    """An observable evolution coordinate, not a prompt instruction."""
+def _carries_nothing(value: object) -> bool:
+    """Whether a value is an absence rather than a datum.
+
+    ``0`` and ``False`` are answers; an empty list, mapping or string is the
+    shape of a field nobody ever filled in.
+    """
+
+    if value is None:
+        return True
+    return isinstance(value, (str, bytes, list, tuple, set, dict)) and len(value) == 0
+
+
+class StoredDocument(BaseModel):
+    """A model read back out of storage, not off a wire.
+
+    A genome on disk was written by an earlier build of this same program, so a
+    key it carries that this build does not model is not a typo — it is a field
+    that used to exist. Refusing it outright turns an ordinary shape-narrowing
+    release into a hard failure at load time, and that failure surfaces nowhere
+    near its cause: on 2026-09-14 an RK3588 Host answered nothing at all to a
+    spoken turn because ``relationship`` still held three keys a later release
+    had removed. All three were empty.
+
+    So a retired key is dropped **only when it carries nothing**. That keeps the
+    distinction the strictness was protecting: a genome arriving with
+    ``commitments: ["task"]`` is a genome claiming to hold someone's promise,
+    and persona is not where promises live — ignoring it would delete it
+    silently, which is worse than refusing to load. Emptiness is what makes the
+    drop lossless, and nothing else is dropped.
+
+    Widening needs nothing from this: every field here has a default, so an
+    older row simply lacks the newer key. A *meaning* change would still need a
+    migration — that is what the ``schema_version`` column is for, and it has
+    not been needed yet.
+
+    Authored input keeps ``extra="forbid"`` with no such allowance. There an
+    unrecognised key is a person's mistake, worth refusing while it can still
+    be corrected.
+    """
 
     model_config = ConfigDict(extra="forbid")
+
+    @model_validator(mode="before")
+    @classmethod
+    def _drop_retired_keys_that_carry_nothing(cls, data: object) -> object:
+        if not isinstance(data, dict):
+            return data
+        retired = [
+            key
+            for key, value in data.items()
+            if key not in cls.model_fields and _carries_nothing(value)
+        ]
+        if not retired:
+            return data
+        return {key: value for key, value in data.items() if key not in retired}
+
+
+class PersonaTraitState(StoredDocument):
+    """An observable evolution coordinate, not a prompt instruction."""
+
 
     value: float = Field(0.5, ge=0.0, le=1.0)
     confidence: float = Field(0.5, ge=0.0, le=1.0)
@@ -46,8 +102,7 @@ class PersonaTraitState(BaseModel):
     source: str = "template"
 
 
-class PersonaEvidenceRef(BaseModel):
-    model_config = ConfigDict(extra="forbid")
+class PersonaEvidenceRef(StoredDocument):
 
     kind: str
     ref_id: str
@@ -55,10 +110,9 @@ class PersonaEvidenceRef(BaseModel):
     confidence: float = Field(0.5, ge=0.0, le=1.0)
 
 
-class PersonaConstitution(BaseModel):
+class PersonaConstitution(StoredDocument):
     """Stable identity and owner-governed hard boundaries."""
 
-    model_config = ConfigDict(extra="forbid")
 
     name: str
     archetype: str = "companion"
@@ -67,10 +121,9 @@ class PersonaConstitution(BaseModel):
     boundaries: list[str] = Field(default_factory=list)
 
 
-class PersonaCharacter(BaseModel):
+class PersonaCharacter(StoredDocument):
     """Rich character meaning plus measurable, non-executable traits."""
 
-    model_config = ConfigDict(extra="forbid")
 
     portrait: str = ""
     traits: dict[str, PersonaTraitState] = Field(default_factory=dict)
@@ -78,22 +131,20 @@ class PersonaCharacter(BaseModel):
     growth_edges: list[str] = Field(default_factory=list)
 
 
-class PersonaRelationship(BaseModel):
-    model_config = ConfigDict(extra="forbid")
+class PersonaRelationship(StoredDocument):
 
     stage: RelationshipStage = "new"
     narrative: str = ""
     safety_boundaries: list[str] = Field(default_factory=list)
 
 
-class PersonaExpression(BaseModel):
+class PersonaExpression(StoredDocument):
     """Authored expression, examples, and modality nuance.
 
     These fields describe a coherent voice.  They are not a compiler DSL and
     are consumed holistically by the runtime realizer.
     """
 
-    model_config = ConfigDict(extra="forbid")
 
     voice_portrait: str = ""
     behavior_guidance: list[str] = Field(default_factory=list)
@@ -102,15 +153,13 @@ class PersonaExpression(BaseModel):
     signature_phrases: dict[str, str] = Field(default_factory=dict)
 
 
-class PersonaMemoryPolicy(BaseModel):
-    model_config = ConfigDict(extra="forbid")
+class PersonaMemoryPolicy(StoredDocument):
 
     recall_policy: dict[str, Any] = Field(default_factory=dict)
     relation_policies: dict[str, Any] = Field(default_factory=dict)
 
 
-class PersonaEvolutionPolicy(BaseModel):
-    model_config = ConfigDict(extra="forbid")
+class PersonaEvolutionPolicy(StoredDocument):
 
     enabled: bool = True
     auto_apply_low_risk: bool = False
@@ -126,10 +175,9 @@ class PersonaProvenance(BaseModel):
     evidence_refs: list[PersonaEvidenceRef] = Field(default_factory=list)
 
 
-class PersonaGenome(BaseModel):
+class PersonaGenome(StoredDocument):
     """Immutable semantic persona snapshot stored by ``eidolon_data``."""
 
-    model_config = ConfigDict(extra="forbid")
 
     schema_version: Literal["eidolon.persona_genome"] = PERSONA_GENOME_SCHEMA
     constitution: PersonaConstitution
