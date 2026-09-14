@@ -590,10 +590,6 @@ PersonaConflictCode = Literal[
     #: The proposal was written against a genome that is no longer current. The
     #: work is not wrong, it is just out of date — re-read and propose again.
     "base_not_current",
-    #: The base genome id matches but its content does not. Same shape of
-    #: staleness, caught by hash rather than by pointer, and worth its own code
-    #: because it means something rewrote a genome in place.
-    "base_hash_mismatch",
     #: The current genome moved between the proposal and its activation. The
     #: proposal is marked stale by the authority, so retrying *this* one cannot
     #: succeed.
