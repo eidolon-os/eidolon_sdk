@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contracts.eidolon.live/system/v1/host-power.schema.json",
+  "additionalProperties": false,
+  "properties": {
+    "can_power_off": {
+      "title": "Can Power Off",
+      "type": "boolean"
+    },
+    "unavailable_reason": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Unavailable Reason"
+    }
+  },
+  "required": [
+    "can_power_off"
+  ],
+  "title": "HostPowerStatusWire",
+  "type": "object"
+}

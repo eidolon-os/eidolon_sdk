@@ -5,7 +5,7 @@ the ingress that knows what a reading means to the person using that Host.
 """
 
 from .host_monitor import HostMonitorWire
-
+from .host_power import HostPowerOffAccepted, HostPowerOffRequest, HostPowerStatusWire
 from .host_vitals import (
     HOST_VITALS_CONTRACT,
     HOST_VITALS_OPERATION,
@@ -14,6 +14,9 @@ from .host_vitals import (
 )
 
 __all__ = [
+    "HostPowerStatusWire",
+    "HostPowerOffRequest",
+    "HostPowerOffAccepted",
     "HostMonitorWire",
     "HOST_VITALS_CONTRACT",
     "HOST_VITALS_OPERATION",

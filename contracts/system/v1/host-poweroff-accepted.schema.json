@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contracts.eidolon.live/system/v1/host-poweroff-accepted.schema.json",
+  "additionalProperties": false,
+  "properties": {
+    "operation": {
+      "const": "system.poweroff",
+      "default": "system.poweroff",
+      "title": "Operation",
+      "type": "string"
+    },
+    "request_id": {
+      "title": "Request Id",
+      "type": "string"
+    },
+    "status": {
+      "const": "accepted",
+      "default": "accepted",
+      "title": "Status",
+      "type": "string"
+    }
+  },
+  "required": [
+    "request_id"
+  ],
+  "title": "HostPowerOffAccepted",
+  "type": "object"
+}
