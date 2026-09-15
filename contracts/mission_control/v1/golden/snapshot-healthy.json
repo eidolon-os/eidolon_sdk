@@ -134,6 +134,7 @@
         "turn_id": "turn-0007",
         "companion_id": "companion-yanzhou",
         "device_id": "dev-esp32-living",
+        "runtime_session_id": "rts-2026-08-24-0516-7f3a",
         "status": "running",
         "trigger": "voice",
         "latency_ms": 780,

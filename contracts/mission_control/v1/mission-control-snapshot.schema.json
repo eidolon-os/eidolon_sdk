@@ -469,6 +469,14 @@
                 ],
                 "maxLength": 128
               },
+              "runtime_session_id": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "maxLength": 128,
+                "description": "Which entry into a voice room this turn belongs to \u2014 the named dispatch's identity, which Channel also names its session trace after. Deliberately not `conversation_id`: that one is the brain's own long-lived thread and is stable across sessions, so joining on it would fuse every session of one device into a single row. Null when the authority did not record one (a turn that never came through a runtime session, or a Host older than this field)."
+              },
               "status": {
                 "type": "string",
                 "minLength": 1,
