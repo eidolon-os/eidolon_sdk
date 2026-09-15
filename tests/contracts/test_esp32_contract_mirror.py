@@ -226,7 +226,23 @@ def test_esp32_canonical_claim_consumer_and_roll_call_handler_match_contract() -
         "{kControlOpDeviceRollCall, 1, "
         "&EidolonVoiceController::HandleDeviceRollCallCommand}" in controller
     )
-    assert "pending_session_intent_ = kSessionIntentPresence;" in controller
+    # BOX-3 no longer originates a presence wake, and this mirror must stop
+    # asking it to. eidolon-client-esp32 673c91a8 deleted the radar driver, its
+    # test, and the EIDOLON_RADAR_PRESENCE_BROADCAST /
+    # EIDOLON_OWNER_PRESENCE_VOICE_WAKE options: the board has no sensor left to
+    # notice a person with, so a local `pending_session_intent_ =
+    # kSessionIntentPresence` could only ever be dead code here. Which board
+    # originates a wake is a hardware capability -- eidolon-client-esp32-korvo-1
+    # still carries the radar and that assignment -- and never was the wire
+    # contract. The contract is that `presence_initiated` is a valid
+    # session_intent, asserted against the mirrored header above. What every
+    # board still owes is below: an orchestrated room.join carrying a presence or
+    # proactive intent is honored rather than dropped as unsupported, or
+    # Channel's presence welcome and owner lease are unreachable on this board.
+    assert "cJSON_GetObjectItem(root, kSessionIntentField)" in controller
+    assert "strcmp(value, kSessionIntentPresence) == 0 ||" in controller
+    assert "strcmp(value, kSessionIntentProactive) == 0" in controller
+    assert "pending_session_intent_ = value;" in controller
     assert "command.capability_version != entry.capability_version" in controller
     assert "PlayRollCallFeedback()" in controller
     assert 'AckCommand(command, "completed", "OK", "", "{\\"played\\":true}")' in controller
