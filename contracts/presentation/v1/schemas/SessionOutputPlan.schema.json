@@ -1,0 +1,81 @@
+{
+  "$defs": {
+    "OutputSelection": {
+      "additionalProperties": false,
+      "properties": {
+        "speech": {
+          "default": false,
+          "title": "Speech",
+          "type": "boolean"
+        },
+        "dialogue_text": {
+          "default": false,
+          "title": "Dialogue Text",
+          "type": "boolean"
+        },
+        "expression": {
+          "default": false,
+          "title": "Expression",
+          "type": "boolean"
+        },
+        "audio_cue": {
+          "default": false,
+          "title": "Audio Cue",
+          "type": "boolean"
+        },
+        "motion": {
+          "default": false,
+          "title": "Motion",
+          "type": "boolean"
+        }
+      },
+      "title": "OutputSelection",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": 1,
+      "default": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "session_id": {
+      "maxLength": 96,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9_.:-]+$",
+      "title": "Session Id",
+      "type": "string"
+    },
+    "policy_revision": {
+      "maximum": 4294967295,
+      "minimum": 1,
+      "title": "Policy Revision",
+      "type": "integer"
+    },
+    "outputs": {
+      "$ref": "#/$defs/OutputSelection"
+    },
+    "expression_profile": {
+      "anyOf": [
+        {
+          "const": "eidolon.face.v1",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Expression Profile"
+    }
+  },
+  "required": [
+    "session_id",
+    "policy_revision",
+    "outputs"
+  ],
+  "title": "SessionOutputPlan",
+  "type": "object"
+}

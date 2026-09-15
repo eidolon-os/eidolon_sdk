@@ -1,0 +1,122 @@
+{
+  "$defs": {
+    "ExpressionStep": {
+      "additionalProperties": false,
+      "properties": {
+        "at_ms": {
+          "default": 0,
+          "maximum": 10000,
+          "minimum": 0,
+          "title": "At Ms",
+          "type": "integer"
+        },
+        "gesture": {
+          "enum": [
+            "attend",
+            "affirm",
+            "ponder",
+            "question",
+            "soften",
+            "delight",
+            "hesitate",
+            "attention"
+          ],
+          "title": "Gesture",
+          "type": "string"
+        },
+        "variant": {
+          "default": "default",
+          "enum": [
+            "default",
+            "subtle"
+          ],
+          "title": "Variant",
+          "type": "string"
+        },
+        "intensity": {
+          "default": 0.3,
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Intensity",
+          "type": "number"
+        },
+        "duration_ms": {
+          "maximum": 10000,
+          "minimum": 150,
+          "title": "Duration Ms",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "gesture",
+        "duration_ms"
+      ],
+      "title": "ExpressionStep",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": 1,
+      "default": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "presentation_id": {
+      "maxLength": 96,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9_.:-]+$",
+      "title": "Presentation Id",
+      "type": "string"
+    },
+    "response_id": {
+      "maxLength": 96,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9_.:-]+$",
+      "title": "Response Id",
+      "type": "string"
+    },
+    "profile": {
+      "const": "eidolon.face.v1",
+      "default": "eidolon.face.v1",
+      "title": "Profile",
+      "type": "string"
+    },
+    "catalog_revision": {
+      "const": "face-core-1",
+      "default": "face-core-1",
+      "title": "Catalog Revision",
+      "type": "string"
+    },
+    "max_duration_ms": {
+      "maximum": 10000,
+      "minimum": 150,
+      "title": "Max Duration Ms",
+      "type": "integer"
+    },
+    "steps": {
+      "items": {
+        "$ref": "#/$defs/ExpressionStep"
+      },
+      "maxItems": 8,
+      "minItems": 1,
+      "title": "Steps",
+      "type": "array"
+    },
+    "on_finish": {
+      "const": "resume_current_base",
+      "default": "resume_current_base",
+      "title": "On Finish",
+      "type": "string"
+    }
+  },
+  "required": [
+    "presentation_id",
+    "response_id",
+    "max_duration_ms",
+    "steps"
+  ],
+  "title": "ExpressionPlan",
+  "type": "object"
+}

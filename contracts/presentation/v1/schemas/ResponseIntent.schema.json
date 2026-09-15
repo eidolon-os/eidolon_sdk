@@ -1,0 +1,99 @@
+{
+  "additionalProperties": false,
+  "description": "Only emitted after Agent validates outcome_ref against actual results.",
+  "properties": {
+    "intent": {
+      "enum": [
+        "acknowledge",
+        "confirm",
+        "consider",
+        "clarify",
+        "comfort",
+        "celebrate",
+        "decline",
+        "notify",
+        "none"
+      ],
+      "title": "Intent",
+      "type": "string"
+    },
+    "stance": {
+      "default": "neutral",
+      "enum": [
+        "neutral",
+        "warm",
+        "calm",
+        "playful"
+      ],
+      "title": "Stance",
+      "type": "string"
+    },
+    "intensity": {
+      "default": 0.3,
+      "maximum": 1,
+      "minimum": 0,
+      "title": "Intensity",
+      "type": "number"
+    },
+    "pace": {
+      "default": "normal",
+      "enum": [
+        "gentle",
+        "normal",
+        "brisk"
+      ],
+      "title": "Pace",
+      "type": "string"
+    },
+    "outcome_ref": {
+      "anyOf": [
+        {
+          "maxLength": 96,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9_.:-]+$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Outcome Ref"
+    },
+    "schema_version": {
+      "const": 1,
+      "default": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "response_id": {
+      "maxLength": 96,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9_.:-]+$",
+      "title": "Response Id",
+      "type": "string"
+    },
+    "turn_id": {
+      "maxLength": 96,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9_.:-]+$",
+      "title": "Turn Id",
+      "type": "string"
+    },
+    "session_id": {
+      "maxLength": 96,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9_.:-]+$",
+      "title": "Session Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "intent",
+    "response_id",
+    "turn_id",
+    "session_id"
+  ],
+  "title": "ResponseIntent",
+  "type": "object"
+}

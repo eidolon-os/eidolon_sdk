@@ -1,0 +1,32 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "session_id": {
+      "maxLength": 96,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9_.:-]+$",
+      "title": "Session Id",
+      "type": "string"
+    },
+    "policy_revision": {
+      "maximum": 4294967295,
+      "minimum": 1,
+      "title": "Policy Revision",
+      "type": "integer"
+    },
+    "presentation_id": {
+      "maxLength": 96,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9_.:-]+$",
+      "title": "Presentation Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "session_id",
+    "policy_revision",
+    "presentation_id"
+  ],
+  "title": "CancelExpression",
+  "type": "object"
+}

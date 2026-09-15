@@ -1,0 +1,60 @@
+{
+  "$defs": {
+    "OutputSelection": {
+      "additionalProperties": false,
+      "properties": {
+        "speech": {
+          "default": false,
+          "title": "Speech",
+          "type": "boolean"
+        },
+        "dialogue_text": {
+          "default": false,
+          "title": "Dialogue Text",
+          "type": "boolean"
+        },
+        "expression": {
+          "default": false,
+          "title": "Expression",
+          "type": "boolean"
+        },
+        "audio_cue": {
+          "default": false,
+          "title": "Audio Cue",
+          "type": "boolean"
+        },
+        "motion": {
+          "default": false,
+          "title": "Motion",
+          "type": "boolean"
+        }
+      },
+      "title": "OutputSelection",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": 1,
+      "default": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "revision": {
+      "maximum": 4294967295,
+      "minimum": 1,
+      "title": "Revision",
+      "type": "integer"
+    },
+    "allowed": {
+      "$ref": "#/$defs/OutputSelection"
+    }
+  },
+  "required": [
+    "revision",
+    "allowed"
+  ],
+  "title": "DeviceOutputPolicy",
+  "type": "object"
+}

@@ -1,0 +1,64 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": 1,
+      "default": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "presentation_id": {
+      "maxLength": 96,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9_.:-]+$",
+      "title": "Presentation Id",
+      "type": "string"
+    },
+    "response_id": {
+      "maxLength": 96,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9_.:-]+$",
+      "title": "Response Id",
+      "type": "string"
+    },
+    "status": {
+      "enum": [
+        "accepted",
+        "started",
+        "completed",
+        "cancelled",
+        "rejected",
+        "failed"
+      ],
+      "title": "Status",
+      "type": "string"
+    },
+    "sequence": {
+      "maximum": 4294967295,
+      "minimum": 1,
+      "title": "Sequence",
+      "type": "integer"
+    },
+    "reason": {
+      "default": "",
+      "maxLength": 96,
+      "title": "Reason",
+      "type": "string"
+    },
+    "elapsed_ms": {
+      "default": 0,
+      "maximum": 10000,
+      "minimum": 0,
+      "title": "Elapsed Ms",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "presentation_id",
+    "response_id",
+    "status",
+    "sequence"
+  ],
+  "title": "PresentationReceipt",
+  "type": "object"
+}

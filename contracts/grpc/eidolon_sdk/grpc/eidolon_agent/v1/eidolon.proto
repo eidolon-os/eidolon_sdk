@@ -40,6 +40,7 @@ message ChatRequest {
     // Inline realtime signal on the open Chat stream — the preferred path
     // while a session is live (see PushSignal for the out-of-band variant).
     PushSignalInline signal = 3;
+    PresentationFeedback presentation_feedback = 4;
   }
 }
 
@@ -138,12 +139,42 @@ message TurnEvent {
     ACK = 9;
     PROGRESS = 10;
     HANDOFF = 11;
+    PRESENTATION = 12;
   }
   string turn_id = 1;
   uint64 seq = 2;
   Kind kind = 3;
   google.protobuf.Struct data = 4;
   double ts = 5;
+  ResponseIntent presentation = 6;
+}
+
+// Device-independent semantic output. Agent validates task facts before emission.
+message ResponseIntent {
+  uint32 schema_version = 1;
+  string response_id = 2;
+  string turn_id = 3;
+  string session_id = 4;
+  string intent = 5;
+  string stance = 6;
+  double intensity = 7;
+  string pace = 8;
+  optional string outcome_ref = 9;
+}
+
+// Channel reports device-render evidence on the same authenticated Chat stream.
+message PresentationFeedback {
+  string turn_id = 1;
+  PresentationReceipt receipt = 2;
+}
+message PresentationReceipt {
+  uint32 schema_version = 1;
+  string presentation_id = 2;
+  string response_id = 3;
+  string status = 4;
+  uint32 sequence = 5;
+  string reason = 6;
+  uint32 elapsed_ms = 7;
 }
 
 // ---------------------------------------------------------------------------

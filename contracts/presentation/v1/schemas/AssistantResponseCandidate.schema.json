@@ -1,0 +1,102 @@
+{
+  "$defs": {
+    "PresentationCandidate": {
+      "additionalProperties": false,
+      "properties": {
+        "intent": {
+          "enum": [
+            "acknowledge",
+            "confirm",
+            "consider",
+            "clarify",
+            "comfort",
+            "celebrate",
+            "decline",
+            "notify",
+            "none"
+          ],
+          "title": "Intent",
+          "type": "string"
+        },
+        "stance": {
+          "default": "neutral",
+          "enum": [
+            "neutral",
+            "warm",
+            "calm",
+            "playful"
+          ],
+          "title": "Stance",
+          "type": "string"
+        },
+        "intensity": {
+          "default": 0.3,
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Intensity",
+          "type": "number"
+        },
+        "pace": {
+          "default": "normal",
+          "enum": [
+            "gentle",
+            "normal",
+            "brisk"
+          ],
+          "title": "Pace",
+          "type": "string"
+        },
+        "outcome_ref": {
+          "anyOf": [
+            {
+              "maxLength": 96,
+              "minLength": 1,
+              "pattern": "^[A-Za-z0-9_.:-]+$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Outcome Ref"
+        }
+      },
+      "required": [
+        "intent"
+      ],
+      "title": "PresentationCandidate",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": 1,
+      "default": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "public_text": {
+      "anyOf": [
+        {
+          "maxLength": 8192,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Public Text"
+    },
+    "presentation": {
+      "$ref": "#/$defs/PresentationCandidate"
+    }
+  },
+  "required": [
+    "presentation"
+  ],
+  "title": "AssistantResponseCandidate",
+  "type": "object"
+}
