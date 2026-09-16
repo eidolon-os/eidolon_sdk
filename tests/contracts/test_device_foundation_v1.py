@@ -561,6 +561,200 @@ def test_replacing_an_assignment_needs_no_policy_refs_because_nothing_defines_on
     assert cleared.model_dump(mode="json")["policy_refs"] == []
 
 
+def _body_endpoint_document(**status_overrides) -> dict:
+    """The document the Body Mesh authority serves today, byte for byte.
+
+    Transcribed from the producer's own functional test rather than invented, so
+    that "the bindings accept what is actually on the wire" is what these
+    assertions are about.
+    """
+
+    from eidolon_sdk.device_foundation.v1.testing import named_device_instance_id
+
+    device = named_device_instance_id("device-1")
+    status = {
+        "observed_generation": 1,
+        "effective_companion_id": "companion-1",
+        "conditions": ["Realized"],
+    }
+    status.update(status_overrides)
+    return {
+        "operation": "kernel.body-endpoint",
+        "body_endpoint_id": f"{device}:body",
+        "device_id": device,
+        "owner_id": "owner-1",
+        "endpoint_id": "body",
+        "device_ref": {
+            "device_instance_id": device,
+            "owner_domain_id": "owner-domain-1",
+            "owner_domain_generation": 2,
+            "claim_generation": 3,
+            "trust_epoch": 4,
+        },
+        "mount_revision": 3,
+        "roles": ["body"],
+        "assignment_policy": "optional",
+        "risk_class": "safe",
+        "concurrency": "exclusive",
+        "source": "derived",
+        "present": True,
+        "assignment": {
+            "operation": "kernel.body-assignment",
+            "assignment_id": f"assignment:{device}:body",
+            "body_endpoint_id": f"{device}:body",
+            "device_id": device,
+            "endpoint_id": "body",
+            "owner_id": "owner-1",
+            "companion_id": "companion-1",
+            "selection_provenance": "user_selected",
+            "change_reason": None,
+            "mode": "default",
+            "policy_refs": [],
+            "revision": 1,
+            "generation": 1,
+            "updated_at": "2026-08-05T00:00:00Z",
+            "status": status,
+        },
+    }
+
+
+def test_the_body_read_path_parses_the_document_the_authority_serves_today() -> None:
+    """The precondition for constraining anything: do not refuse what ships.
+
+    These bindings are adopted by the producer and by two consumers in the same
+    change. If the shape they pin is not the shape already on the wire, the
+    tightening is not a no-op and the first thing it breaks is production.
+    """
+
+    from eidolon_sdk.device_foundation.v1 import BodyEndpoint
+
+    endpoint = BodyEndpoint.model_validate(_body_endpoint_document())
+
+    assert endpoint.assignment is not None
+    assert endpoint.assignment.status.effective_companion_id == "companion-1"
+    # And the rule WireEnum exists to keep: a canonical model validates its own
+    # JSON dump. Everything here crosses a process boundary as a decoded body.
+    assert BodyEndpoint.model_validate(endpoint.model_dump(mode="json")) == endpoint
+
+
+def test_a_body_whose_device_is_gone_answers_as_nobody_with_a_named_condition() -> None:
+    """``effective_companion_id`` is null while ``companion_id`` is not.
+
+    The assignment outlives the mount on purpose, so the spec still names a
+    Companion. Reading it instead of the status is what starts a session as an
+    Eidolon on hardware that is not there.
+    """
+
+    from eidolon_sdk.device_foundation.v1 import AssignmentCondition, BodyEndpoint
+
+    endpoint = BodyEndpoint.model_validate(
+        _body_endpoint_document(effective_companion_id=None, conditions=["CapabilityMissing"])
+    )
+
+    assert endpoint.assignment is not None
+    assert endpoint.assignment.companion_id == "companion-1"
+    assert endpoint.assignment.status.effective_companion_id is None
+    assert endpoint.assignment.status.conditions == (AssignmentCondition.CAPABILITY_MISSING,)
+
+
+@pytest.mark.parametrize(
+    ("status", "why"),
+    [
+        (
+            {
+                "observed_generation": 1,
+                "effective_companion_id": "companion-1",
+                "conditions": ["Realized"],
+                "in_force": True,
+            },
+            "a field nobody admitted",
+        ),
+        (
+            {"observed_generation": 1, "conditions": ["Realized"]},
+            "the field that says who is answering, absent",
+        ),
+        (
+            {"effective_companion_id": "companion-1", "conditions": ["Realized"]},
+            "the generation this was observed at, absent",
+        ),
+        (
+            {"observed_generation": 1, "effective_companion_id": "companion-1"},
+            "the conditions array, absent",
+        ),
+        (
+            {
+                "observed_generation": 1,
+                "effective_companion_id": "companion-1",
+                "conditions": ["InForce"],
+            },
+            "a condition outside the canonical vocabulary",
+        ),
+    ],
+)
+def test_the_body_status_refuses_drift_in_either_direction(status: dict, why: str) -> None:
+    """Closed, and required both ways — which is the whole point of the type.
+
+    An unadmitted field is the producer handing a consumer something no one
+    decided it should see. A missing one is a producer that moved on, and it is
+    the more dangerous of the two: a status with no ``effective_companion_id``
+    read through ``.get()`` is not an error, it is a Body that answers as
+    nobody. That reading is what this type exists to make impossible.
+    """
+
+    from eidolon_sdk.device_foundation.v1 import BodyAssignmentStatus
+
+    with pytest.raises(ValueError):
+        BodyAssignmentStatus.model_validate(status)
+
+
+def test_the_write_result_status_is_a_different_document_from_the_read_status() -> None:
+    """Why ``ReplaceAssignmentResult.status`` is still an open object.
+
+    Closing it to the read path's shape was the obvious move and it is wrong:
+    this package's own conformance vector for a write result carries a status
+    with no ``effective_companion_id``, a condition this vocabulary does not
+    define, and an observed generation *behind* the committed one. That is a
+    resource whose realization lags its spec; the read path is one whose
+    authority commits both at once. One constrained type cannot be both.
+
+    Pinned as a test rather than left as a comment because the comment is only
+    true while the fixture says this. If the fixture is ever reconciled with the
+    vocabulary, this fails and the decision gets made again on purpose.
+    """
+
+    from eidolon_sdk.device_foundation.v1 import BodyAssignmentStatus
+
+    cases = json.loads(
+        (CONTRACT_ROOT / "examples" / "valid" / "body-mesh.json").read_text(encoding="utf-8")
+    )["cases"]
+    result = next(
+        case["value"]
+        for case in cases
+        if case["case_id"] == "DF-BODY-REPLACE-ASSIGNMENT-RESULT-VALID"
+    )
+
+    assert "effective_companion_id" not in result["status"]
+    assert result["status"]["observed_generation"] < result["generation"]
+    with pytest.raises(ValueError):
+        BodyAssignmentStatus.model_validate(result["status"])
+
+
+def test_the_derived_endpoint_id_is_published_so_no_consumer_has_to_mirror_it() -> None:
+    """Composing ``<device_id>:body`` is how a Body is addressed at all.
+
+    A consumer that cannot import this word copies it, and then has to invent a
+    way to check the copy. One of them settled on substring-matching the
+    producer's source file, in a test that skipped itself when that file was not
+    on disk — a check that disappeared by passing.
+    """
+
+    from eidolon_sdk.device_foundation.v1 import DERIVED_ENDPOINT_ID
+
+    assert DERIVED_ENDPOINT_ID == "body"
+    document = _body_endpoint_document()
+    assert document["body_endpoint_id"].endswith(f":{DERIVED_ENDPOINT_ID}")
+
+
 def _box3_document() -> dict:
     """The document a shipped BOX-3 build emits, as the golden corpus holds it."""
 

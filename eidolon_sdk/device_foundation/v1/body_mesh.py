@@ -24,9 +24,12 @@ refs no evaluator reads, which reads like a constraint and enforces nothing.
 
 from __future__ import annotations
 
+from datetime import UTC, datetime
+from typing import Literal
+
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
-from .lifecycle import WireEnum, _IDENTIFIER
+from .lifecycle import DeviceRef, WireEnum, _IDENTIFIER
 
 
 class _Model(BaseModel):
@@ -35,6 +38,42 @@ class _Model(BaseModel):
 
 #: An ``Identifier`` in the canonical common schema.
 _Identifier = Field(min_length=3, max_length=128, pattern=_IDENTIFIER)
+
+
+#: The one Body endpoint every mounted device has until a Manifest declares its
+#: own. Named rather than spelled inline so the derivation has one definition
+#: and the reader of an identifier in a log can find where it came from.
+#:
+#: It is here rather than only in the producing authority because composing
+#: ``<device_id>:body`` is what a consumer must do to *address* a Body at all.
+#: A consumer that cannot import this word mirrors it instead, and then has to
+#: invent a way to check the mirror — which is how one of them ended up
+#: substring-matching the producer's source file.
+DERIVED_ENDPOINT_ID = "body"
+
+
+def _wire_instant(value: object) -> object:
+    """Accept the wire form of an instant as well as the decoded one.
+
+    The same rule :class:`WireEnum` restores for enums: a canonical model has to
+    validate its own ``model_dump(mode="json")``. These models are strict, and a
+    strict model reads a timestamp only as a ``datetime`` — so without this a
+    document could be parsed from JSON bytes and never from the dictionary that
+    same document decodes to, which is what every ASGI handler is given.
+    """
+
+    if isinstance(value, str):
+        value = datetime.fromisoformat(value.replace("Z", "+00:00"))
+    if not isinstance(value, datetime) or value.utcoffset() is None:
+        raise ValueError("timestamp must include an offset")
+    return value.astimezone(UTC)
+
+
+def _unique_tuple(value: object) -> object:
+    value = tuple(value) if isinstance(value, list) else value
+    if isinstance(value, tuple) and len(value) != len(set(value)):
+        raise ValueError("canonical arrays are sets, not bags")
+    return value
 
 
 class AssignmentMode(WireEnum):
@@ -130,4 +169,177 @@ class ReplaceAssignmentResult(_Model):
     revision: int = Field(ge=1)
     generation: int = Field(ge=1)
     spec: dict[str, object]
+    #: Left open, and not the same document as :class:`BodyAssignmentStatus`.
+    #:
+    #: This was going to be closed to the read path's shape in the same batch,
+    #: on the reasoning that one ``status`` constrained in one place beats two.
+    #: The canonical conformance vector says they are not one status:
+    #: ``DF-BODY-REPLACE-ASSIGNMENT-RESULT-VALID`` in
+    #: ``contracts/device_foundation/v1/examples/valid/body-mesh.json`` carries
+    #: ``{"observed_generation": 0, "conditions": ["PendingRealization"]}`` —
+    #: no ``effective_companion_id`` at all, a condition this module's vocabulary
+    #: does not define, and an observed generation *behind* the committed one.
+    #: That is the status of a resource whose realization lags its spec. The
+    #: read path below is the status of one whose authority commits both in a
+    #: single transaction. Closing this to that would make these bindings refuse
+    #: a fixture this same package publishes, and the conformance runner would
+    #: not notice: it checks fixtures against JSON Schema, never against these.
     status: dict[str, object]
+
+
+class BodyAssignmentStatus(_Model):
+    """What the writing authority says is *in force* for one Body, right now.
+
+    Closed on purpose. Every field here was already being emitted and already
+    being read; what was missing was anywhere to say so. A consumer that had to
+    learn ``effective_companion_id`` from prose read the wrong field instead and
+    started sessions under a Companion nobody had assigned — this type is what
+    turns that prose into something that fails.
+
+    A redundancy worth paying knowingly, rather than discovering later
+    -----------------------------------------------------------------
+
+    This whole object is a pure function of facts already in the same document:
+    ``effective_companion_id`` is the assignment's ``companion_id`` when the
+    endpoint is present and null otherwise, and ``observed_generation`` equals
+    ``generation``. It carries no new information. It exists because spec/status
+    is the shape of a canonical resource, and ``observed_generation`` is kept
+    for the day a second actor realizes what a first actor committed.
+
+    That day has not come. The producing authority says so itself — "there is no
+    second actor to lag behind". So the pattern's benefit is still owed while its
+    cost is already being paid, and the cost is exactly this: "who answers
+    through this Body" is readable in two places in one document, and a consumer
+    has to be told which one is the answer. Removing ``status`` would be a
+    deviation from the canonical shape and is priced separately; what must not
+    happen again is paying this without knowing it is being paid.
+    """
+
+    #: Equal to the assignment's ``generation`` on every Host today, for the
+    #: reason above. Typed as its own field rather than asserted equal, because
+    #: the day it can differ is the day a consumer must already be reading it.
+    observed_generation: int = Field(ge=1)
+    #: Who is answering, as opposed to who is assigned. Null for a Body whose
+    #: device is no longer mounted: the assignment deliberately outlives the
+    #: mount so a device that comes back comes back to the same Eidolon, which
+    #: means the spec's ``companion_id`` is *not* the question "who answers
+    #: here" — this is. Required rather than defaulted: a producer that stopped
+    #: sending it must not read as a Body that answers as nobody.
+    effective_companion_id: str | None = Field(min_length=1, max_length=64)
+    #: Empty is a real answer, and it means "nothing is wrong here".
+    #:
+    #: The one local question this module was asked to settle: whether the
+    #: vocabulary needs a value for a Body that is present and answering as
+    #: nobody. It does not, for two separate reasons.
+    #:
+    #: A Body that was never assigned has no assignment document, so it has no
+    #: ``conditions`` array for such a value to live in — a condition cannot
+    #: describe the absence of the thing that would carry it.
+    #:
+    #: A Body that *was* assigned and is now quiet already says why, one field
+    #: away on this same document: ``selection_provenance`` is ``user_cleared``,
+    #: ``companion_deleted`` or ``policy_reconciled``, and ``user_selected`` with
+    #: no Companion is refused at the authority. So a new condition would be a
+    #: second spelling of a fact already stated here — the very redundancy
+    #: documented above, added deliberately this time.
+    conditions: tuple[AssignmentCondition, ...]
+
+    @field_validator("conditions", mode="before")
+    @classmethod
+    def _conditions(cls, value: object) -> object:
+        return _unique_tuple(value)
+
+
+class BodyAssignment(_Model):
+    """Which Companion answers through one Body, as the authority reports it.
+
+    The read counterpart of :class:`ReplaceAssignmentResult`, and a wider
+    document: it carries the facts needed to address this Body again, which a
+    caller who just supplied them does not need back.
+
+    ``selection_provenance`` is what lets a screen tell "you cleared this" apart
+    from "the Eidolon it answered as was put away". Both leave the same null
+    ``companion_id`` behind, and a speaker that goes quiet with no sentence
+    attached is indistinguishable from a broken one.
+    """
+
+    operation: Literal["kernel.body-assignment"] = "kernel.body-assignment"
+    #: Longer than a canonical ``Identifier`` because it is composed from one:
+    #: ``assignment:<body_endpoint_id>``, and ``body_endpoint_id`` may itself
+    #: use the full 128. Transcribed from what the authority can actually emit
+    #: rather than re-derived, so that adopting this type changes no wire byte.
+    assignment_id: str = Field(min_length=1, max_length=160)
+    body_endpoint_id: str = Field(min_length=1, max_length=128)
+    device_id: str = Field(min_length=1, max_length=128)
+    endpoint_id: str = Field(min_length=1, max_length=64)
+    owner_id: str = Field(min_length=1, max_length=64)
+    #: What the spec says. Not who is answering — see
+    #: :attr:`BodyAssignmentStatus.effective_companion_id`.
+    companion_id: str | None = Field(min_length=1, max_length=64)
+    selection_provenance: SelectionProvenance
+    change_reason: str | None = Field(min_length=1, max_length=256)
+    mode: AssignmentMode
+    policy_refs: tuple[str, ...] = Field(max_length=16)
+    #: Moves on every commit; what the next writer compares against.
+    revision: int = Field(ge=1)
+    #: Moves only when the spec changes, so a runtime that fenced a session on
+    #: it is undisturbed by a write that changed nothing it depends on.
+    generation: int = Field(ge=1)
+    updated_at: datetime
+    status: BodyAssignmentStatus
+
+    @field_validator("policy_refs", mode="before")
+    @classmethod
+    def _policies(cls, value: object) -> object:
+        return _unique_tuple(value)
+
+    @field_validator("updated_at", mode="before")
+    @classmethod
+    def _updated_at(cls, value: object) -> object:
+        return _wire_instant(value)
+
+
+class BodyEndpoint(_Model):
+    """One assignable Body, as the authority can currently describe it.
+
+    Reading this answers both questions a session starts with — is this device
+    this Owner's and mounted, and who answers through it — in one round trip.
+    They were one field on a device mount once, which is why re-claiming a
+    device silently forgot its Eidolon.
+    """
+
+    operation: Literal["kernel.body-endpoint"] = "kernel.body-endpoint"
+    body_endpoint_id: str = Field(min_length=1, max_length=128)
+    device_id: str = Field(min_length=1, max_length=128)
+    owner_id: str = Field(min_length=1, max_length=64)
+    endpoint_id: str = Field(min_length=1, max_length=64)
+    #: Which mount this endpoint currently *is*, at the generation it was
+    #: derived at — not a second copy of the mount, and a fence for anything
+    #: that acts on this answer after the fact.
+    device_ref: DeviceRef
+    mount_revision: int = Field(ge=1)
+    roles: tuple[
+        Literal["body", "sensor", "actuator", "gateway", "controller"], ...
+    ] = Field(min_length=1, max_length=8)
+    assignment_policy: Literal["required", "optional", "forbidden"]
+    risk_class: Literal["safe", "sensitive", "hazardous"]
+    concurrency: Literal["shared", "exclusive", "leased"]
+    #: ``derived`` says the Host filled in for a Manifest vocabulary that
+    #: declares no endpoints. A consumer showing capability detail must not
+    #: present a derived declaration as the device's own word.
+    source: Literal["derived", "manifest"]
+    #: False when the device this Body belongs to is no longer mounted. The
+    #: assignment is deliberately not deleted with it: a device that comes back
+    #: should come back to the Eidolon it answered as, and a deleted row cannot
+    #: do that. This is why reading the spec instead of the status would start a
+    #: session as an Eidolon on hardware that is not there.
+    present: bool
+    #: Null for a Body nobody has decided about yet. Required rather than
+    #: defaulted, so a producer that stopped sending it is drift and not a Body
+    #: that happens to be unassigned.
+    assignment: BodyAssignment | None
+
+    @field_validator("roles", mode="before")
+    @classmethod
+    def _roles(cls, value: object) -> object:
+        return _unique_tuple(value)
