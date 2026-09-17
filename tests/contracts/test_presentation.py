@@ -9,6 +9,10 @@ from eidolon_sdk.biz.presentation import (
     SessionOutputPlan,
     AssistantResponseCandidate,
 )
+from eidolon_sdk.biz.presentation.device import (
+    DeviceOutputConfiguration,
+    ReadDeviceOutputPolicy,
+)
 
 
 def plan(**overrides):
@@ -84,6 +88,42 @@ def test_no_output_and_missing_face_profile_fail_at_negotiation():
         outputs=OutputSelection(expression=True),
         expression_profile="eidolon.face.v1",
     )
+
+
+def device_ref():
+    return dict(
+        device_instance_id="device-instance-" + "a1" * 32,
+        owner_domain_id="owner-f774cf8e1b667eb0ca7b",
+        owner_domain_generation=3,
+        claim_generation=1,
+        trust_epoch=1,
+    )
+
+
+def test_undecided_output_policy_is_not_an_empty_one():
+    """``None`` is an open question; an empty selection is the Owner's answer."""
+
+    undecided = DeviceOutputConfiguration.model_validate(
+        dict(device_ref=device_ref(), capabilities=dict(speech=True, expression=True))
+    )
+    assert undecided.policy is None
+    denied = DeviceOutputConfiguration.model_validate(
+        dict(
+            device_ref=device_ref(),
+            capabilities=dict(speech=True, expression=True),
+            policy=dict(revision=4, allowed={}),
+        )
+    )
+    assert denied.policy is not None and denied.policy.allowed == OutputSelection()
+    assert denied != undecided
+    assert DeviceOutputConfiguration.model_validate_json(denied.model_dump_json()) == denied
+
+
+def test_output_policy_query_carries_only_the_device_it_asks_about():
+    assert ReadDeviceOutputPolicy.model_validate(dict(device_ref=device_ref()))
+    for smuggled in ({"allowed": {"speech": True}}, {"owner_id": "owner_1"}):
+        with pytest.raises(ValidationError):
+            ReadDeviceOutputPolicy.model_validate(dict(device_ref=device_ref(), **smuggled))
 
 
 def test_model_cannot_specify_device_or_authority():

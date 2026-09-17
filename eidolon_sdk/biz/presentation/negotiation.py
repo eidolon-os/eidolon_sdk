@@ -29,6 +29,21 @@ def manifest_outputs(manifest: dict[str, Any]) -> OutputSelection:
     )
 
 
+def output_policy_required(capabilities: OutputSelection) -> bool:
+    """Whether this device cannot be served until its Owner has decided.
+
+    A device that can show this product's face is one whose speech has to be a
+    grant rather than a leftover default, so an absent policy is a question and
+    not an answer, and nothing may negotiate on its behalf. Devices that predate
+    the vocabulary keep running on the legacy outputs instead — which is why
+    this is one predicate and not a rule each consumer states for itself: the
+    Provider refuses by it, and a management surface says "not decided yet" by
+    it, and they cannot come to mean different things.
+    """
+
+    return capabilities.expression
+
+
 def select_outputs(
     *,
     capabilities: OutputSelection,
