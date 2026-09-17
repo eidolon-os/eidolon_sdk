@@ -181,9 +181,18 @@ def test_generated_ph2_bindings_are_sdk_local() -> None:
 _CONTRACT_CONSUMPTION = re.compile(
     r"(?:from|import)\s+eidolon_sdk\.device_foundation|contracts/device_foundation/"
 )
+#: Directory names that hold tooling output rather than a repository's source.
+#:
+#: A name list is right here, unlike in :func:`_other_checkouts_of_this_repository`
+#: — that one was standing in for a fact git can state, and got it wrong the
+#: moment someone moved their worktrees. These are just the conventional names
+#: tools write under, and ``.claude`` is one of them: two of the repositories
+#: walked below already have one, and it is where this workspace's agent puts
+#: whole checkouts. Descending into one would attribute a repository's own
+#: files to it a second time, under a path nobody would recognise.
 _UNWALKED = {
     ".git", ".venv", "venv", "__pycache__", "node_modules",
-    ".eidolon-ops", ".dart_tool", ".worktrees", "build",
+    ".eidolon-ops", ".dart_tool", ".worktrees", ".claude", "build",
 }
 
 
