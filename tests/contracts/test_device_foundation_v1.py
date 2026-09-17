@@ -312,6 +312,29 @@ def test_baseline_rejects_repository_set_drift(tmp_path: Path) -> None:
     assert "docs" in failure["missing_repositories"]
 
 
+def _other_checkouts_of_this_repository() -> tuple[Path, ...]:
+    """Every working tree of this repository except the one under test.
+
+    Asked of git rather than listed by hand. The exclusion below used to name
+    the directory this workspace keeps worktrees in, which was true until a
+    second tool started putting them somewhere else — and the uniqueness test
+    then reported this repository as a duplicate of itself, in a checkout whose
+    only crime was existing. A checkout is the same file, not a second source,
+    wherever anyone chose to put it, so the rule says that instead of guessing
+    at the places.
+    """
+
+    listed = subprocess.check_output(
+        ["git", "-C", str(SDK_ROOT), "worktree", "list", "--porcelain"], text=True
+    )
+    roots = {
+        Path(line.removeprefix("worktree ")).resolve()
+        for line in listed.splitlines()
+        if line.startswith("worktree ")
+    }
+    return tuple(sorted(roots - {SDK_ROOT.resolve()}))
+
+
 def test_canonical_source_is_unique() -> None:
     workspace = SDK_ROOT.parent
     # Runtime bindings intentionally share the package namespace, but only the
@@ -321,15 +344,18 @@ def test_canonical_source_is_unique() -> None:
         Path("requirements/requirements.json"),
         Path("profile/eidolon-trust-p256-hpke-v1.json"),
     )
+    checkouts = _other_checkouts_of_this_repository()
     for marker in markers:
         matches = [
             path
             for path in workspace.rglob(marker.name)
             if path.as_posix().endswith(f"device_foundation/v1/{marker.as_posix()}")
             and ".git" not in path.parts
-            and ".worktrees" not in path.parts
             and ".migration-backups" not in path.parts
+            and not any(path.is_relative_to(checkout) for checkout in checkouts)
         ]
+        # A plain copy is still a second source and still fails here. Only a
+        # checkout git knows about is the same file under another name.
         assert matches == [CONTRACT_ROOT / marker]
 
 
