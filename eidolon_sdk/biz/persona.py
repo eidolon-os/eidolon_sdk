@@ -610,7 +610,6 @@ __all__ = [
     "PersonaPreviewResponse",
     "PersonaPreset",
     "PersonaPresetCatalog",
-    "persona_preset_catalog",
     "validate_persona_evolution",
     "ConversationPreferences",
     "PersonaEditSnapshot",
@@ -648,6 +647,9 @@ class PersonaPreset(BaseModel):
     preset_id: str
     revision: str = "1"
     title: str
+    default_name: str = Field(min_length=1, max_length=128)
+    description: str = Field(min_length=1, max_length=200)
+    preferences: ConversationPreferences
     persona: PersonaAuthoring
     examples: list[str]
 
@@ -655,59 +657,6 @@ class PersonaPreset(BaseModel):
 class PersonaPresetCatalog(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
     presets: list[PersonaPreset]
-
-
-def persona_preset_catalog() -> PersonaPresetCatalog:
-    """Data publishes these authoring snapshots; clients do not invent defaults."""
-    default = PersonaAuthoring()
-    definitions = [
-        (
-            "gentle",
-            "温和陪伴",
-            default,
-            [
-                "你：你好。\nTA：嗨，很高兴见到你。",
-                "你：今天有点累。\nTA：辛苦了，先歇一会儿。我在。",
-                "你：帮我做个选择。\nTA：你在考虑哪两个选项？",
-            ],
-        ),
-        (
-            "direct",
-            "直接务实",
-            default.model_copy(
-                update={
-                    "character_portrait": "直接、踏实，尊重 owner 自己的判断。",
-                    "voice_portrait": "用具体的短句回答；需要解释时清楚展开。",
-                }
-            ),
-            [
-                "你：你好。\nTA：你好，我在。",
-                "你：今天有点累。\nTA：听起来今天消耗很大。先缓一缓。",
-                "你：帮我做个选择。\nTA：有哪些选项，你最看重什么？",
-            ],
-        ),
-        (
-            "playful",
-            "活泼有趣",
-            default.model_copy(
-                update={
-                    "character_portrait": "活泼、好奇，有轻盈的幽默感，也能安静听人说话。",
-                    "voice_portrait": "自然轻快，偶尔幽默；不把每句话都变成表演。",
-                }
-            ),
-            [
-                "你：你好。\nTA：嗨，我来啦。",
-                "你：今天有点累。\nTA：今天的电量见底了吧。我陪你缓一缓。",
-                "你：帮我做个选择。\nTA：把候选选手告诉我，我们一起看看。",
-            ],
-        ),
-    ]
-    return PersonaPresetCatalog(
-        presets=[
-            PersonaPreset(preset_id=key, title=title, persona=persona, examples=examples)
-            for key, title, persona, examples in definitions
-        ]
-    )
 
 
 def validate_persona_evolution(
