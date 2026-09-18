@@ -172,6 +172,13 @@ class PersonaProvenance(BaseModel):
 
     origin: str = "template"
     base_genome_id: str | None = None
+    #: Which published preset this Eidolon started from, if it started from one
+    #: untouched. A record of where it came from, and nothing more: no later
+    #: read resolves it, and an Eidolon's own evolution owes the preset nothing.
+    #: Raising a preset's revision does not reach back — the genome was written
+    #: whole at creation, and this only says which revision it was written from.
+    source_preset_id: str | None = Field(default=None, max_length=64)
+    source_preset_revision: str | None = Field(default=None, max_length=32)
     evidence_refs: list[PersonaEvidenceRef] = Field(default_factory=list)
 
 
@@ -431,6 +438,8 @@ def build_default_persona_genome(
     archetype: str = "companion",
     origin: str = "template",
     base_genome_id: str | None = None,
+    source_preset_id: str | None = None,
+    source_preset_revision: str | None = None,
 ) -> PersonaGenome:
     return PersonaGenome(
         constitution=PersonaConstitution(
@@ -456,7 +465,12 @@ def build_default_persona_genome(
             max_delta_per_commit=0.05,
             review_required_traits=["core.intimacy", "core.vulnerability"],
         ),
-        provenance=PersonaProvenance(origin=origin, base_genome_id=base_genome_id),
+        provenance=PersonaProvenance(
+            origin=origin,
+            base_genome_id=base_genome_id,
+            source_preset_id=source_preset_id,
+            source_preset_revision=source_preset_revision,
+        ),
     )
 
 
@@ -465,6 +479,8 @@ def build_persona_genome_from_draft(
     *,
     origin: str = "owner_authored",
     base_genome_id: str | None = None,
+    source_preset_id: str | None = None,
+    source_preset_revision: str | None = None,
 ) -> PersonaGenome:
     """Create one coherent snapshot without interpreting prose as other fields."""
 
@@ -473,6 +489,8 @@ def build_persona_genome_from_draft(
         archetype=draft.archetype,
         origin=origin,
         base_genome_id=base_genome_id,
+        source_preset_id=source_preset_id,
+        source_preset_revision=source_preset_revision,
     )
     return base.model_copy(
         update={
