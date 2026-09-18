@@ -31,3 +31,5 @@ class DeviceOutputConfiguration(Contract):
     device_ref: DeviceRef
     capabilities: OutputSelection
     policy: DeviceOutputPolicy | None = None
+    # None is a response from a pre-contract Hub, not an explicit opt-out.
+    policy_required: bool | None = Field(default=None, strict=True)

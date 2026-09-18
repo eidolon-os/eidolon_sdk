@@ -147,3 +147,47 @@ def test_boolean_is_not_an_intensity():
     data["steps"][0]["intensity"] = True
     with pytest.raises(ValidationError):
         ExpressionPlan.model_validate(data)
+
+
+@pytest.mark.parametrize("expression", [False, True])
+def test_explicit_contract_requires_policy_independently_of_face(expression):
+    from eidolon_sdk.biz.presentation.negotiation import (
+        output_policy_required,
+        validate_output_contract,
+    )
+
+    caps = OutputSelection(speech=True, dialogue_text=True, expression=expression)
+    manifest = {
+        "properties": [
+            {
+                "name": "output.contract",
+                "writable": False,
+                "schema": {"type": "string", "const": "eidolon.outputs.v1"},
+            }
+        ]
+    }
+    validate_output_contract(manifest)
+    assert output_policy_required(caps, manifest=manifest)
+    assert output_policy_required(caps, requirement=True)
+    assert output_policy_required(caps) == expression
+
+
+@pytest.mark.parametrize("value", [None, False, "eidolon.outputs.v2"])
+def test_invalid_contract_never_restores_legacy_defaults(value):
+    from eidolon_sdk.biz.presentation.negotiation import (
+        output_policy_required,
+        validate_output_contract,
+    )
+
+    manifest = {
+        "properties": [
+            {
+                "name": "output.contract",
+                "writable": False,
+                "schema": {"type": "string", "const": value},
+            }
+        ]
+    }
+    assert output_policy_required(OutputSelection(speech=True), manifest=manifest)
+    with pytest.raises(ValueError, match="OUTPUT_CONTRACT"):
+        validate_output_contract(manifest)

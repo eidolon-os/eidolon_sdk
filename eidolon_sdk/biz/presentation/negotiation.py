@@ -29,19 +29,44 @@ def manifest_outputs(manifest: dict[str, Any]) -> OutputSelection:
     )
 
 
-def output_policy_required(capabilities: OutputSelection) -> bool:
-    """Whether this device cannot be served until its Owner has decided.
+OUTPUT_CONTRACT = "eidolon.outputs.v1"
 
-    A device that can show this product's face is one whose speech has to be a
-    grant rather than a leftover default, so an absent policy is a question and
-    not an answer, and nothing may negotiate on its behalf. Devices that predate
-    the vocabulary keep running on the legacy outputs instead — which is why
-    this is one predicate and not a rule each consumer states for itself: the
-    Provider refuses by it, and a management surface says "not decided yet" by
-    it, and they cannot come to mean different things.
+
+def output_policy_required(
+    capabilities: OutputSelection,
+    *,
+    manifest: dict[str, Any] | None = None,
+    requirement: bool | None = None,
+) -> bool:
+    """New declarations opt in explicitly; old face devices remain protected.
+
+    A malformed or unknown marker must not restore legacy speech. The Provider
+    validates the exact contract separately before creating a channel.
+    ``requirement`` carries the Hub's projection to management clients; None
+    denotes an older Hub response that did not contain that projection.
     """
+    marked = manifest is not None and any(
+        isinstance(prop, dict) and prop.get("name") == "output.contract"
+        for prop in manifest.get("properties", ())
+    )
+    return capabilities.expression or requirement is True or marked
 
-    return capabilities.expression
+
+def validate_output_contract(manifest: dict[str, Any]) -> None:
+    markers = [
+        prop
+        for prop in manifest.get("properties", ())
+        if isinstance(prop, dict) and prop.get("name") == "output.contract"
+    ]
+    if not markers:
+        return  # Existing devices have no explicit contract marker.
+    if len(markers) != 1 or markers[0].get("writable") is not False:
+        raise ValueError("INVALID_OUTPUT_CONTRACT")
+    schema = markers[0].get("schema")
+    if not isinstance(schema, dict) or schema.get("type") != "string":
+        raise ValueError("INVALID_OUTPUT_CONTRACT")
+    if schema.get("const") != OUTPUT_CONTRACT:
+        raise ValueError("UNSUPPORTED_OUTPUT_CONTRACT")
 
 
 def select_outputs(
