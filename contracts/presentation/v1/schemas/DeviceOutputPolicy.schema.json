@@ -1,5 +1,18 @@
 {
   "$defs": {
+    "InputSelection": {
+      "additionalProperties": false,
+      "description": "Owner permission to send microphone audio, independent of response outputs.",
+      "properties": {
+        "microphone": {
+          "default": false,
+          "title": "Microphone",
+          "type": "boolean"
+        }
+      },
+      "title": "InputSelection",
+      "type": "object"
+    },
     "OutputSelection": {
       "additionalProperties": false,
       "properties": {
@@ -34,6 +47,7 @@
     }
   },
   "additionalProperties": false,
+  "description": "Device interaction permissions sharing one atomic revision.\n\nThe wire name predates input controls. Inputs remain a separate selection;\nthey are never response outputs or part of presentation negotiation.\nNone preserves the historical microphone behavior for existing policies.",
   "properties": {
     "schema_version": {
       "const": 1,
@@ -49,6 +63,17 @@
     },
     "allowed": {
       "$ref": "#/$defs/OutputSelection"
+    },
+    "inputs": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/InputSelection"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
     }
   },
   "required": [

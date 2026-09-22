@@ -1,5 +1,18 @@
 {
   "$defs": {
+    "InputSelection": {
+      "additionalProperties": false,
+      "description": "Owner permission to send microphone audio, independent of response outputs.",
+      "properties": {
+        "microphone": {
+          "default": false,
+          "title": "Microphone",
+          "type": "boolean"
+        }
+      },
+      "title": "InputSelection",
+      "type": "object"
+    },
     "OutputSelection": {
       "additionalProperties": false,
       "properties": {
@@ -56,6 +69,9 @@
     },
     "outputs": {
       "$ref": "#/$defs/OutputSelection"
+    },
+    "inputs": {
+      "$ref": "#/$defs/InputSelection"
     },
     "expression_profile": {
       "anyOf": [

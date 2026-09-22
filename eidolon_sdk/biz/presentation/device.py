@@ -2,13 +2,14 @@
 
 from pydantic import Field
 from eidolon_sdk.device_foundation.v1 import DeviceRef
-from . import Contract, DeviceOutputPolicy, OutputSelection
+from . import Contract, DeviceOutputPolicy, OutputSelection, InputSelection
 
 
 class SetDeviceOutputPolicy(Contract):
     device_ref: DeviceRef
     expected_revision: int = Field(strict=True, ge=0)
     allowed: OutputSelection
+    inputs: InputSelection | None = None
 
 
 class ReadDeviceOutputPolicy(Contract):
@@ -30,6 +31,7 @@ class DeviceOutputConfiguration(Contract):
 
     device_ref: DeviceRef
     capabilities: OutputSelection
+    input_capabilities: InputSelection | None = None
     policy: DeviceOutputPolicy | None = None
     # None is a response from a pre-contract Hub, not an explicit opt-out.
     policy_required: bool | None = Field(default=None, strict=True)

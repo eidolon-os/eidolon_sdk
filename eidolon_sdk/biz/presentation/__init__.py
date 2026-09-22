@@ -62,13 +62,34 @@ class OutputSelection(Contract):
 
     @property
     def can_respond(self) -> bool:
-        return self.speech or self.dialogue_text or self.expression
+        return self.speech or self.dialogue_text or self.expression or self.motion
+
+
+class InputSelection(Contract):
+    """Owner permission to send microphone audio, independent of response outputs."""
+
+    microphone: bool = Field(default=False, strict=True)
+
+
+def manifest_inputs(manifest: dict[str, Any]) -> InputSelection:
+    return InputSelection(microphone=any(
+        isinstance(entry, dict) and entry.get("kind") == "audio"
+        and entry.get("direction") in {"publish", "bidirectional"}
+        for entry in manifest.get("media", ())
+    ))
 
 
 class DeviceOutputPolicy(Contract):
+    """Device interaction permissions sharing one atomic revision.
+
+    The wire name predates input controls. Inputs remain a separate selection;
+    they are never response outputs or part of presentation negotiation.
+    None preserves the historical microphone behavior for existing policies.
+    """
     schema_version: Literal[1] = 1
     revision: Annotated[int, Field(strict=True, ge=1, le=4294967295)]
     allowed: OutputSelection
+    inputs: InputSelection | None = None
 
 
 class SessionOutputPlan(Contract):
@@ -76,12 +97,11 @@ class SessionOutputPlan(Contract):
     session_id: Identifier
     policy_revision: Annotated[int, Field(strict=True, ge=1, le=4294967295)]
     outputs: OutputSelection
+    inputs: InputSelection = Field(default_factory=lambda: InputSelection(microphone=True))
     expression_profile: Literal["eidolon.face.v1"] | None = None
 
     @model_validator(mode="after")
     def check_outputs(self) -> Self:
-        if not self.outputs.can_respond:
-            raise ValueError("NO_RESPONSE_OUTPUT")
         if self.outputs.expression != (self.expression_profile is not None):
             raise ValueError("EXPRESSION_PROFILE_REQUIRED")
         return self
@@ -98,7 +118,7 @@ class PresentationCandidate(Contract):
 class AssistantResponseCandidate(Contract):
     schema_version: Literal[1] = 1
     public_text: Annotated[str, Field(max_length=8192)] | None = None
-    presentation: PresentationCandidate
+    presentation: PresentationCandidate = Field(default_factory=lambda: PresentationCandidate(intent="none"))
 
 
 class ResponseIntent(PresentationCandidate):

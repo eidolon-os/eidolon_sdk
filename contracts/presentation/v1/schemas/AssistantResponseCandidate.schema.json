@@ -94,9 +94,6 @@
       "$ref": "#/$defs/PresentationCandidate"
     }
   },
-  "required": [
-    "presentation"
-  ],
   "title": "AssistantResponseCandidate",
   "type": "object"
 }

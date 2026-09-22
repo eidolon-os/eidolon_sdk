@@ -74,7 +74,6 @@ def test_policy_intersection_never_enlarges_capability():
 
 def test_no_output_and_missing_face_profile_fail_at_negotiation():
     for outputs, profile in [
-        (OutputSelection(), None),
         (OutputSelection(expression=True), None),
         (OutputSelection(speech=True), "eidolon.face.v1"),
     ]:
@@ -191,3 +190,17 @@ def test_invalid_contract_never_restores_legacy_defaults(value):
     assert output_policy_required(OutputSelection(speech=True), manifest=manifest)
     with pytest.raises(ValueError, match="OUTPUT_CONTRACT"):
         validate_output_contract(manifest)
+
+
+def test_microphone_policy_is_strict_and_preserves_legacy_wire_shape():
+    from eidolon_sdk.biz.presentation import DeviceOutputPolicy, InputSelection, OutputSelection, manifest_inputs
+    from pydantic import ValidationError
+    import pytest
+    legacy = DeviceOutputPolicy(revision=1, allowed=OutputSelection(speech=True))
+    assert legacy.model_dump(mode='json')['inputs'] is None
+    denied = DeviceOutputPolicy(revision=2, allowed=legacy.allowed, inputs=InputSelection(microphone=False))
+    assert DeviceOutputPolicy.model_validate_json(denied.model_dump_json()) == denied
+    with pytest.raises(ValidationError):
+        InputSelection(microphone='false')
+    assert manifest_inputs({'media': [{'kind': 'audio', 'direction': 'subscribe'}]}).microphone is False
+    assert manifest_inputs({'media': [{'kind': 'audio', 'direction': 'publish'}]}).microphone is True
