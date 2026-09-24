@@ -156,6 +156,11 @@ SessionEndReason = Literal[
 # does not stack, so a device that retries after a lost reply is safe.
 SESSION_OPEN_TYPE = "session_open"
 SESSION_CLOSE_TYPE = "session_close"
+
+# Provider rejection applies only before session_started, never to accepted work.
+SESSION_REJECTED_TYPE = "session_rejected"
+SESSION_REJECTION_CONFLICT = "conflict"
+
 SESSION_STARTED_TYPE = "session_started"
 SESSION_CONVERSATION_ID_FIELD = "conversation_id"
 SESSION_CONVERSATION_ID_MAX_LENGTH = 64
