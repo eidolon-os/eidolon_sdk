@@ -54,3 +54,6 @@ class SharedChannelSnapshot(BaseModel):
     channel_id: str
     manifest_revision: str
     expires_at_ms: int
+    # Original-channel presence is not shared-room readiness or admission.
+    on_channel: bool | None = None
+    observed_at_ms: int | None = None
