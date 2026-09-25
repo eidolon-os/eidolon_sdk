@@ -1,7 +1,7 @@
 """Shared-session selection, before any room or invitation is created.
 
 Authenticated Owner scope is supplied by the caller, never by this payload.
-These snapshots are observations, not room admission or execution grants.
+Selection is not room admission or an execution grant.
 """
 
 from datetime import UTC, datetime
@@ -49,18 +49,6 @@ class SharedSessionSelection(BaseModel):
         if len(domains) != 1:
             raise ValueError("MIXED_OWNER_DOMAIN")
         return self
-
-
-class SharedChannelSnapshot(BaseModel):
-    model_config = ConfigDict(extra="forbid", frozen=True, strict=True)
-
-    device_ref: DeviceRef
-    channel_id: str
-    manifest_revision: str
-    expires_at_ms: int
-    # Original-channel presence is not shared-room readiness or admission.
-    on_channel: bool | None = None
-    observed_at_ms: int | None = None
 
 
 class SharedSessionInvitation(BaseModel):

@@ -158,6 +158,9 @@ SESSION_OPEN_TYPE = "session_open"
 SESSION_CLOSE_TYPE = "session_close"
 
 # Provider rejection applies only before session_started, never to accepted work.
+# LiveKit reserves this exact room-scoped participant identity for Provider.
+# Match authenticated signalling identity, never a sender field in JSON.
+CHANNEL_PROVIDER_IDENTITY_PREFIX = "channel-provider-"
 SESSION_REJECTED_TYPE = "session_rejected"
 SESSION_REJECTION_CONFLICT = "conflict"
 

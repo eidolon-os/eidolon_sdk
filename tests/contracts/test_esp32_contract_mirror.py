@@ -102,6 +102,8 @@ def test_esp32_topics_header_matches_python_wire_contract() -> None:
         "SESSION_CONTROL_TOPIC": "kSessionControlTopic",
         "SESSION_OPEN_TYPE": "kSessionOpenType",
         "SESSION_CLOSE_TYPE": "kSessionCloseType",
+        "SESSION_REJECTED_TYPE": "kSessionRejectedType",
+        "SESSION_REJECTION_CONFLICT": "kSessionRejectionConflict",
         "SESSION_STARTED_TYPE": "kSessionStartedType",
         "SESSION_CONVERSATION_ID_FIELD": "kSessionConversationIdField",
         "SESSION_END_TYPE": "kSessionEndType",
@@ -116,6 +118,7 @@ def test_esp32_topics_header_matches_python_wire_contract() -> None:
         "SESSION_INTENT_PROACTIVE": "kSessionIntentProactive",
     }
     mirrored.update({
+        "CHANNEL_PROVIDER_IDENTITY_PREFIX": "kChannelProviderIdentityPrefix",
         "CONTROL_TOPIC": "kControlTopic",
         "EVENT_TOPIC": "kEventTopic",
         "CLIENT_AUDIO_STATE_TOPIC": "kClientAudioStateTopic",
@@ -242,7 +245,8 @@ def test_esp32_canonical_claim_consumer_and_roll_call_handler_match_contract() -
     assert "cJSON_GetObjectItem(root, kSessionIntentField)" in controller
     assert "strcmp(value, kSessionIntentPresence) == 0 ||" in controller
     assert "strcmp(value, kSessionIntentProactive) == 0" in controller
-    assert "pending_session_intent_ = value;" in controller
+    assert "intent = value;" in controller
+    assert "pending_session_intent_ = intent;" in controller
     assert "command.capability_version != entry.capability_version" in controller
     assert "PlayRollCallFeedback()" in controller
     assert 'AckCommand(command, "completed", "OK", "", "{\\"played\\":true}")' in controller

@@ -1,0 +1,10 @@
+{
+  "provider_identity": "channel-provider-same-room",
+  "room": "same-room",
+  "payload": {
+    "schema_v": 1,
+    "type": "session_rejected",
+    "conversation_id": "conversation-1",
+    "reason": "conflict"
+  }
+}

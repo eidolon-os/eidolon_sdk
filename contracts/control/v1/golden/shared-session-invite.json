@@ -1,0 +1,46 @@
+{
+  "v": 1,
+  "kind": "cmd",
+  "id": "invite-golden",
+  "op": "shared-session.invite",
+  "ts": 1700000000000,
+  "ttl_ms": 20000,
+  "qos": "ack",
+  "priority": "normal",
+  "src": {
+    "type": "channel",
+    "id": "channel-provider"
+  },
+  "dst": {
+    "type": "device",
+    "id": "device-instance-591d7c62d0bc738376935f77ff2acd5472bbee64207a765df03af6d6240c07dc"
+  },
+  "payload": {
+    "schema_version": 1,
+    "session_id": "visit-golden",
+    "device_ref": {
+      "device_instance_id": "device-instance-591d7c62d0bc738376935f77ff2acd5472bbee64207a765df03af6d6240c07dc",
+      "owner_domain_id": "owner-domain_01",
+      "owner_domain_generation": 3,
+      "claim_generation": 7,
+      "trust_epoch": 4
+    },
+    "deadline_ms": 1700000020000,
+    "channel": {
+      "channel_id": "temporary-golden",
+      "purpose": "shared-session",
+      "kinds": [
+        "audio",
+        "reliable-data"
+      ],
+      "binding_format": "application/vnd.eidolon.livekit-session+json;v=2",
+      "issued_at_ms": 1700000000000,
+      "expires_at_ms": 1700000120000,
+      "opaque_binding": "eyJhdWRpbyI6eyJjaGFubmVscyI6MSwic2FtcGxlX3JhdGUiOjE2MDAwfSwic2NoZW1hX3ZlcnNpb24iOjIsInNlc3Npb24iOnsiaWRlbnRpdHkiOiJkZXZpY2UtaW5zdGFuY2UtNTkxZDdjNjJkMGJjNzM4Mzc2OTM1Zjc3ZmYyYWNkNTQ3MmJiZWU2NDIwN2E3NjVkZjAzYWY2ZDYyNDBjMDdkYyIsInJvb21fbmFtZSI6ImVpZG9sb24tZGV2aWNlLTlmMWMwYTRkMmI2ZThmM2E1YzdkMWUwNCIsInNlcnZlcl91cmwiOiJ3c3M6Ly9saXZla2l0Lm93bmVyLnRlc3Q6Nzg4MCIsInRva2VuIjoiZXlKaGJHY2lPaUpJVXpJMU5pSXNJblI1Y0NJNklrcFhWQ0o5LmV5SnBjM01pT2lKQlVFbGxlR0Z0Y0d4bElpd2ljM1ZpSWpvaVpHVjJhV05sSWl3aWRtbGtaVzhpT25zaWNtOXZiU0k2SW1WNFlXMXdiR1VpZlgwLldtOXVNVjl6YVdkdVlYUjFjbVZmY0d4aFkyVm9iMnhrWlhKZlptOXlYMkVnZG1sbGQyVnkifX0="
+    }
+  },
+  "caps": [
+    "ack.v1",
+    "result.v1"
+  ]
+}
