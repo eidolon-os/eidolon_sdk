@@ -166,6 +166,7 @@ SESSION_REJECTION_CONFLICT = "conflict"
 
 SESSION_STARTED_TYPE = "session_started"
 SESSION_CONVERSATION_ID_FIELD = "conversation_id"
+SESSION_CONTROL_REQUEST_ID_FIELD = "control_request_id"
 SESSION_CONVERSATION_ID_MAX_LENGTH = 64
 VALID_SESSION_REQUEST_TYPES = frozenset({SESSION_OPEN_TYPE, SESSION_CLOSE_TYPE})
 SessionRequestType = Literal["session_open", "session_close"]
