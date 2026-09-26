@@ -1,0 +1,10 @@
+{
+  "schema_v": 1,
+  "type": "smarthome.execute",
+  "payload": {
+    "schema_version": 1,
+    "request_id": "touch-golden-2",
+    "commands": [],
+    "scene_id": "scene.movie"
+  }
+}

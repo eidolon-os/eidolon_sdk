@@ -1,0 +1,9 @@
+{
+  "schema_v": 1,
+  "type": "smarthome.sync",
+  "payload": {
+    "schema_version": 1,
+    "known_revision": 1,
+    "known_seq": 0
+  }
+}

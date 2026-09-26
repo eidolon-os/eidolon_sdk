@@ -1,0 +1,278 @@
+{
+  "v": 1,
+  "kind": "cmd",
+  "id": "snapshot-golden",
+  "op": "smarthome.snapshot",
+  "ts": 1700000000000,
+  "ttl_ms": 10000,
+  "qos": "fire_and_forget",
+  "priority": "normal",
+  "src": {
+    "type": "channel",
+    "id": "channel_provider"
+  },
+  "dst": {
+    "type": "device",
+    "id": "korvo1-golden"
+  },
+  "payload": {
+    "schema_version": 1,
+    "revision": 1,
+    "seq": 0,
+    "home_name": "我的家",
+    "panel_area_id": "living",
+    "utc_offset_minutes": 480,
+    "areas": [
+      {
+        "area_id": "living",
+        "name": "客厅"
+      },
+      {
+        "area_id": "master",
+        "name": "主卧"
+      },
+      {
+        "area_id": "kitchen",
+        "name": "厨房"
+      },
+      {
+        "area_id": "bath",
+        "name": "卫生间"
+      },
+      {
+        "area_id": "balcony",
+        "name": "阳台"
+      },
+      {
+        "area_id": "entry",
+        "name": "玄关"
+      },
+      {
+        "area_id": "whole",
+        "name": "全屋"
+      }
+    ],
+    "devices": [
+      {
+        "device_id": "living.main_light",
+        "name": "客厅主灯",
+        "type": "light",
+        "area_id": "living",
+        "online": true,
+        "state": {
+          "on": true,
+          "level": 60
+        }
+      },
+      {
+        "device_id": "master.light",
+        "name": "主卧灯",
+        "type": "light",
+        "area_id": "master",
+        "online": true,
+        "state": {
+          "on": false,
+          "level": 60
+        }
+      },
+      {
+        "device_id": "master.bedside",
+        "name": "床头灯",
+        "type": "light",
+        "area_id": "master",
+        "online": true,
+        "state": {
+          "on": true,
+          "level": 30
+        }
+      },
+      {
+        "device_id": "living.ac",
+        "name": "客厅空调",
+        "type": "climate",
+        "area_id": "living",
+        "online": true,
+        "state": {
+          "on": false,
+          "mode": "cool",
+          "target_c": 26,
+          "current_c": 28
+        }
+      },
+      {
+        "device_id": "master.ac",
+        "name": "主卧空调",
+        "type": "climate",
+        "area_id": "master",
+        "online": true,
+        "state": {
+          "on": false,
+          "mode": "cool",
+          "target_c": 26,
+          "current_c": 27
+        }
+      },
+      {
+        "device_id": "living.curtain",
+        "name": "客厅窗帘",
+        "type": "cover",
+        "area_id": "living",
+        "online": true,
+        "state": {
+          "position": 70
+        }
+      },
+      {
+        "device_id": "living.purifier",
+        "name": "空气净化器",
+        "type": "fan",
+        "area_id": "living",
+        "online": true,
+        "state": {
+          "on": true,
+          "speed": 30
+        }
+      },
+      {
+        "device_id": "master.humidifier",
+        "name": "加湿器",
+        "type": "fan",
+        "area_id": "master",
+        "online": true,
+        "state": {
+          "on": false,
+          "speed": 30
+        }
+      },
+      {
+        "device_id": "living.tv",
+        "name": "电视",
+        "type": "media",
+        "area_id": "living",
+        "online": true,
+        "state": {
+          "on": false,
+          "volume": 20,
+          "muted": false
+        }
+      },
+      {
+        "device_id": "living.speaker",
+        "name": "智能音箱",
+        "type": "media",
+        "area_id": "living",
+        "online": true,
+        "state": {
+          "on": true,
+          "volume": 35,
+          "muted": false
+        }
+      },
+      {
+        "device_id": "whole.vacuum",
+        "name": "扫地机器人",
+        "type": "appliance",
+        "area_id": "whole",
+        "online": true,
+        "state": {
+          "run_state": "idle"
+        }
+      },
+      {
+        "device_id": "balcony.washer",
+        "name": "洗衣机",
+        "type": "appliance",
+        "area_id": "balcony",
+        "online": true,
+        "state": {
+          "run_state": "idle"
+        }
+      },
+      {
+        "device_id": "balcony.rack",
+        "name": "电动晾衣架",
+        "type": "cover",
+        "area_id": "balcony",
+        "online": true,
+        "state": {
+          "position": 0
+        }
+      },
+      {
+        "device_id": "kitchen.rice_cooker",
+        "name": "电饭煲",
+        "type": "appliance",
+        "area_id": "kitchen",
+        "online": true,
+        "state": {
+          "run_state": "idle"
+        }
+      },
+      {
+        "device_id": "bath.water_heater",
+        "name": "热水器",
+        "type": "water_heater",
+        "area_id": "bath",
+        "online": true,
+        "state": {
+          "on": true,
+          "mode": "heat",
+          "target_c": 42,
+          "current_c": null
+        }
+      },
+      {
+        "device_id": "entry.lock",
+        "name": "智能门锁",
+        "type": "lock",
+        "area_id": "entry",
+        "online": true,
+        "state": {
+          "locked": true
+        }
+      },
+      {
+        "device_id": "entry.camera",
+        "name": "摄像头",
+        "type": "camera",
+        "area_id": "entry",
+        "online": false,
+        "state": null
+      },
+      {
+        "device_id": "living.thermo",
+        "name": "温湿度计",
+        "type": "sensor",
+        "area_id": "living",
+        "online": true,
+        "state": {
+          "temp_c": 24.5,
+          "humidity": 48
+        }
+      }
+    ],
+    "scenes": [
+      {
+        "scene_id": "scene.home",
+        "name": "回家"
+      },
+      {
+        "scene_id": "scene.away",
+        "name": "离家"
+      },
+      {
+        "scene_id": "scene.movie",
+        "name": "观影"
+      },
+      {
+        "scene_id": "scene.sleep",
+        "name": "睡眠"
+      }
+    ]
+  },
+  "caps": [
+    "ack.v1",
+    "result.v1"
+  ],
+  "capability_version": 1
+}
