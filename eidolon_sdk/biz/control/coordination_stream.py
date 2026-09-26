@@ -1,8 +1,8 @@
 """Host-internal role-group stream. The authenticated Channel owns media IO.
 
 One connection owns one scene; it must stop every prepared endpoint if this
-connection fails. A played receipt means physical presentation drained, never
-model DONE, synthesis completion or an HTTP success. No device credentials or
+connection fails. A reply receipt declares its completion basis: native LiveKit playout or a
+device acknowledgement. Neither is inferred from model DONE or HTTP success. No device credentials or
 raw audio are transported here. Service authentication is required separately.
 """
 
@@ -73,6 +73,7 @@ class Receipt(Frame):
     request_id: Identifier
     device_id: Identifier
     result: Literal["completed", "failed"]
+    completion_basis: Literal["device_ack", "native_playout"] = "device_ack"
 
 
 class Speaking(Frame):
