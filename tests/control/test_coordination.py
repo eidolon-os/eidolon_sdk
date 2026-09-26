@@ -16,6 +16,7 @@ def selection():
         )
 
     return dict(
+        scenario="ip_role_group",
         session_id="scene-1",
         input_device=ref("input"),
         members=[
@@ -37,6 +38,8 @@ def test_selection_round_trips_with_one_input_and_separate_members():
 @pytest.mark.parametrize(
     "field,value",
     [
+        ("scenario", "solo"),
+        ("scenario", "directed"),
         ("schema_version", True),
         ("schema_version", "1"),
         ("schema_version", 1.0),
@@ -91,3 +94,11 @@ def test_single_response_device_and_explicit_bounded_discussion_are_supported():
     scene = CoordinationSelection.model_validate(payload)
     assert len(scene.devices) == 2
     assert scene.discussion and scene.reply_budget == 4
+
+
+def test_group_scenario_must_be_explicit_even_with_one_member():
+    payload = selection()
+    payload.pop("scenario")
+    payload["members"] = payload["members"][:1]
+    with pytest.raises(ValidationError):
+        CoordinationSelection.model_validate(payload)

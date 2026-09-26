@@ -1,9 +1,10 @@
-"""A coordinated scene selection, not an authorization or a playback grant.
+"""An IP role-group scene selection, not a global conversation policy.
 
 The management boundary resolves current DeviceRefs after authenticating the
 Owner. Every lifecycle, device capability and Companion runtime scope must be
 checked before preparing any endpoint. Member order is configuration order;
-only a decision proposal determines response order.
+only a decision proposal determines response order. Solo conversations retain
+their existing input modes and do not use this contract.
 """
 
 from typing import Annotated, Literal, Self
@@ -28,6 +29,7 @@ class CoordinationSelection(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
 
     schema_version: Literal[1] = 1
+    scenario: Literal["ip_role_group"]
     session_id: Annotated[
         str, Field(strict=True, min_length=1, max_length=64, pattern=r"^[A-Za-z0-9_.:-]+$")
     ]
