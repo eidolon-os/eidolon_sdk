@@ -63,3 +63,12 @@ class CoordinationSelection(BaseModel):
         if len(domains) != 1:
             raise ValueError("MIXED_OWNER_DOMAIN")
         return self
+
+
+class RoleGroupStatus(BaseModel):
+    model_config = ConfigDict(extra="forbid", frozen=True)
+    session_id: Identifier
+    state: Literal["preparing", "ready", "closing", "closed", "failed"]
+    error: str = ""
+    scenario: Literal["ip_role_group"]
+    completion_basis: Literal["native_playout"]
