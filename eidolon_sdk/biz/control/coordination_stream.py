@@ -89,3 +89,72 @@ ClientFrame = Annotated[
     Press | Release | Transcript | Receipt | Speaking | Close, Field(discriminator="type")
 ]
 CLIENT_FRAME = TypeAdapter(ClientFrame)
+
+
+class ServerFrame(Frame):
+    stream_id: Identifier
+    session_id: Identifier
+
+
+class Prepared(ServerFrame):
+    type: Literal["prepared"]
+    policy: Literal["explicit-demo-order-v1"]
+    physical_devices_ready: Literal[False]
+
+
+Epoch = Annotated[int, Field(strict=True, ge=0)]
+
+
+class Capturing(ServerFrame):
+    type: Literal["capturing"]
+    capture_id: Identifier
+    epoch: Epoch
+
+
+class Stop(ServerFrame):
+    type: Literal["stop"]
+    request_id: Identifier
+    device_id: Identifier
+    epoch: Epoch
+
+
+class ReplyFrame(ServerFrame):
+    request_id: Identifier
+    turn_id: Identifier
+    device_id: Identifier
+    epoch: Epoch
+
+    @model_validator(mode="after")
+    def request_is_turn(self) -> Self:
+        if self.request_id != self.turn_id:
+            raise ValueError("reply request must match turn")
+        return self
+
+
+class ReplyStart(ReplyFrame):
+    type: Literal["reply_start"]
+    companion_id: Identifier
+
+
+class ReplyDelta(ReplyFrame):
+    type: Literal["reply_delta"]
+    text: Annotated[str, Field(strict=True, max_length=32768)]
+
+
+class ReplyEnd(ReplyFrame):
+    type: Literal["reply_end"]
+
+
+class SceneState(ServerFrame):
+    type: Literal["state"]
+    state: Annotated[str, Field(strict=True, max_length=64)]
+    members: dict[Identifier, Annotated[str, Field(strict=True, max_length=64)]]
+    epoch: Epoch
+
+
+SERVER_FRAME = TypeAdapter(
+    Annotated[
+        Prepared | Capturing | Stop | ReplyStart | ReplyDelta | ReplyEnd | SceneState,
+        Field(discriminator="type"),
+    ]
+)

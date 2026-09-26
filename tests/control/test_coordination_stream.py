@@ -66,3 +66,37 @@ def test_explicit_mock_policy_and_group_scenario_round_trip():
 def test_frames_cannot_change_scope_or_claim_model_done_as_played(frame):
     with pytest.raises(ValidationError):
         CLIENT_FRAME.validate_python(frame)
+
+
+def test_server_reply_correlation_and_epoch_are_strict():
+    from eidolon_sdk.biz.control.coordination_stream import SERVER_FRAME
+
+    base = dict(
+        type="reply_start",
+        stream_id="stream",
+        session_id="scene",
+        request_id="turn",
+        turn_id="turn",
+        device_id="device",
+        companion_id="a",
+        epoch=1,
+    )
+    assert SERVER_FRAME.validate_python(base).epoch == 1
+    for changes in (dict(epoch=True), dict(epoch=-1), dict(turn_id="other"), dict(extra="x")):
+        with pytest.raises(ValueError):
+            SERVER_FRAME.validate_python({**base, **changes})
+
+
+def test_agent_preparation_cannot_claim_physical_readiness():
+    from eidolon_sdk.biz.control.coordination_stream import SERVER_FRAME
+
+    with pytest.raises(ValueError):
+        SERVER_FRAME.validate_python(
+            dict(
+                type="prepared",
+                stream_id="stream",
+                session_id="scene",
+                policy="explicit-demo-order-v1",
+                physical_devices_ready=True,
+            )
+        )
