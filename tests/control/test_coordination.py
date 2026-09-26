@@ -102,3 +102,29 @@ def test_group_scenario_must_be_explicit_even_with_one_member():
     payload["members"] = payload["members"][:1]
     with pytest.raises(ValidationError):
         CoordinationSelection.model_validate(payload)
+
+
+def test_scene_roles_round_trip_without_changing_member_binding():
+    payload = selection()
+    payload['members'][0]['role'] = dict(name=' 孙悟空 ', description='机敏果敢')
+    scene = CoordinationSelection.model_validate(payload)
+    assert scene.members[0].role.name == '孙悟空'
+    assert scene.members[0].companion_id == 'companion-a'
+    assert scene.members[1].role is None
+    assert CoordinationSelection.model_validate_json(scene.model_dump_json()) == scene
+
+
+@pytest.mark.parametrize('value', [True, '1', 1.0, 2])
+def test_scene_assignments_are_immutable_version_one(value):
+    with pytest.raises(ValidationError):
+        CoordinationSelection.model_validate(selection() | {'assignment_revision': value})
+
+
+@pytest.mark.parametrize('role', [dict(name=' '), dict(name='x'*81),
+                                dict(name='悟空', description='x'*1001),
+                                dict(name='悟空', companion_id='forged')])
+def test_role_data_is_bounded_and_cannot_supply_authority(role):
+    payload = selection()
+    payload['members'][0]['role'] = role
+    with pytest.raises(ValidationError):
+        CoordinationSelection.model_validate(payload)

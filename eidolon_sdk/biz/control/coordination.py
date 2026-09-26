@@ -9,7 +9,7 @@ their existing input modes and do not use this contract.
 
 from typing import Annotated, Literal, Self
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, StringConstraints, model_validator
 
 from eidolon_sdk.device_foundation.v1 import DeviceRef
 
@@ -18,11 +18,20 @@ Identifier = Annotated[
 ]
 
 
+class SceneRole(BaseModel):
+    """Temporary performance data; never a Companion binding or tool grant."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+    name: Annotated[str, StringConstraints(strict=True, strip_whitespace=True, min_length=1, max_length=80)]
+    description: Annotated[str, StringConstraints(strict=True, strip_whitespace=True, max_length=1000)] = ""
+
+
 class CoordinationMember(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
 
     companion_id: Identifier
     output_device: DeviceRef
+    role: SceneRole | None = None
 
 
 class CoordinationSelection(BaseModel):
@@ -38,13 +47,16 @@ class CoordinationSelection(BaseModel):
     members: Annotated[tuple[CoordinationMember, ...], Field(min_length=1, max_length=16)]
     discussion: Annotated[bool, Field(strict=True)] = False
     reply_budget: Annotated[int, Field(strict=True, ge=1, le=32)] = 8
+    # Immutable for this scene. Changing assignments requires a new scene.
+    assignment_revision: Literal[1] = 1
 
     @model_validator(mode="before")
     @classmethod
     def integer_version(cls, value):
-        if isinstance(value, dict) and "schema_version" in value:
-            if type(value["schema_version"]) is not int:
-                raise ValueError("SCHEMA_VERSION_MUST_BE_INTEGER")
+        if isinstance(value, dict):
+            for key in ("schema_version", "assignment_revision"):
+                if key in value and type(value[key]) is not int:
+                    raise ValueError("VERSION_MUST_BE_INTEGER")
         return value
 
     @property
