@@ -12,7 +12,9 @@ from pydantic import BaseModel, ConfigDict, Field, TypeAdapter, model_validator
 
 from eidolon_sdk.biz.dialogue_control import CommittedTurnDecision, TurnCommitBoundary
 
-from .coordination import CoordinationSelection, Identifier
+from .coordination import (
+    CoordinationSelection, Identifier, STOP_EXECUTION_TIMEOUT, STOP_RECEIPT_TIMEOUT,
+)
 
 ROLE_GROUP_STREAM_PATH = "/api/admin/role-groups/stream"
 MAX_FRAME_BYTES = 131072
@@ -65,6 +67,7 @@ class Receipt(Frame):
     device_id: Identifier
     result: Literal["completed", "failed"]
     completion_basis: Literal["device_ack", "native_playout"] = "device_ack"
+    error_code: Annotated[str, Field(strict=True, max_length=128)] = ""
 
 
 class Speaking(Frame):
@@ -104,6 +107,8 @@ class Capturing(ServerFrame):
 
 
 class Stop(ServerFrame):
+    # PTT stops share the Channel's immediate local operation. Cleanup stops do not.
+    capture_id: Identifier | None = None
     type: Literal["stop"]
     request_id: Identifier
     device_id: Identifier

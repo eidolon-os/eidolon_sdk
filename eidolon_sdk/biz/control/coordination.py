@@ -84,3 +84,8 @@ class RoleGroupStatus(BaseModel):
     error: str = ""
     scenario: Literal["ip_role_group"]
     completion_basis: Literal["native_playout"]
+
+
+# Physical execution and receipt delivery have separate bounded budgets.
+STOP_EXECUTION_TIMEOUT = 2.0
+STOP_RECEIPT_TIMEOUT = STOP_EXECUTION_TIMEOUT + 1.0
