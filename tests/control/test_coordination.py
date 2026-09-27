@@ -31,7 +31,7 @@ def test_selection_round_trips_with_one_input_and_separate_members():
     assert CoordinationSelection.model_validate_json(scene.model_dump_json()) == scene
     assert len(scene.devices) == 3
     assert scene.input_mode == "ptt"
-    assert not scene.discussion
+    assert scene.goal == ""
     assert [m.companion_id for m in scene.members] == ["companion-a", "companion-b"]
 
 
@@ -43,7 +43,7 @@ def test_selection_round_trips_with_one_input_and_separate_members():
         ("schema_version", True),
         ("schema_version", "1"),
         ("schema_version", 1.0),
-        ("schema_version", 2),
+        ("schema_version", 1),
         ("input_mode", "full_duplex"),
         ("discussion", "false"),
         ("discussion", 1),
@@ -90,10 +90,10 @@ def test_rejects_invalid_membership(case):
 
 def test_single_response_device_and_explicit_bounded_discussion_are_supported():
     payload = selection()
-    payload.update(members=payload["members"][:1], discussion=True, reply_budget=4)
+    payload.update(members=payload["members"][:1], goal="讨论旅行", reply_budget=4)
     scene = CoordinationSelection.model_validate(payload)
     assert len(scene.devices) == 2
-    assert scene.discussion and scene.reply_budget == 4
+    assert scene.goal == "讨论旅行" and scene.reply_budget == 4
 
 
 def test_group_scenario_must_be_explicit_even_with_one_member():

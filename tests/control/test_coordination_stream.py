@@ -47,9 +47,9 @@ def test_mock_policy_does_not_add_or_duplicate_members(order):
         OpenScene(type="open", owner_id="owner", selection=selection(), mock_order=order)
 
 
-def test_explicit_mock_policy_and_group_scenario_round_trip():
+def test_semantic_group_scenario_round_trip():
     frame = OpenScene(
-        type="open", owner_id="owner", selection=selection(), mock_order=("companion-b",)
+        type="open", owner_id="owner", selection=selection()
     )
     assert OpenScene.model_validate_json(frame.model_dump_json()) == frame
 
@@ -96,7 +96,7 @@ def test_agent_preparation_cannot_claim_physical_readiness():
                 type="prepared",
                 stream_id="stream",
                 session_id="scene",
-                policy="explicit-demo-order-v1",
+                policy="semantic-step-v2",
                 physical_devices_ready=True,
             )
         )

@@ -23,19 +23,10 @@ class Frame(BaseModel):
 
 
 class OpenScene(Frame):
+    schema_version: Literal[2] = 2
     type: Literal["open"]
     owner_id: Identifier
     selection: CoordinationSelection
-    # Explicit simulation policy until a production adjudicator is configured.
-    mock_order: Annotated[tuple[Identifier, ...], Field(min_length=1, max_length=16)]
-
-    @model_validator(mode="after")
-    def known_candidates(self) -> Self:
-        if len(set(self.mock_order)) != len(self.mock_order):
-            raise ValueError("duplicate mock decision candidate")
-        if not set(self.mock_order) <= {m.companion_id for m in self.selection.members}:
-            raise ValueError("mock decision candidate is not a scene member")
-        return self
 
 
 class Press(Frame):
@@ -99,7 +90,7 @@ class ServerFrame(Frame):
 
 class Prepared(ServerFrame):
     type: Literal["prepared"]
-    policy: Literal["explicit-demo-order-v1"]
+    policy: Literal["semantic-step-v2"]
     physical_devices_ready: Literal[False]
 
 
@@ -148,9 +139,12 @@ class ReplyEnd(ReplyFrame):
 
 class SceneState(ServerFrame):
     type: Literal["state"]
+    capture_id: Identifier
     state: Annotated[str, Field(strict=True, max_length=64)]
     members: dict[Identifier, Annotated[str, Field(strict=True, max_length=64)]]
     epoch: Epoch
+    outcome: Literal["waiting", "finished", "clarification", "budget_exhausted", "abstained", "error", "empty_input"] = "waiting"
+    error_code: Annotated[str, Field(strict=True, max_length=128)] = ""
 
 
 SERVER_FRAME = TypeAdapter(

@@ -1,4 +1,4 @@
-"""Participation decision v1: model-neutral proposals, never execution grants.
+"""Participation decision v2: one semantic step, never an execution grant.
 
 Bounds are wire safety limits, not a promise of a model's token capacity.
 Adapters must reject context beyond their own limits rather than truncate it.
@@ -36,6 +36,7 @@ class Context(Contract):
 
 class Candidate(Contract):
     companion_id: Identifier
+    display_name: Annotated[str, Field(strict=True, max_length=256)] = ""
     description: Annotated[str, Field(strict=True, max_length=4096)]
 
 
@@ -46,7 +47,8 @@ class Constraints(Contract):
         "wait",
         "finish",
     )
-    max_next_speakers: Annotated[int, Field(strict=True, ge=1, le=64)] = 1
+    max_next_speakers: Annotated[int, Field(strict=True, ge=1, le=1)] = 1
+    remaining_replies: Annotated[int, Field(strict=True, ge=1, le=32)] = 8
 
     @model_validator(mode="after")
     def unique_actions(self) -> Self:
@@ -56,7 +58,7 @@ class Constraints(Contract):
 
 
 class Snapshot(Contract):
-    schema_version: Literal[1] = 1
+    schema_version: Literal[2] = 2
     decision_id: Identifier
     context_ref: Identifier
     context_version: Revision
@@ -73,6 +75,10 @@ class Snapshot(Contract):
 
 
 class DecisionRequest(Snapshot):
+    task: Literal["ip_team.participation"] = "ip_team.participation"
+    # Pinned initiating user request, even after many completed peer replies.
+    user_request: Message
+    scene_goal: Annotated[str, Field(strict=True, max_length=2000)] = ""
     trigger: Message
     context: Context = Field(default_factory=Context)
     candidates: Annotated[tuple[Candidate, ...], Field(max_length=64)]
@@ -81,14 +87,18 @@ class DecisionRequest(Snapshot):
 
     @model_validator(mode="after")
     def validate_context(self) -> Self:
+        if self.user_request.author_kind != "user":
+            raise ValueError("USER_REQUEST_MUST_BE_USER")
         ids = [candidate.companion_id for candidate in self.candidates]
         if len(set(ids)) != len(ids):
             raise ValueError("DUPLICATE_CANDIDATE")
         # Bound the whole snapshot too, not just each individual message.
-        size = len(self.trigger.text) + len(self.context.summary)
+        size = (len(self.trigger.text) + len(self.context.summary)
+                + len(self.user_request.text) + len(self.scene_goal))
         size += sum(len(message.text) for message in self.context.recent_messages)
         size += sum(map(len, self.context.pending_requirements))
-        size += sum(len(candidate.description) for candidate in self.candidates)
+        size += sum(len(candidate.description) + len(candidate.display_name)
+                    for candidate in self.candidates)
         if size > 131072:
             raise ValueError("CONTEXT_TOO_LARGE")
         return self
@@ -96,13 +106,19 @@ class DecisionRequest(Snapshot):
 
 class Proposal(Contract):
     action: Action
-    participants: Annotated[tuple[Identifier, ...], Field(max_length=64)] = ()
+    participants: Annotated[tuple[Identifier, ...], Field(max_length=1)] = ()
+    # A bounded task for the selected speaker, not generated dialogue or a tool grant.
+    instruction: Annotated[str, Field(strict=True, max_length=2000)] = ""
 
     @model_validator(mode="after")
     def validate_action(self) -> Self:
         if len(set(self.participants)) != len(self.participants):
             raise ValueError("DUPLICATE_PARTICIPANT")
         count = len(self.participants)
+        if self.action == "clarify" and not self.instruction.strip():
+            raise ValueError("CLARIFICATION_TASK_REQUIRED")
+        if self.action in {"wait", "finish"} and self.instruction:
+            raise ValueError("SILENT_ACTION_HAS_NO_SPEAKER_TASK")
         if (
             self.action == "respond"
             and count == 0

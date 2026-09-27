@@ -37,7 +37,7 @@ class CoordinationMember(BaseModel):
 class CoordinationSelection(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
 
-    schema_version: Literal[1] = 1
+    schema_version: Literal[2] = 2
     scenario: Literal["ip_role_group"]
     session_id: Annotated[
         str, Field(strict=True, min_length=1, max_length=64, pattern=r"^[A-Za-z0-9_.:-]+$")
@@ -45,7 +45,7 @@ class CoordinationSelection(BaseModel):
     input_device: DeviceRef
     input_mode: Literal["ptt"] = "ptt"
     members: Annotated[tuple[CoordinationMember, ...], Field(min_length=1, max_length=16)]
-    discussion: Annotated[bool, Field(strict=True)] = False
+    goal: Annotated[str, StringConstraints(strict=True, strip_whitespace=True, max_length=2000)] = ""
     reply_budget: Annotated[int, Field(strict=True, ge=1, le=32)] = 8
     # Immutable for this scene. Changing assignments requires a new scene.
     assignment_revision: Literal[1] = 1

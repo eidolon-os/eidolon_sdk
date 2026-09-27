@@ -9,7 +9,7 @@ from eidolon_sdk.biz.participation import DecisionRequest, DecisionResult, valid
 def request():
     return DecisionRequest.model_validate(
         {
-            "schema_version": 1,
+            "schema_version": 2,
             "decision_id": "d1",
             "context_ref": "team-chat",
             "context_version": 2,
@@ -22,6 +22,7 @@ def request():
                 "author_id": "owner",
                 "text": "悟空先说，八戒补充",
             },
+            "user_request": {"message_id":"m1", "author_kind":"user", "author_id":"owner", "text":"悟空先说，八戒补充"},
             "context": {
                 "recent_messages": [],
                 "summary": "旅行安排",
@@ -41,7 +42,7 @@ def request():
 
 def result(**changes):
     data = dict(
-        schema_version=1,
+        schema_version=2,
         decision_id="d1",
         context_ref="team-chat",
         context_version=2,
@@ -118,7 +119,7 @@ def test_rejects_oversize_context_instead_of_truncation():
         DecisionRequest.model_validate(data)
 
 
-@pytest.mark.parametrize("version", [True, "1", 2])
+@pytest.mark.parametrize("version", [True, "2", 1])
 def test_version_does_not_coerce(version):
     data = request().model_dump(mode="json")
     data["schema_version"] = version
