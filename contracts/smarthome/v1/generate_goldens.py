@@ -130,6 +130,10 @@ def vectors() -> dict[str, dict]:
         "voice-result-executed.json": _envelope("result-golden-1", OP_RESULT, executed.model_dump(mode="json")),
         "voice-result-ambiguous.json": _envelope("result-golden-2", OP_RESULT, ambiguous.model_dump(mode="json")),
         "voice-result-answered.json": _envelope("result-golden-3", OP_RESULT, answered.model_dump(mode="json")),
+        "voice-result-clarification.json": _envelope("result-golden-4", OP_RESULT, VoiceResult(
+            turn_id="clarify-1", utterance="调一下", outcome="clarification",
+            message="想调节哪个设备？",
+        ).model_dump(mode="json")),
         # Upward: the full body a panel publishes on PANEL_REQUEST_TOPIC.
         "panel-execute-request.json": panel_request(execute),
         "panel-scene-request.json": panel_request(scene),

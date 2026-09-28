@@ -601,7 +601,7 @@ class CommandTemplate(Contract):
 
 
 VoiceOutcome = Literal[
-    "executed", "partial", "answered", "ambiguous", "not_found", "unrelated", "failed", "unavailable"
+    "executed", "partial", "answered", "ambiguous", "clarification", "not_found", "unrelated", "failed", "unavailable"
 ]
 
 

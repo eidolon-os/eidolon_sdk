@@ -140,6 +140,7 @@ def test_snapshot_and_delta_integrity():
 
 
 def test_voice_result_shapes():
+    VoiceResult(turn_id="t", utterance="调一下", outcome="clarification", message="想调节哪个设备？")
     VoiceResult(turn_id="t", utterance="打开空调", outcome="executed", message="已打开客厅空调")
     both = (PanelCandidate(device_id="a", name="客厅空调"), PanelCandidate(device_id="b", name="主卧空调"))
     VoiceResult(turn_id="t", utterance="打开空调", outcome="ambiguous", message="哪台？",
