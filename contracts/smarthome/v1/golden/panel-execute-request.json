@@ -1,0 +1,19 @@
+{
+  "schema_v": 1,
+  "type": "smarthome.execute",
+  "payload": {
+    "schema_version": 1,
+    "request_id": "touch-golden-1",
+    "commands": [
+      {
+        "device_id": "living.main_light",
+        "trait": "level",
+        "command": "set",
+        "params": {
+          "value": 40
+        }
+      }
+    ],
+    "scene_id": null
+  }
+}

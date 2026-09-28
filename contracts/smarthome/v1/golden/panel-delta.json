@@ -1,0 +1,44 @@
+{
+  "v": 1,
+  "kind": "cmd",
+  "id": "delta-golden",
+  "op": "smarthome.delta",
+  "ts": 1700000000000,
+  "ttl_ms": 10000,
+  "qos": "fire_and_forget",
+  "priority": "normal",
+  "src": {
+    "type": "channel",
+    "id": "channel_provider"
+  },
+  "dst": {
+    "type": "device",
+    "id": "korvo1-golden"
+  },
+  "payload": {
+    "schema_version": 1,
+    "revision": 1,
+    "seq": 1,
+    "source": {
+      "kind": "voice",
+      "label": "面板语音"
+    },
+    "changes": [
+      {
+        "device_id": "living.ac",
+        "online": true,
+        "state": {
+          "on": true,
+          "mode": "cool",
+          "target_c": 26,
+          "current_c": 28
+        }
+      }
+    ]
+  },
+  "caps": [
+    "ack.v1",
+    "result.v1"
+  ],
+  "capability_version": 1
+}
