@@ -97,6 +97,16 @@ SessionIntent = Literal[
     "proactive_initiated",
 ]
 
+# The application served in a voice session is distinct from session_intent
+# (why it was opened) and from a device's display capabilities.
+SESSION_APPLICATION_FIELD = "session_application"
+SESSION_APPLICATION_COMPANION = "companion.v1"
+SESSION_APPLICATION_HOME_COMMAND = "home.command.v1"
+VOICE_APPLICATION_PROPERTY = "voice.application"
+VALID_SESSION_APPLICATIONS = frozenset(
+    {SESSION_APPLICATION_COMPANION, SESSION_APPLICATION_HOME_COMMAND}
+)
+
 
 def normalize_session_intent(
     raw: str | None, *, default: str = SESSION_INTENT_USER_INITIATED
