@@ -78,7 +78,13 @@ _WIRE_CONTRACT_MIRRORS: dict[str, str | None] = {
 #: Names the korvo fork has not taken from the firmware it forked. Values may
 #: never differ; a name may lag, and each lag is listed so that dropping one is
 #: not the same as never having received it.
-_KORVO_LAGS_BEHIND_ON: dict[str, str] = {}
+_KORVO_LAGS_BEHIND_ON: dict[str, str] = {
+    "kVoiceApplicationProperty": (
+        "lifted on 2026-09-29 from literals in the upstream manifest builder into the mirrored "
+        "header, with no fork checked out beside this package to take it"
+    ),
+    "kSessionApplicationHomeCommand": "as kVoiceApplicationProperty",
+}
 
 #: Empty, and kept rather than deleted: it is the column a newly found client
 #: goes in before somebody has time to write its mirror, and the roster test
@@ -324,7 +330,7 @@ def test_mobile_contract_mirror_matches_sdk() -> None:
         "this client neither sends nor reads it — verified against its own source, not assumed"
     )
     unmirrored = {
-        # The nine aggregate sets. No client mirrors a set: each carries the
+        # The ten aggregate sets. No client mirrors a set: each carries the
         # members it participates in as individual constants, and a C++ or Dart
         # copy of a frozenset would be a second place for membership to drift.
         # Membership is the Authority's to enforce on what it receives.
@@ -337,6 +343,7 @@ def test_mobile_contract_mirror_matches_sdk() -> None:
         "VALID_SESSION_END_REASONS": _AGGREGATE,
         "VALID_SESSION_INTENTS": _AGGREGATE,
         "VALID_SESSION_REQUEST_TYPES": _AGGREGATE,
+        "VALID_SESSION_APPLICATIONS": _AGGREGATE,
         "INPUT_MODE_UNKNOWN": _SENTINEL,
         "PLAYBACK_STATE_UNKNOWN": _SENTINEL,
         "EVENT_TOPIC": _NOT_THIS_CLIENT,
@@ -369,6 +376,29 @@ def test_mobile_contract_mirror_matches_sdk() -> None:
             "too would refuse an id the Provider would have accepted"
         ),
         "WIRE_SCHEMA_VERSION": "mirrored as an integer, asserted below rather than as a string",
+        "SESSION_CONTROL_REQUEST_ID_FIELD": (
+            "only a prepared device room.join carries this correlation, and this client "
+            "implements no prepared device admission — as its own ledger records"
+        ),
+        # The voice application. This phone is served the Companion, and it is
+        # served it by declaring nothing: its manifest is the SDK's software-Body
+        # vector, which has no voice.application property.
+        "VOICE_APPLICATION_PROPERTY": (
+            "a manifest property a Body declares to be served something other than the "
+            "Companion; this client's manifest declares none"
+        ),
+        "SESSION_APPLICATION_COMPANION": (
+            "what a Body that declares no voice.application is served; this client is that "
+            "Body, and declaring the default would be a second statement of an absence"
+        ),
+        "SESSION_APPLICATION_HOME_COMMAND": (
+            "served only to a smart-home panel with a microphone; this client manages the "
+            "smart-home registry but is not a panel"
+        ),
+        "SESSION_APPLICATION_FIELD": (
+            "written by the Channel Provider into the agent's dispatch metadata; it travels "
+            "Provider to agent and never reaches a participant"
+        ),
     }
     _session_vocabulary.assert_every_name_is_decided(
         client="mobile", mirrored=mirrored, unmirrored=unmirrored

@@ -144,9 +144,15 @@ def test_esp32_topics_header_matches_python_wire_contract() -> None:
         "INTERACTION_MODE_PTT": "kInteractionModePtt",
         "PLAYBACK_STATE_IDLE": "kPlaybackStateIdle",
         "PLAYBACK_STATE_AGENT_SPEAKING": "kPlaybackStateAgentSpeaking",
+        # What a board declares in its manifest to be served something other
+        # than the Companion. korvo-1 declares the home command application;
+        # these were literals inside the manifest builder until 2026-09-29, a
+        # carried value nothing compared to this package.
+        "VOICE_APPLICATION_PROPERTY": "kVoiceApplicationProperty",
+        "SESSION_APPLICATION_HOME_COMMAND": "kSessionApplicationHomeCommand",
     })
     unmirrored = {
-        # The nine aggregate sets. No client mirrors a set: each carries the
+        # The ten aggregate sets. No client mirrors a set: each carries the
         # members it participates in as individual constants, and a C++ or Dart
         # copy of a frozenset would be a second place for membership to drift.
         # Membership is the Authority's to enforce on what it receives.
@@ -159,6 +165,7 @@ def test_esp32_topics_header_matches_python_wire_contract() -> None:
         "VALID_SESSION_END_REASONS": _AGGREGATE,
         "VALID_SESSION_INTENTS": _AGGREGATE,
         "VALID_SESSION_REQUEST_TYPES": _AGGREGATE,
+        "VALID_SESSION_APPLICATIONS": _AGGREGATE,
         "INPUT_MODE_UNKNOWN": _SENTINEL,
         "PLAYBACK_STATE_UNKNOWN": _SENTINEL,
         "SESSION_FLOW_ID_FIELD": (
@@ -171,6 +178,16 @@ def test_esp32_topics_header_matches_python_wire_contract() -> None:
             "would refuse an id the Provider would have accepted"
         ),
         "WIRE_SCHEMA_VERSION": "mirrored as an integer, asserted above rather than as a string",
+        "SESSION_APPLICATION_FIELD": (
+            "the member the Channel Provider writes into the agent's dispatch metadata; it "
+            "travels Provider to agent and never to a device. A board states its application "
+            "once, in its manifest, and does not read back which one it is served"
+        ),
+        "SESSION_APPLICATION_COMPANION": (
+            "what a board that declares no voice.application is served. Every board but "
+            "korvo-1 declares none, and korvo-1 declares the home command, so no build "
+            "spells the default; declaring it would be a second statement of an absence"
+        ),
     }
     _session_vocabulary.assert_every_name_is_decided(
         client="esp32", mirrored=mirrored, unmirrored=unmirrored
