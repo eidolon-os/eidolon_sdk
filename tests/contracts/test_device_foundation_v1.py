@@ -894,3 +894,99 @@ def test_codecs_is_optional_and_no_media_is_a_legal_declaration() -> None:
 
     silent = DeviceCapabilityManifest.model_validate({**good, "media": []})
     assert silent.media == ()
+
+
+def _held_ref(**members: object):
+    from eidolon_sdk.device_foundation.v1 import DeviceRef
+
+    return DeviceRef.model_validate({
+        "device_instance_id": "device-instance-" + "a" * 64,
+        "owner_domain_id": "owner-domain_01",
+        "owner_domain_generation": 3,
+        "claim_generation": 7,
+        "trust_epoch": 4,
+        **members,
+    })
+
+
+@pytest.mark.parametrize(
+    ("members", "expected", "why"),
+    [
+        ({}, "none", "the Authority holds exactly this ref"),
+        ({"claim_generation": 8, "trust_epoch": 1}, "adopt",
+         "a re-grant restarts trust_epoch at one"),
+        ({"trust_epoch": 5}, "adopt", "a later trust_epoch of the same Claim"),
+        ({"claim_generation": 6, "trust_epoch": 9}, "refuse",
+         "trust_epoch does not redeem an older claim_generation"),
+        ({"trust_epoch": 3}, "refuse", "an earlier trust_epoch of the same Claim"),
+        ({"owner_domain_generation": 4, "claim_generation": 8, "trust_epoch": 1}, "refuse",
+         "an Authority reset is the descriptor's to report"),
+        ({"owner_domain_generation": 2}, "refuse", "an Authority rolled back"),
+        ({"owner_domain_id": "owner-domain_02", "claim_generation": 8}, "refuse",
+         "another Owner Domain's Claim"),
+        ({"device_instance_id": "device-instance-" + "b" * 64, "claim_generation": 8},
+         "refuse", "another device's Claim"),
+    ],
+)
+def test_a_body_takes_only_a_later_generation_of_the_claim_it_holds(
+    members: dict, expected: str, why: str
+) -> None:
+    from eidolon_sdk.device_foundation.v1 import classify_authority_device_ref
+
+    verdict = classify_authority_device_ref(held=_held_ref(), answered=_held_ref(**members))
+
+    assert verdict == expected, why
+
+
+def _check_configuration_response_with(runner, tmp_path: Path, monkeypatch, edit) -> None:
+    schemas, registry = runner._load_schemas()
+    relative = "golden/device-control-configuration-response.json"
+    vector = runner.load_json(CONTRACT_ROOT / relative)
+    edit(vector["device_ref_corrections"]["cases"])
+    root = tmp_path / "device-foundation-v1"
+    shutil.copytree(CONTRACT_ROOT / "golden", root / "golden")
+    (root / relative).write_text(json.dumps(vector), encoding="utf-8")
+    monkeypatch.setattr(runner, "ROOT", root)
+    runner.check_device_configuration_response(schemas, registry)
+
+
+def _without(case_id: str):
+    def edit(cases: list) -> None:
+        cases[:] = [case for case in cases if case["case_id"] != case_id]
+
+    return edit
+
+
+def test_a_correction_case_is_held_to_the_rule_not_to_its_own_word(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The conclusion a case states is checked against the one definition of
+    the rule, so a vector that told Bodies to refuse a re-grant — the ordering
+    a member-by-member comparison gets wrong — cannot pass."""
+
+    def edit(cases: list) -> None:
+        regrant = next(case for case in cases if case["case_id"].endswith("REGRANT-ADOPTED"))
+        regrant["conclusion"] = "refuse"
+
+    runner = _load_runner()
+    with pytest.raises(runner.ConformanceError, match="where the rule concludes 'adopt'"):
+        _check_configuration_response_with(runner, tmp_path, monkeypatch, edit)
+
+
+@pytest.mark.parametrize(
+    ("case_id", "message"),
+    [
+        ("DF-DEVICE-CONTROL-CONFIGURATION-REGRANT-ADOPTED", "adopts a re-grant"),
+        ("DF-DEVICE-CONTROL-CONFIGURATION-AUTHORITY-RESET-REFUSED", "refuses an Authority reset"),
+        ("DF-DEVICE-CONTROL-CONFIGURATION-OLDER-CLAIM-GENERATION-REFUSED",
+         "older claim_generation"),
+        ("DF-DEVICE-CONTROL-CONFIGURATION-REVOKED-AT-A-LATER-GENERATION-ADOPTED",
+         "revocation recorded at a later generation"),
+    ],
+)
+def test_a_vector_that_lost_a_case_a_half_implemented_rule_fails_is_refused(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, case_id: str, message: str
+) -> None:
+    runner = _load_runner()
+    with pytest.raises(runner.ConformanceError, match=message):
+        _check_configuration_response_with(runner, tmp_path, monkeypatch, _without(case_id))

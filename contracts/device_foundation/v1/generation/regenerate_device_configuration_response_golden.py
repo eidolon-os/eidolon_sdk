@@ -14,6 +14,13 @@ Body must conclude in each case rather than leaving each parser to decide.
 
 The active case carries the real binding this corpus already publishes, so the
 outer object and the inner document move together.
+
+`device_ref_corrections` are answers about a later or an older generation of
+the Claim the request named. They are admissible documents, so they cannot sit
+in `must_refuse`: whether a Body takes one depends on the ref it holds, and
+`classify_authority_device_ref` is the rule. The cases are the orderings a Body
+that compares the members one by one gets wrong in each direction — the
+re-grant it would refuse, and the Authority reset it would take.
 """
 
 from __future__ import annotations
@@ -58,11 +65,17 @@ def session_binding() -> dict:
     }
 
 
-def response(*, lifecycle_state: str, channels: list, manifest: dict | None) -> dict:
+def response(
+    *,
+    lifecycle_state: str,
+    channels: list,
+    manifest: dict | None,
+    device_ref: dict = DEVICE_REF,
+) -> dict:
     value = {
         "operation": "device-control.configuration",
         "nonce": REQUEST_NONCE,
-        "device_ref": DEVICE_REF,
+        "device_ref": device_ref,
         "lifecycle_state": lifecycle_state,
         "channels": channels,
     }
@@ -80,6 +93,124 @@ def case(case_id: str, body_state: str, why: str, value: dict) -> dict:
         "response": value,
         "canonical_utf8": canonical.decode("utf-8"),
         "canonical_sha256": "sha256:" + hashlib.sha256(canonical).hexdigest(),
+    }
+
+
+def answered_ref(**members: object) -> dict:
+    return {**DEVICE_REF, **members}
+
+
+def correction(case_id: str, conclusion: str, why: str, value: dict) -> dict:
+    canonical = rfc8785.dumps(value)
+    return {
+        "case_id": case_id,
+        "conclusion": conclusion,
+        "why": why,
+        "response": value,
+        "canonical_utf8": canonical.decode("utf-8"),
+        "canonical_sha256": "sha256:" + hashlib.sha256(canonical).hexdigest(),
+    }
+
+
+def device_ref_corrections() -> dict:
+    """Answers about another generation of the Claim, held against DEVICE_REF."""
+
+    def approved(**members: object) -> dict:
+        return response(
+            lifecycle_state="approved", channels=[], manifest=None,
+            device_ref=answered_ref(**members),
+        )
+
+    another_device = (
+        "device-instance-" + hashlib.sha256(b"another operational key").hexdigest()
+    )
+    return {
+        "rule": (
+            "Held against `device_ref`, the ref the request named. Device, Owner Domain and "
+            "Owner Domain generation must be the ones held; (claim_generation, trust_epoch) "
+            "compared in that order, later adopted and earlier refused. A Body that adopts "
+            "stores the answered ref and names it in every later request."
+        ),
+        "conclusions": ["adopt", "refuse"],
+        "cases": [
+            correction(
+                "DF-DEVICE-CONTROL-CONFIGURATION-REGRANT-ADOPTED",
+                "adopt",
+                (
+                    "Re-granted while the Body was away: the next claim_generation, and "
+                    "trust_epoch restarted at one. A lower trust_epoch under a later "
+                    "claim_generation is exactly this, and a Body that refuses it is stranded "
+                    "at a ref the Authority no longer holds."
+                ),
+                approved(claim_generation=8, trust_epoch=1),
+            ),
+            correction(
+                "DF-DEVICE-CONTROL-CONFIGURATION-TRUST-EPOCH-ADOPTED",
+                "adopt",
+                "The same Claim at a later trust_epoch.",
+                approved(trust_epoch=5),
+            ),
+            correction(
+                "DF-DEVICE-CONTROL-CONFIGURATION-REVOKED-AT-A-LATER-GENERATION-ADOPTED",
+                "adopt",
+                (
+                    "Re-granted, then revoked, while the Body was away. Still this Claim: the "
+                    "Body records the revocation under the ref the Authority holds."
+                ),
+                response(
+                    lifecycle_state="revoked", channels=[], manifest=None,
+                    device_ref=answered_ref(claim_generation=8, trust_epoch=1),
+                ),
+            ),
+            correction(
+                "DF-DEVICE-CONTROL-CONFIGURATION-OLDER-CLAIM-GENERATION-REFUSED",
+                "refuse",
+                (
+                    "Behind the Claim this Body holds. The Authority does not issue generations "
+                    "backwards, and a higher trust_epoch does not redeem it: trust_epoch is "
+                    "ordered only within one claim_generation."
+                ),
+                approved(claim_generation=6, trust_epoch=9),
+            ),
+            correction(
+                "DF-DEVICE-CONTROL-CONFIGURATION-OLDER-TRUST-EPOCH-REFUSED",
+                "refuse",
+                "The same Claim at an earlier trust_epoch.",
+                approved(trust_epoch=3),
+            ),
+            correction(
+                "DF-DEVICE-CONTROL-CONFIGURATION-AUTHORITY-RESET-REFUSED",
+                "refuse",
+                (
+                    "A later Owner Domain generation is an Authority reset. That is the "
+                    "descriptor's to report, through the recovery a reset requires; a Body "
+                    "that took this ref would skip it. The later claim_generation beside it "
+                    "does not make it a re-grant."
+                ),
+                approved(owner_domain_generation=4, claim_generation=8, trust_epoch=1),
+            ),
+            correction(
+                "DF-DEVICE-CONTROL-CONFIGURATION-AUTHORITY-ROLLBACK-REFUSED",
+                "refuse",
+                "An earlier Owner Domain generation: an Authority rolled back behind this Claim.",
+                approved(owner_domain_generation=2),
+            ),
+            correction(
+                "DF-DEVICE-CONTROL-CONFIGURATION-ANOTHER-OWNER-DOMAIN-REFUSED",
+                "refuse",
+                (
+                    "Identity is what the Claim was found by. An answer naming another Owner "
+                    "Domain is another Claim's configuration, and this Body cannot sign for it."
+                ),
+                approved(owner_domain_id="owner-domain_02", claim_generation=8, trust_epoch=1),
+            ),
+            correction(
+                "DF-DEVICE-CONTROL-CONFIGURATION-ANOTHER-DEVICE-REFUSED",
+                "refuse",
+                "Another device's configuration, wearing this request's nonce.",
+                approved(device_instance_id=another_device, claim_generation=8, trust_epoch=1),
+            ),
+        ],
     }
 
 
@@ -187,6 +318,7 @@ def main() -> None:
                 ),
             },
         ],
+        "device_ref_corrections": device_ref_corrections(),
     }
     save("device-control-configuration-response.json", vector)
 

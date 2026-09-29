@@ -61,6 +61,7 @@ from eidolon_sdk.device_foundation.v1 import (  # noqa: E402
     ADMISSION_AUDIENCE,
     DEVICE_CONTROL_CONFIGURATION_OPERATION,
     MANIFEST_ASSERTION_OPERATION,
+    classify_authority_device_ref,
     AssertDeviceManifest,
     ManifestDocument,
     BASE_IDENTITY_EVIDENCE_FIELDS,
@@ -1296,6 +1297,8 @@ def check_device_configuration_response(
         if not sorted(validator.iter_errors(case["response"]), key=lambda item: list(item.path)):
             raise ConformanceError(f"{case_id}: the refused response is admissible")
 
+    corrections = check_device_ref_corrections(vector, validator)
+
     require_field_inventory(
         vector,
         golden="device-control-configuration-response",
@@ -1314,18 +1317,99 @@ def check_device_configuration_response(
             *(f"must_refuse[{index}].{member}"
               for index in range(len(refusals))
               for member in ("case_id", "response")),
+            "device_ref_corrections", "device_ref_corrections.conclusions",
+            "device_ref_corrections.cases",
+            *(f"device_ref_corrections.cases[{index}]" for index in range(corrections)),
+            *(f"device_ref_corrections.cases[{index}].{member}"
+              for index in range(corrections)
+              for member in ("case_id", "conclusion", "response",
+                             "canonical_utf8", "canonical_sha256")),
         },
         descriptive={
             "vector_id", "description", "schema",
             *(f"cases[{index}].why" for index in range(len(vector["cases"]))),
             *(f"must_refuse[{index}].why" for index in range(len(refusals))),
+            "device_ref_corrections.rule",
+            *(f"device_ref_corrections.cases[{index}].why" for index in range(corrections)),
         },
         opaque={
             *(f"cases[{index}].response" for index in range(len(vector["cases"]))),
             *(f"must_refuse[{index}].response" for index in range(len(refusals))),
+            *(f"device_ref_corrections.cases[{index}].response"
+              for index in range(corrections)),
         },
     )
-    return len(vector["cases"]) + len(refusals)
+    return len(vector["cases"]) + len(refusals) + corrections
+
+
+def check_device_ref_corrections(vector: dict[str, Any], validator: Draft202012Validator) -> int:
+    """Answers about another generation of the Claim the request named.
+
+    The Authority answers `configuration:pull` with the ref it holds, so a
+    Body that fell behind a re-grant is corrected rather than refused — and the
+    answered ref becomes a write to the Body's stored Claim. These answers are
+    admissible, so a schema cannot say which a Body takes; each case's stated
+    conclusion is held to `classify_authority_device_ref` instead, the one
+    definition of the rule, so the vector and the rule cannot drift apart.
+
+    Checked as properties too, because the rule is easy to half-implement: a
+    Body comparing the members one by one refuses the re-grant (a lower
+    trust_epoch under a later claim_generation) and takes the Authority reset
+    (a later Owner Domain generation beside a later claim_generation). A vector
+    that lost either case would pass that Body.
+    """
+
+    section = vector["device_ref_corrections"]
+    if section["conclusions"] != ["adopt", "refuse"]:
+        raise ConformanceError("the correction cases name conclusions this check does not hold")
+    held = DeviceRef.model_validate(vector["device_ref"])
+    cases = section["cases"]
+    for case in cases:
+        case_id = case["case_id"]
+        response = case["response"]
+        canonical = canonical_bytes(response)
+        if canonical.decode("utf-8") != case["canonical_utf8"]:
+            raise ConformanceError(f"{case_id}: canonical_utf8 is not RFC 8785 of its response")
+        if "sha256:" + hashlib.sha256(canonical).hexdigest() != case["canonical_sha256"]:
+            raise ConformanceError(f"{case_id}: digest does not describe the response")
+        errors = sorted(validator.iter_errors(response), key=lambda item: list(item.path))
+        if errors:
+            raise ConformanceError(f"{case_id}: an answer a Body judges against its ref must be "
+                                   f"admissible on its own: {errors[0].message}")
+        if response["nonce"] != vector["request_nonce"]:
+            raise ConformanceError(f"{case_id}: does not echo the nonce it answers")
+        if not case["why"]:
+            raise ConformanceError(f"{case_id}: a case with no reason teaches nothing")
+        answered = DeviceRef.model_validate(response["device_ref"])
+        verdict = classify_authority_device_ref(held=held, answered=answered)
+        if verdict == "none":
+            raise ConformanceError(f"{case_id}: answers with the held ref, which corrects nothing")
+        if case["conclusion"] != verdict:
+            raise ConformanceError(
+                f"{case_id}: states {case['conclusion']!r} where the rule concludes {verdict!r}"
+            )
+
+    def has(conclusion: str, predicate, *, lifecycle_state: str | None = None) -> bool:
+        return any(
+            case["conclusion"] == conclusion
+            and lifecycle_state in (None, case["response"]["lifecycle_state"])
+            and predicate(DeviceRef.model_validate(case["response"]["device_ref"]))
+            for case in cases
+        )
+
+    if not has("adopt", lambda ref: ref.claim_generation > held.claim_generation
+               and ref.trust_epoch < held.trust_epoch, lifecycle_state="approved"):
+        raise ConformanceError("no case adopts a re-grant, whose trust_epoch restarts lower")
+    if not has("refuse", lambda ref: ref.owner_domain_generation > held.owner_domain_generation
+               and ref.claim_generation > held.claim_generation):
+        raise ConformanceError("no case refuses an Authority reset beside a later claim_generation")
+    if not has("refuse", lambda ref: ref.claim_generation < held.claim_generation
+               and ref.trust_epoch > held.trust_epoch):
+        raise ConformanceError("no case refuses an older claim_generation at a higher trust_epoch")
+    if not any(case["response"]["lifecycle_state"] == "revoked" and case["conclusion"] == "adopt"
+               for case in cases):
+        raise ConformanceError("no case adopts a revocation recorded at a later generation")
+    return len(cases)
 
 
 def check_livekit_session_binding() -> int:

@@ -47,6 +47,8 @@ from .admission_credential import (
 )
 from .device_control import (
     DEVICE_CONTROL_CONFIGURATION_OPERATION,
+    DeviceRefCorrection,
+    classify_authority_device_ref,
     device_control_configuration_proof_document,
 )
 from .admission import (
@@ -155,6 +157,8 @@ from .setup_descriptor import (
 
 __all__ = [
     "DEVICE_CONTROL_CONFIGURATION_OPERATION",
+    "DeviceRefCorrection",
+    "classify_authority_device_ref",
     "device_control_configuration_proof_document",
     "CLAIM_GRANT_ACK_PROOF_CONTRACT",
     "CLAIM_GRANT_COLLECTION_PROOF_CONTRACT",

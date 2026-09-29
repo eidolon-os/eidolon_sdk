@@ -1058,6 +1058,34 @@
       "status": "covered",
       "waiver_reason": null,
       "waiver_expires_at": null
+    },
+    {
+      "requirement_id": "DF-DEVICE-CONTROL-RESPONSE-002",
+      "normative_text_ref": "the configuration:pull answer carries the DeviceRef the Authority holds, found by device identity, so a Body behind a re-grant is corrected rather than refused (eidolon_hub 9ba1765). A Body MUST adopt that ref only when device, Owner Domain and Owner Domain generation equal the ones it holds and (claim_generation, trust_epoch) is later in that order, MUST store it before signing any later request, and MUST refuse every other ref: a re-grant restarts trust_epoch at one, and an Owner Domain generation change is an Authority reset the descriptor reports",
+      "owner": "eidolon_sdk+eidolon_hub+eidolon-client-esp32+eidolon_client_mobile",
+      "schema_ids": [
+        "device-control/DeviceConfigurationResult"
+      ],
+      "producer_tests": [
+        "HUB::tests/component/test_stale_device_ref_recovery.py::test_a_stale_ref_is_answered_with_the_one_the_authority_holds",
+        "HUB::tests/component/test_stale_device_ref_recovery.py::test_the_corrected_ref_is_the_one_that_works_on_the_next_call",
+        "HUB::tests/component/test_stale_device_ref_recovery.py::test_a_revoked_claim_still_says_revoked_to_a_device_at_any_generation"
+      ],
+      "consumer_tests": [
+        "ESP32::TestConfigurationDeviceRefCorrectionsMatchTheGoldenVector",
+        "MOBILE::test/device_control_client_test.dart::each DeviceRef correction the vector pins is adopted or refused as it says"
+      ],
+      "simulator_vectors": [
+        "golden/device-control-configuration-response.json"
+      ],
+      "integration_tests": [
+        "CONFORMANCE::check_device_ref_corrections",
+        "SDK::test_a_body_takes_only_a_later_generation_of_the_claim_it_holds"
+      ],
+      "hil_tests": [],
+      "status": "covered",
+      "waiver_reason": null,
+      "waiver_expires_at": null
     }
   ]
 }

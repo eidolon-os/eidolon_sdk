@@ -19,12 +19,53 @@ too (`golden/device-control-manifest-assertion-proof.json`).
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Literal
 
 from .lifecycle import DeviceRef
 
 #: The operation a device names when it asks the Authority what it should be.
 DEVICE_CONTROL_CONFIGURATION_OPERATION = "device-control.configuration"
+
+#: What the ref a configuration answer carries means for the ref a Body holds.
+DeviceRefCorrection = Literal["none", "adopt", "refuse"]
+
+
+def classify_authority_device_ref(
+    *,
+    held: DeviceRef,
+    answered: DeviceRef,
+) -> DeviceRefCorrection:
+    """Whether a Body takes the ref a `configuration:pull` answer carries.
+
+    The Authority finds the Claim by device identity and answers with the ref
+    it holds, so a Body that was re-granted while it kept an older ref is
+    corrected here rather than refused forever. That makes the answered ref a
+    write to the Body's stored Claim, and this is the rule for when it may be
+    one; `golden/device-control-configuration-response.json` pins it for every
+    Body that parses the answer.
+
+    Only the Claim's own generations move. Device and Owner Domain are who is
+    asking and who answers. The Owner Domain generation changes only when the
+    Authority is reset, and a reset is the descriptor's to report, through the
+    recovery it requires — a configuration answer handing over a ref at the new
+    generation must not let a Body skip that. A re-grant issues the next
+    `claim_generation` and restarts `trust_epoch` at one, so `trust_epoch` is
+    ordered within one `claim_generation` and never across one: a Body that
+    compares the members one by one refuses exactly the re-grant this exists to
+    correct. Anything older than what the Body holds is refused.
+    """
+
+    if (
+        answered.device_instance_id != held.device_instance_id
+        or answered.owner_domain_id != held.owner_domain_id
+        or answered.owner_domain_generation != held.owner_domain_generation
+    ):
+        return "refuse"
+    answered_order = (answered.claim_generation, answered.trust_epoch)
+    held_order = (held.claim_generation, held.trust_epoch)
+    if answered_order == held_order:
+        return "none"
+    return "adopt" if answered_order > held_order else "refuse"
 
 
 def device_control_configuration_proof_document(
