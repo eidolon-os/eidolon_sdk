@@ -18,6 +18,11 @@ They now ship as `eidolon-memory-contracts`, alongside the service that owns
 them, so that service can be built and released without the OS SDK. Clients of
 memory depend on that package directly.
 
+## HTTP infrastructure
+
+See [HTTP client lifecycle and transport policy](eidolon_sdk/core/http/README.md)
+for connection pooling, timeouts, retries, and project boundaries.
+
 ## License
 
 Copyright © 2026 Li Jinsong.

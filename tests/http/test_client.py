@@ -151,3 +151,40 @@ async def test_create_async_client_uses_shared_settings() -> None:
         assert client.trust_env is False
     finally:
         await client.aclose()
+
+
+@pytest.mark.asyncio
+async def test_service_request_inherits_pool_timeout_and_allows_explicit_override() -> None:
+    seen = []
+
+    def handler(request):
+        seen.append(request.extensions['timeout'])
+        return httpx.Response(200)
+
+    async with create_async_client(
+        HTTPClientSettings(timeout_seconds=12, connect_timeout_seconds=3, trust_env=False),
+        transport=httpx.MockTransport(handler),
+    ) as pool:
+        client = ServiceHTTPClient(pool, 'http://fixture')
+        await client._request('GET', '/default')
+        await client._request('GET', '/bounded', timeout=0.25)
+        await client._request('GET', '/explicit-unbounded', timeout=httpx.Timeout(None))
+    assert seen[0] == {'connect': 3, 'read': 12, 'write': 12, 'pool': 12}
+    assert set(seen[1].values()) == {0.25}
+    assert set(seen[2].values()) == {None}
+    assert pool.is_closed
+
+
+@pytest.mark.asyncio
+async def test_device_post_is_not_replayed_on_lost_response() -> None:
+    sent = []
+
+    def handler(request):
+        sent.append(request)
+        raise httpx.ReadTimeout('receipt lost', request=request)
+
+    async with create_async_client(transport=httpx.MockTransport(handler), trust_env=False) as pool:
+        client = ServiceHTTPClient(pool, 'http://fixture', retry_policy=HTTPRetryPolicy(attempts=3))
+        with pytest.raises(ServiceUnavailable):
+            await client._request('POST', '/execute', json={'id': 'one-command'})
+    assert len(sent) == 1

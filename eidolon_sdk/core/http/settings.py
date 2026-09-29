@@ -9,11 +9,22 @@ import httpx
 
 @dataclass(frozen=True, slots=True)
 class HTTPClientSettings:
-    """Small transport-level settings object for ``httpx.AsyncClient``."""
+    """Small transport-level settings object for HTTPX clients."""
 
     timeout_seconds: float = 30.0
     connect_timeout_seconds: float = 5.0
     trust_env: bool = True
+    http2: bool = False
+    max_connections: int = 100
+    max_keepalive_connections: int = 20
+    keepalive_expiry_seconds: float = 5.0
+
+    def to_httpx_limits(self) -> httpx.Limits:
+        return httpx.Limits(
+            max_connections=self.max_connections,
+            max_keepalive_connections=self.max_keepalive_connections,
+            keepalive_expiry=self.keepalive_expiry_seconds,
+        )
 
     def to_httpx_timeout(self) -> httpx.Timeout:
         return httpx.Timeout(

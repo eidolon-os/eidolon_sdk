@@ -16,17 +16,29 @@ def normalize_base_url(base_url: str) -> str:
     return base_url.rstrip("/")
 
 
-def create_async_client(settings: HTTPClientSettings | None = None) -> httpx.AsyncClient:
-    """Create a configured ``httpx.AsyncClient``.
-
-    The SDK keeps this intentionally small: projects own lifecycle and
-    service-specific headers, while shared timeout/proxy defaults live here.
-    """
+def _client_options(settings: HTTPClientSettings | None, overrides: dict[str, Any]) -> dict[str, Any]:
     settings = settings or HTTPClientSettings()
-    return httpx.AsyncClient(
-        timeout=settings.to_httpx_timeout(),
-        trust_env=settings.trust_env,
-    )
+    return {
+        "timeout": settings.to_httpx_timeout(),
+        "limits": settings.to_httpx_limits(),
+        "trust_env": settings.trust_env,
+        "http2": settings.http2,
+        **overrides,
+    }
+
+
+def create_async_client(
+    settings: HTTPClientSettings | None = None, **kwargs: Any,
+) -> httpx.AsyncClient:
+    """Create a caller-owned pooled client using shared transport settings.
+
+    Public HTTPX options (transport, headers, TLS, per-service timeouts) may
+    override settings. Reuse for a service/session lifespan and close once in
+    its owner; never share globally across event loops or security contexts.
+    HTTP/2 is opt-in and requires the caller's ``httpx[http2]`` dependency.
+    This factory does not install retries or change proxy/redirect policy.
+    """
+    return httpx.AsyncClient(**_client_options(settings, kwargs))
 
 
 def authorization_header(token: str, *, scheme: str = "Bearer") -> dict[str, str]:
@@ -98,7 +110,7 @@ class ServiceHTTPClient:
                     json=json,
                     params=params,
                     headers=merged_headers or None,
-                    timeout=timeout,
+                    **({"timeout": timeout} if timeout is not None else {}),
                 )
             except self.UNREACHABLE_EXCEPTIONS as exc:
                 last_unreachable = exc
