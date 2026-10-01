@@ -98,7 +98,9 @@ SessionIntent = Literal[
 ]
 
 # The application served in a voice session is distinct from session_intent
-# (why it was opened) and from a device's display capabilities.
+# (why it was opened), Companion identity and device display capabilities.
+# Both applications use the shared Companion identity/assignment resolution;
+# home.command.v1 selects the independent home processor, not anonymous access.
 SESSION_APPLICATION_FIELD = "session_application"
 SESSION_APPLICATION_COMPANION = "companion.v1"
 SESSION_APPLICATION_HOME_COMMAND = "home.command.v1"

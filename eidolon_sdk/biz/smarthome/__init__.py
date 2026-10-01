@@ -113,6 +113,25 @@ Name = Annotated[str, Field(strict=True, min_length=1, max_length=32, pattern=r"
 Revision = Annotated[int, Field(strict=True, ge=0)]
 StateValue = bool | int | float | str | None
 
+
+class HomeSessionScope(BaseModel):
+    """Trusted ingress identity for an independent smart-home Agent session.
+
+    Companion selects who handles the interaction; Owner remains the authority
+    for device control. This scope carries no persona prompt or memory content.
+    """
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+    owner_id: Identifier
+    companion_id: Identifier
+    device_ref: Identifier
+    session_id: Identifier
+
+
+class HomeCommandRequest(HomeSessionScope):
+    turn_id: Identifier
+    utterance: str = Field(min_length=1, max_length=512)
+
 Trait = Literal[
     "on_off",
     "level",
@@ -684,6 +703,8 @@ __all__ = [
     "ERROR_CODES",
     "ExecuteRequest",
     "ExecuteResult",
+    "HomeCommandRequest",
+    "HomeSessionScope",
     "OP_DELTA",
     "OP_RESULT",
     "OP_SNAPSHOT",
