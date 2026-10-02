@@ -69,6 +69,9 @@ ERROR_OUT_OF_RANGE = "OUT_OF_RANGE"
 ERROR_DEVICE_OFFLINE = "DEVICE_OFFLINE"
 ERROR_DEADLINE_EXCEEDED = "DEADLINE_EXCEEDED"
 ERROR_UNKNOWN_SCENE = "UNKNOWN_SCENE"
+# A delegated platform (one that takes an instruction and answers in words)
+# refused it. Distinct from DEVICE_OFFLINE: the platform was reachable.
+ERROR_PLATFORM_REJECTED = "PLATFORM_REJECTED"
 ERROR_CODES = frozenset(
     {
         ERROR_UNKNOWN_DEVICE,
@@ -78,6 +81,7 @@ ERROR_CODES = frozenset(
         ERROR_OUT_OF_RANGE,
         ERROR_DEVICE_OFFLINE,
         ERROR_DEADLINE_EXCEEDED,
+        ERROR_PLATFORM_REJECTED,
     }
 )
 
@@ -157,6 +161,21 @@ DeviceType = Literal[
     "sensor",
 ]
 OriginKind = Literal["voice", "text", "touch", "scene", "mobile", "automation"]
+# Where a registry device came from, and which of its fields the Owner edited by
+# hand so that a later import from the Provider must leave them alone.
+DeviceSource = Literal["manual", "imported"]
+OverrideField = Literal["name", "aliases", "area_id"]
+# A Provider implementation's short name (``virtual``, ``homeassistant``...).
+# ``Device.provider`` is ``kind`` alone for the host's own virtual devices, or
+# ``kind:account_id`` for devices that live behind an account; see
+# ``provider_binding``. A kind names an adapter, never a brand's vocabulary.
+ProviderKind = Annotated[str, Field(strict=True, pattern=r"^[a-z][a-z0-9_]{0,31}$")]
+AccountStatus = Literal["pending", "connected", "degraded", "revoked"]
+AccountFieldKind = Literal["text", "secret", "url", "phone", "choice"]
+# Status of one executed command. ``delegated``: a platform accepted the
+# instruction in its own words and no device state was observed; it never
+# becomes ``succeeded`` on its own.
+CommandStatus = Literal["succeeded", "failed", "unknown", "delegated"]
 
 
 class RegistryError(ValueError):
@@ -276,11 +295,24 @@ def initial_state(kind: str) -> dict[str, StateValue]:
 def validate_state(kind: str, state: dict[str, Any]) -> None:
     """A full state must carry exactly the keys its type's traits define."""
     spec = device_type(kind)
+    _validate_state(spec.traits, spec.modes, state, exact=True)
+
+
+def state_keys(traits: tuple[str, ...]) -> dict[str, tuple[type, ...]]:
     allowed: dict[str, tuple[type, ...]] = {}
-    for trait in spec.traits:
+    for trait in traits:
         allowed.update(TRAIT_STATE[trait])
-    if set(state) != set(allowed):
+    return allowed
+
+
+def _validate_state(
+    traits: tuple[str, ...], modes: tuple[str, ...], state: dict[str, Any], *, exact: bool
+) -> None:
+    allowed = state_keys(traits)
+    if exact and set(state) != set(allowed):
         raise ValueError(f"STATE_KEYS_MISMATCH: {sorted(state)} != {sorted(allowed)}")
+    if not exact and not set(state) <= set(allowed):
+        raise ValueError(f"STATE_KEYS_UNKNOWN: {sorted(set(state) - set(allowed))}")
     for key, value in state.items():
         types = allowed[key]
         # bool is an int subclass; never let True stand in for a number.
@@ -288,7 +320,7 @@ def validate_state(kind: str, state: dict[str, Any]) -> None:
             raise ValueError(f"STATE_TYPE_MISMATCH: {key}")
         if not isinstance(value, types):
             raise ValueError(f"STATE_TYPE_MISMATCH: {key}")
-    if "mode" in state and state["mode"] not in spec.modes:
+    if "mode" in state and state["mode"] not in modes:
         raise ValueError("STATE_MODE_UNKNOWN")
     if "run_state" in state and state["run_state"] not in RUN_STATES:
         raise ValueError("STATE_RUN_STATE_UNKNOWN")
@@ -310,7 +342,10 @@ class Command(Contract):
 
 def validate_command(kind: str, command: Command) -> None:
     """Reject a command this device type cannot take. Execution is not decided here."""
-    spec = device_type(kind)
+    _validate_command(device_type(kind), kind, command)
+
+
+def _validate_command(spec: DeviceTypeSpec, kind: str, command: Command) -> None:
     if command.trait not in spec.traits:
         raise SmartHomeError(ERROR_UNSUPPORTED_COMMAND, f"{kind} has no {command.trait}")
     params = TRAIT_COMMANDS[command.trait].get(command.command)
@@ -344,6 +379,19 @@ class Area(Contract):
     order: Annotated[int, Field(strict=True, ge=0, le=1000)] = 0
 
 
+class Limits(Contract):
+    """Bounds a real device declares that are tighter than, or differ from, its type's."""
+
+    target_c: tuple[float, float] | None = None
+    modes: Annotated[tuple[str, ...], Field(max_length=16)] | None = None
+
+    @model_validator(mode="after")
+    def validate_bounds(self) -> Self:
+        if self.target_c is not None and self.target_c[0] > self.target_c[1]:
+            raise ValueError("LIMITS_TARGET_C_INVERTED")
+        return self
+
+
 class Device(Contract):
     device_id: Identifier
     name: Name
@@ -352,12 +400,77 @@ class Device(Contract):
     area_id: Identifier | None = None
     provider: Identifier = "virtual"
     provider_ref: Identifier | None = None
+    # v2, all optional with the v1 meaning as default. ``traits`` narrows the
+    # type's preset to what this device really supports (a light that cannot
+    # dim); ``None`` is the preset. ``limits`` replaces the preset's bounds.
+    traits: Annotated[tuple[Trait, ...], Field(min_length=1, max_length=9)] | None = None
+    limits: Limits | None = None
+    source: DeviceSource = "manual"
+    overrides: Annotated[tuple[OverrideField, ...], Field(max_length=3)] = ()
+    synced_at_ms: Annotated[int, Field(strict=True, ge=0)] | None = None
+    # The Provider no longer lists it; kept so names, aliases and area survive
+    # a device coming back, shown as offline meanwhile.
+    orphaned: bool = False
+
+    @model_validator(mode="after")
+    def validate_traits(self) -> Self:
+        if self.traits is not None:
+            preset = DEVICE_TYPES[self.type].traits
+            if len(set(self.traits)) != len(self.traits) or not set(self.traits) <= set(preset):
+                raise ValueError("DEVICE_TRAITS_NOT_IN_TYPE")
+        return self
+
+
+def provider_binding(provider: str) -> tuple[str, str]:
+    """``kind`` and ``account_id`` of a ``Device.provider`` value; no account is ``""``."""
+    kind, sep, account_id = provider.partition(":")
+    return kind, account_id if sep else ""
+
+
+def device_traits(device: Device) -> tuple[str, ...]:
+    return device.traits if device.traits is not None else DEVICE_TYPES[device.type].traits
+
+
+def device_spec(device: Device) -> DeviceTypeSpec:
+    """The type preset with this device's own traits and limits applied."""
+    preset = DEVICE_TYPES[device.type]
+    limits = device.limits
+    return DeviceTypeSpec(
+        traits=device_traits(device),
+        label=preset.label,
+        target_c=limits.target_c if limits is not None and limits.target_c is not None else preset.target_c,
+        modes=tuple(limits.modes) if limits is not None and limits.modes is not None else preset.modes,
+        initial=preset.initial,
+    )
+
+
+def validate_device_state(device: Device, state: dict[str, Any]) -> None:
+    """A full state must carry exactly the keys this device's traits define."""
+    spec = device_spec(device)
+    _validate_state(spec.traits, spec.modes, state, exact=True)
+
+
+def validate_device_command(device: Device, command: Command) -> None:
+    """``validate_command`` against what this device, not just its type, supports."""
+    _validate_command(device_spec(device), device.type, command)
 
 
 class Scene(Contract):
+    """Either Eidolon's own list of actions, or a scene a Provider runs as a whole."""
+
     scene_id: Identifier
     name: Name
-    actions: Annotated[tuple[Command, ...], Field(min_length=1, max_length=MAX_SCENE_ACTIONS)]
+    actions: Annotated[tuple[Command, ...], Field(max_length=MAX_SCENE_ACTIONS)] = ()
+    provider_ref: Identifier | None = None
+    provider: Identifier | None = None
+
+    @model_validator(mode="after")
+    def validate_target(self) -> Self:
+        if bool(self.actions) == (self.provider_ref is not None):
+            raise ValueError("EXACTLY_ONE_OF_ACTIONS_OR_PROVIDER_REF")
+        if (self.provider_ref is None) != (self.provider is None):
+            raise ValueError("PROVIDER_SCENE_NEEDS_PROVIDER")
+        return self
 
 
 class Placement(Contract):
@@ -394,12 +507,12 @@ class Registry(Contract):
         for placement in self.placements:
             if placement.area_id not in area_ids:
                 raise RegistryError(REGISTRY_PLACEMENT_AREA_UNKNOWN)
-        kinds = {d.device_id: d.type for d in self.devices}
+        by_id = {d.device_id: d for d in self.devices}
         for scene in self.scenes:
             for action in scene.actions:
                 if action.device_id not in device_ids:
                     raise RegistryError(REGISTRY_SCENE_DEVICE_UNKNOWN)
-                validate_command(kinds[action.device_id], action)
+                validate_device_command(by_id[action.device_id], action)
         return self
 
     def device(self, device_id: str) -> Device | None:
@@ -460,9 +573,12 @@ class ExecuteRequest(Contract):
 
 class CommandResult(Contract):
     device_id: Identifier
-    status: Literal["succeeded", "failed", "unknown"]
+    status: CommandStatus
     code: str | None = None
     state: dict[str, StateValue] | None = None
+    # What a delegated platform answered, verbatim; shown as the platform's
+    # words, never read back into device state.
+    platform_answer: Annotated[str | None, Field(max_length=200)] = None
 
     @model_validator(mode="after")
     def validate_status(self) -> Self:
@@ -470,6 +586,13 @@ class CommandResult(Contract):
             raise ValueError("FAILED_RESULT_NEEDS_CODE")
         if self.status == "succeeded" and self.state is None:
             raise ValueError("SUCCEEDED_RESULT_NEEDS_STATE")
+        if self.status == "delegated":
+            if self.platform_answer is None:
+                raise ValueError("DELEGATED_RESULT_NEEDS_PLATFORM_ANSWER")
+            if self.state is not None:
+                raise ValueError("DELEGATED_RESULT_HAS_NO_STATE")
+        elif self.platform_answer is not None:
+            raise ValueError("PLATFORM_ANSWER_ONLY_WHEN_DELEGATED")
         return self
 
 
@@ -512,6 +635,64 @@ def validate_execute_result(commands: tuple[Command, ...], result: ExecuteResult
             raise ValueError("RESULT_ORDER_MISMATCH")
 
 
+# --- Provider accounts and discovery (host <-> management clients) -------------
+
+
+class AccountField(Contract):
+    """One thing a person fills in to bind a Provider account; declared by the adapter."""
+
+    name: Identifier
+    label: Annotated[str, Field(strict=True, min_length=1, max_length=64)]
+    kind: AccountFieldKind = "text"
+    required: bool = True
+    choices: Annotated[tuple[str, ...], Field(max_length=32)] = ()
+
+
+class AccountSchema(Contract):
+    kind: ProviderKind
+    label: Annotated[str, Field(strict=True, min_length=1, max_length=64)]
+    fields: Annotated[tuple[AccountField, ...], Field(max_length=16)] = ()
+
+
+class AccountChoice(Contract):
+    value: Identifier
+    label: Annotated[str, Field(strict=True, min_length=1, max_length=64)]
+
+
+class ProviderAccount(Contract):
+    """A bound account, without any credential. ``pending`` carries what is still to choose."""
+
+    account_id: Identifier
+    kind: ProviderKind
+    label: Annotated[str, Field(strict=True, min_length=1, max_length=64)]
+    status: AccountStatus
+    last_seen_ms: Annotated[int, Field(strict=True, ge=0)] | None = None
+    error: Annotated[str | None, Field(max_length=200)] = None
+    choices: Annotated[tuple[AccountChoice, ...], Field(max_length=32)] = ()
+
+
+class DiscoveredDevice(Contract):
+    """A device a Provider account exposes, as it looks before import."""
+
+    external_ref: Identifier
+    name: Annotated[str, Field(strict=True, min_length=1, max_length=64)]
+    suggested_type: DeviceType
+    traits: Annotated[tuple[Trait, ...], Field(min_length=1, max_length=9)] | None = None
+    limits: Limits | None = None
+    area_name: Annotated[str | None, Field(max_length=64)] = None
+    reachable: bool = True
+
+
+class Observation(Contract):
+    """One observed fact about a device: reachable or not, and its state if known."""
+
+    device_id: Identifier
+    reachable: bool
+    state: dict[str, StateValue] | None = None
+    observed_at_ms: Annotated[int, Field(strict=True, ge=0)]
+    seq: Annotated[int, Field(strict=True, ge=0)] = 0
+
+
 # --- Panel wire (host <-> korvo-1) -------------------------------------------
 
 
@@ -535,7 +716,11 @@ class PanelDevice(Contract):
             if self.online:
                 raise ValueError("ONLINE_DEVICE_NEEDS_STATE")
             return self
-        validate_state(self.type, self.state)
+        # A real device may support fewer traits than its type's preset (a light
+        # that cannot dim), so a panel state is a subset of the type's keys. The
+        # keys present are typed exactly as before; the panel draws what it has.
+        spec = device_type(self.type)
+        _validate_state(spec.traits, spec.modes, self.state, exact=False)
         return self
 
 
@@ -691,18 +876,31 @@ def _encoded_size(model: BaseModel) -> int:
 
 
 __all__ = [
+    "AccountChoice",
+    "AccountField",
+    "AccountSchema",
+    "AccountStatus",
     "Area",
     "CAPABILITY_VERSION",
     "ChangeSource",
     "Command",
     "CommandResult",
+    "CommandStatus",
     "CommandTemplate",
     "DEVICE_TYPES",
     "Device",
+    "DeviceSource",
     "DeviceTypeSpec",
+    "DiscoveredDevice",
     "ERROR_CODES",
+    "ERROR_PLATFORM_REJECTED",
     "ExecuteRequest",
     "ExecuteResult",
+    "Limits",
+    "Observation",
+    "OverrideField",
+    "ProviderAccount",
+    "ProviderKind",
     "HomeCommandRequest",
     "HomeSessionScope",
     "OP_DELTA",
@@ -737,10 +935,16 @@ __all__ = [
     "TRAIT_COMMANDS",
     "TRAIT_STATE",
     "VoiceResult",
+    "device_spec",
+    "device_traits",
     "device_type",
     "initial_state",
     "panel_request",
+    "provider_binding",
+    "state_keys",
     "validate_command",
+    "validate_device_command",
+    "validate_device_state",
     "validate_execute_result",
     "validate_state",
 ]
