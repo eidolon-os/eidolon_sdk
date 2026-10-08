@@ -220,7 +220,7 @@ TRAIT_COMMANDS: dict[str, dict[str, dict[str, _Param]]] = {
         "set_target": {"celsius": ("number", None, None)},
         "step": {"delta": ("number", -10, 10)},
     },
-    "fan_speed": {"set": {"value": _PCT}},
+    "fan_speed": {"set": {"value": _PCT}, "step": {"delta": _STEP}},
     "position": {"open": {}, "close": {}, "stop": {}, "set": {"value": _PCT}},
     "lock": {"lock": {}, "unlock": {}},
     "operational": {"start": {}, "pause": {}, "stop": {}, "dock": {}},

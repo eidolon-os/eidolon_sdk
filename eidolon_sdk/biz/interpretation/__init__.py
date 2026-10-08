@@ -14,7 +14,7 @@ from __future__ import annotations
 
 from typing import Annotated, Literal, Self
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, JsonValue, model_validator
 
 SCHEMA_VERSION = 1
 
@@ -98,6 +98,8 @@ class InterpretationRequest(Contract):
         "unrelated",
     )
     timeout_ms: Annotated[int, Field(strict=True, ge=1, le=10000)]
+    # Caller-owned, bounded conversation facts; never an execution grant.
+    context: dict[str, JsonValue] | None = None
 
     @model_validator(mode="before")
     @classmethod
@@ -109,6 +111,9 @@ class InterpretationRequest(Contract):
 
     @model_validator(mode="after")
     def validate_request(self) -> Self:
+        import json
+        if self.context is not None and len(json.dumps(self.context, ensure_ascii=False).encode()) > 16384:
+            raise ValueError("CONTEXT_TOO_LARGE")
         refs = [c.ref for c in self.candidates]
         if len(set(refs)) != len(refs):
             raise ValueError("DUPLICATE_CANDIDATE")

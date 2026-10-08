@@ -1,5 +1,7 @@
 # eidolon-sdk
 
+
+2026-10-08: [Model context and relative fan-speed contract](contracts/smarthome/v1/model-context.md).
 Shared Python contracts and infrastructure for the Eidolon project family.
 
 The canonical Device Foundation V1 contract is under

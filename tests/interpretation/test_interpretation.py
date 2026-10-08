@@ -105,3 +105,12 @@ def test_mention_names_what_the_home_lacks_only_when_nothing_matched():
                              "action": {"trait": "on_off", "command": "on"}})
     with pytest.raises(ValidationError, match="MENTION_ONLY_WHEN_NONE"):
         Proposal.model_validate({**control("living.ac"), "mention": "空调"})
+
+
+def test_context_payload_is_bounded_and_optional():
+    from pydantic import ValidationError
+    base=dict(interpretation_id='context',domain='smarthome',utterance='关灯',candidates=(),timeout_ms=1000)
+    assert InterpretationRequest(**base).context is None
+    assert InterpretationRequest(**base,context={'history':[{'utterance':'开灯'}]}).context['history']
+    with pytest.raises(ValidationError,match='CONTEXT_TOO_LARGE'):
+        InterpretationRequest(**base,context={'history':'很长的历史'*5000})
