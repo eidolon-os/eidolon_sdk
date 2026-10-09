@@ -9,16 +9,18 @@ from typing import ClassVar as _ClassVar, Optional as _Optional, Union as _Union
 DESCRIPTOR: _descriptor.FileDescriptor
 
 class ChatRequest(_message.Message):
-    __slots__ = ("start", "cancel", "signal", "presentation_feedback")
+    __slots__ = ("start", "cancel", "signal", "presentation_feedback", "motion_feedback")
     START_FIELD_NUMBER: _ClassVar[int]
     CANCEL_FIELD_NUMBER: _ClassVar[int]
     SIGNAL_FIELD_NUMBER: _ClassVar[int]
     PRESENTATION_FEEDBACK_FIELD_NUMBER: _ClassVar[int]
+    MOTION_FEEDBACK_FIELD_NUMBER: _ClassVar[int]
     start: StartTurn
     cancel: CancelTurn
     signal: PushSignalInline
     presentation_feedback: PresentationFeedback
-    def __init__(self, start: _Optional[_Union[StartTurn, _Mapping]] = ..., cancel: _Optional[_Union[CancelTurn, _Mapping]] = ..., signal: _Optional[_Union[PushSignalInline, _Mapping]] = ..., presentation_feedback: _Optional[_Union[PresentationFeedback, _Mapping]] = ...) -> None: ...
+    motion_feedback: MotionFeedback
+    def __init__(self, start: _Optional[_Union[StartTurn, _Mapping]] = ..., cancel: _Optional[_Union[CancelTurn, _Mapping]] = ..., signal: _Optional[_Union[PushSignalInline, _Mapping]] = ..., presentation_feedback: _Optional[_Union[PresentationFeedback, _Mapping]] = ..., motion_feedback: _Optional[_Union[MotionFeedback, _Mapping]] = ...) -> None: ...
 
 class StartTurn(_message.Message):
     __slots__ = ("turn_id", "conversation_id", "text", "realtime", "metadata", "trace_id", "speculative", "input_modality")
@@ -65,7 +67,7 @@ class PushSignalInline(_message.Message):
     def __init__(self, modality: _Optional[str] = ..., label: _Optional[str] = ..., confidence: _Optional[float] = ..., raw: _Optional[_Union[_struct_pb2.Struct, _Mapping]] = ..., ts: _Optional[_Union[datetime.datetime, _timestamp_pb2.Timestamp, _Mapping]] = ...) -> None: ...
 
 class TurnEvent(_message.Message):
-    __slots__ = ("turn_id", "seq", "kind", "data", "ts", "presentation")
+    __slots__ = ("turn_id", "seq", "kind", "data", "ts", "presentation", "motion")
     class Kind(int, metaclass=_enum_type_wrapper.EnumTypeWrapper):
         __slots__ = ()
         KIND_UNSPECIFIED: _ClassVar[TurnEvent.Kind]
@@ -81,6 +83,7 @@ class TurnEvent(_message.Message):
         PROGRESS: _ClassVar[TurnEvent.Kind]
         HANDOFF: _ClassVar[TurnEvent.Kind]
         PRESENTATION: _ClassVar[TurnEvent.Kind]
+        MOTION: _ClassVar[TurnEvent.Kind]
     KIND_UNSPECIFIED: TurnEvent.Kind
     STATE: TurnEvent.Kind
     DELTA: TurnEvent.Kind
@@ -94,19 +97,32 @@ class TurnEvent(_message.Message):
     PROGRESS: TurnEvent.Kind
     HANDOFF: TurnEvent.Kind
     PRESENTATION: TurnEvent.Kind
+    MOTION: TurnEvent.Kind
     TURN_ID_FIELD_NUMBER: _ClassVar[int]
     SEQ_FIELD_NUMBER: _ClassVar[int]
     KIND_FIELD_NUMBER: _ClassVar[int]
     DATA_FIELD_NUMBER: _ClassVar[int]
     TS_FIELD_NUMBER: _ClassVar[int]
     PRESENTATION_FIELD_NUMBER: _ClassVar[int]
+    MOTION_FIELD_NUMBER: _ClassVar[int]
     turn_id: str
     seq: int
     kind: TurnEvent.Kind
     data: _struct_pb2.Struct
     ts: float
     presentation: ResponseIntent
-    def __init__(self, turn_id: _Optional[str] = ..., seq: _Optional[int] = ..., kind: _Optional[_Union[TurnEvent.Kind, str]] = ..., data: _Optional[_Union[_struct_pb2.Struct, _Mapping]] = ..., ts: _Optional[float] = ..., presentation: _Optional[_Union[ResponseIntent, _Mapping]] = ...) -> None: ...
+    motion: HeadMotionRequest
+    def __init__(self, turn_id: _Optional[str] = ..., seq: _Optional[int] = ..., kind: _Optional[_Union[TurnEvent.Kind, str]] = ..., data: _Optional[_Union[_struct_pb2.Struct, _Mapping]] = ..., ts: _Optional[float] = ..., presentation: _Optional[_Union[ResponseIntent, _Mapping]] = ..., motion: _Optional[_Union[HeadMotionRequest, _Mapping]] = ...) -> None: ...
+
+class HeadMotionRequest(_message.Message):
+    __slots__ = ("command_id", "action", "times")
+    COMMAND_ID_FIELD_NUMBER: _ClassVar[int]
+    ACTION_FIELD_NUMBER: _ClassVar[int]
+    TIMES_FIELD_NUMBER: _ClassVar[int]
+    command_id: str
+    action: str
+    times: int
+    def __init__(self, command_id: _Optional[str] = ..., action: _Optional[str] = ..., times: _Optional[int] = ...) -> None: ...
 
 class ResponseIntent(_message.Message):
     __slots__ = ("schema_version", "response_id", "turn_id", "session_id", "intent", "stance", "intensity", "pace", "outcome_ref")
@@ -129,6 +145,14 @@ class ResponseIntent(_message.Message):
     pace: str
     outcome_ref: str
     def __init__(self, schema_version: _Optional[int] = ..., response_id: _Optional[str] = ..., turn_id: _Optional[str] = ..., session_id: _Optional[str] = ..., intent: _Optional[str] = ..., stance: _Optional[str] = ..., intensity: _Optional[float] = ..., pace: _Optional[str] = ..., outcome_ref: _Optional[str] = ...) -> None: ...
+
+class MotionFeedback(_message.Message):
+    __slots__ = ("turn_id", "receipt")
+    TURN_ID_FIELD_NUMBER: _ClassVar[int]
+    RECEIPT_FIELD_NUMBER: _ClassVar[int]
+    turn_id: str
+    receipt: _struct_pb2.Struct
+    def __init__(self, turn_id: _Optional[str] = ..., receipt: _Optional[_Union[_struct_pb2.Struct, _Mapping]] = ...) -> None: ...
 
 class PresentationFeedback(_message.Message):
     __slots__ = ("turn_id", "receipt")

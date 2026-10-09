@@ -7,9 +7,9 @@ limits, output selection and receipt semantics are shared by every consumer.
 from __future__ import annotations
 
 import json
-from typing import Annotated, Literal, Self, Any
+from typing import Annotated, Any, Literal, Self
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, model_serializer, model_validator
 
 FACE_PROFILE = "eidolon.face.v1"
 FACE_CATALOG = "face-core-1"
@@ -99,6 +99,16 @@ class SessionOutputPlan(Contract):
     outputs: OutputSelection
     inputs: InputSelection = Field(default_factory=lambda: InputSelection(microphone=True))
     expression_profile: Literal["eidolon.face.v1"] | None = None
+    motion_profile: Literal["stackchan.head.v1"] | None = None
+
+    @model_serializer(mode="wrap")
+    def serialize_output_plan(self, handler):
+        value = handler(self)
+        # Older devices reject unknown plan keys; only opted-in firmware sees this.
+        if self.motion_profile is None:
+            value.pop("motion_profile", None)
+        return value
+
 
     @model_validator(mode="after")
     def check_outputs(self) -> Self:

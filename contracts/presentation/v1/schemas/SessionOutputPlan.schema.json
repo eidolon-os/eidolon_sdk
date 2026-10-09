@@ -85,6 +85,19 @@
       ],
       "default": null,
       "title": "Expression Profile"
+    },
+    "motion_profile": {
+      "anyOf": [
+        {
+          "const": "stackchan.head.v1",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Motion Profile"
     }
   },
   "required": [

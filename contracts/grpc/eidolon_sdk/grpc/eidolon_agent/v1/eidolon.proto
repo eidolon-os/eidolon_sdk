@@ -41,6 +41,7 @@ message ChatRequest {
     // while a session is live (see PushSignal for the out-of-band variant).
     PushSignalInline signal = 3;
     PresentationFeedback presentation_feedback = 4;
+    MotionFeedback motion_feedback = 5;
   }
 }
 
@@ -140,6 +141,9 @@ message TurnEvent {
     PROGRESS = 10;
     HANDOFF = 11;
     PRESENTATION = 12;
+    // Validated tool execution request on this session, never raw TOOL_CALL.
+    // motion carries the typed request; seq=0 is out-of-band.
+    MOTION = 13;
   }
   string turn_id = 1;
   uint64 seq = 2;
@@ -147,6 +151,13 @@ message TurnEvent {
   google.protobuf.Struct data = 4;
   double ts = 5;
   ResponseIntent presentation = 6;
+  HeadMotionRequest motion = 7;
+}
+
+message HeadMotionRequest {
+  string command_id = 1;
+  string action = 2;
+  uint32 times = 3;
 }
 
 // Device-independent semantic output. Agent validates task facts before emission.
@@ -163,6 +174,12 @@ message ResponseIntent {
 }
 
 // Channel reports device-render evidence on the same authenticated Chat stream.
+// Terminal execution evidence for an outstanding request on this Chat stream.
+message MotionFeedback {
+  string turn_id = 1;
+  google.protobuf.Struct receipt = 2; // biz.presentation.motion.MotionReceipt
+}
+
 message PresentationFeedback {
   string turn_id = 1;
   PresentationReceipt receipt = 2;
