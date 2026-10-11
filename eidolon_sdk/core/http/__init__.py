@@ -5,6 +5,7 @@ from .client import (
     authorization_header,
     create_async_client,
     normalize_base_url,
+    request_with_reconnect,
 )
 from .errors import ServiceHTTPError, ServiceUnavailable, ServiceUpstreamError
 from .settings import HTTPClientSettings, HTTPRetryPolicy
@@ -19,4 +20,5 @@ __all__ = [
     "authorization_header",
     "create_async_client",
     "normalize_base_url",
+    "request_with_reconnect",
 ]

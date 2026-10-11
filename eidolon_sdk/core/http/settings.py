@@ -17,7 +17,9 @@ class HTTPClientSettings:
     http2: bool = False
     max_connections: int = 100
     max_keepalive_connections: int = 20
-    keepalive_expiry_seconds: float = 5.0
+    # Stay below the 5-second idle close used by our HTTP servers. Equal
+    # lifetimes race with a new request at the device poll boundary.
+    keepalive_expiry_seconds: float = 2.0
 
     def to_httpx_limits(self) -> httpx.Limits:
         return httpx.Limits(

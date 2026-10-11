@@ -28,7 +28,7 @@ def _client_options(settings: HTTPClientSettings | None, overrides: dict[str, An
 
 
 def create_async_client(
-    settings: HTTPClientSettings | None = None, **kwargs: Any,
+    settings: HTTPClientSettings | None = None, *, uds: str | None = None, **kwargs: Any,
 ) -> httpx.AsyncClient:
     """Create a caller-owned pooled client using shared transport settings.
 
@@ -38,7 +38,51 @@ def create_async_client(
     HTTP/2 is opt-in and requires the caller's ``httpx[http2]`` dependency.
     This factory does not install retries or change proxy/redirect policy.
     """
-    return httpx.AsyncClient(**_client_options(settings, kwargs))
+    options = _client_options(settings, kwargs)
+    if uds is not None:
+        if options.get("transport") is not None:
+            raise ValueError("uds and an explicit transport are mutually exclusive")
+        # HTTPX ignores client limits when a custom transport is supplied.
+        options["transport"] = httpx.AsyncHTTPTransport(
+            uds=uds, limits=options["limits"],
+            trust_env=options["trust_env"], http2=options["http2"],
+        )
+    return httpx.AsyncClient(**options)
+
+
+async def request_with_reconnect(
+    client: httpx.AsyncClient,
+    method: str,
+    url: str,
+    *,
+    timeout: float,
+    replay_safe: bool = False,
+    **kwargs: Any,
+) -> httpx.Response:
+    """Retry a lost HTTP connection once, within one total time budget.
+
+    GET/HEAD/OPTIONS are safe by default. Query POSTs must opt in at their
+    semantic call site. Mutations, status refusals and timeouts are not replayed.
+    Only buffered request bodies are supported: retrying a consumed stream
+    could silently send different bytes. HTTPX discards the broken connection.
+    """
+    safe = replay_safe or method.upper() in {"GET", "HEAD", "OPTIONS"}
+    content = kwargs.get("content")
+    if content is not None and not isinstance(content, (str, bytes)):
+        safe = False
+    if kwargs.get("files") is not None or kwargs.get("data") is not None:
+        safe = False
+    try:
+        async with asyncio.timeout(timeout):
+            for attempt in range(2):
+                try:
+                    return await client.request(method, url, timeout=timeout, **kwargs)
+                except httpx.RemoteProtocolError:
+                    if not safe or attempt:
+                        raise
+    except TimeoutError as exc:
+        raise httpx.ReadTimeout("HTTP request exhausted its total time budget") from exc
+    raise AssertionError("unreachable")
 
 
 def authorization_header(token: str, *, scheme: str = "Bearer") -> dict[str, str]:

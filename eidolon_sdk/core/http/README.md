@@ -32,7 +32,7 @@ async with create_async_client(
   请求令牌放在每次请求中，不能写入共享池的全局可变 headers。
 - 内部控制面沿用 `trust_env=False`；外部服务保留自己的代理策略。
 - `create_async_client` 接受 HTTPX 原生参数覆盖，无须再包一套 HTTP 协议。
-- 默认 HTTP/1.1；池默认上限 100 / keepalive 20 / 空闲 5 秒。
+- 默认 HTTP/1.1；池默认上限 100 / keepalive 20 / 空闲 2 秒（早于服务端默认 5 秒）。
   SDK 超时默认 30 秒、连接 5 秒；调用方按原有预算显式覆盖。
 - Agent LLM 显式启用 HTTP/2、空闲保留 60 秒，并由 Agent 声明
   `httpx[http2]` 依赖。SDK 不要求所有服务安装或启用 HTTP/2。
@@ -82,3 +82,6 @@ async with create_async_client(
 - Memory 独立性边界：3 passed。Memory 源码未改。
 - 本次没有新增线上性能结果或发布；已有 HTTP/2 测量在 Agent 的
   `docs/reviews/2026-09-29-home-llm-latency/`，不据此宣称多轮长尾全部解决。
+
+`create_async_client(uds=...)` 对 Unix socket 使用同一连接池配置。
+`request_with_reconnect` 在总超时预算内对 RemoteProtocolError 最多重试一次；仅 GET/HEAD/OPTIONS 默认可重放，查询 POST 必须在语义调用点显式指定 `replay_safe=True`。写入、流式请求体、超时和状态码拒绝不自动重放。
