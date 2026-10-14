@@ -42,6 +42,8 @@ message ChatRequest {
     PushSignalInline signal = 3;
     PresentationFeedback presentation_feedback = 4;
     MotionFeedback motion_feedback = 5;
+    ChannelToolResult channel_tool_result = 6;
+    ChannelToolCancel channel_tool_cancel = 7;
   }
 }
 
@@ -68,6 +70,7 @@ message StartTurn {
   // Existing Agent behavior only distinguishes spoken from typed input. This
   // is an input fact, not another principal or product-entrypoint taxonomy.
   string input_modality = 8; // voice | text
+  repeated string channel_tool_capabilities = 9;
 }
 
 // Cancel an in-flight turn. ``played_chars``/``played_ms`` report how much of
@@ -144,6 +147,10 @@ message TurnEvent {
     // Validated tool execution request on this session, never raw TOOL_CALL.
     // motion carries the typed request; seq=0 is out-of-band.
     MOTION = 13;
+    // Channel-local tool execution request; the Channel must return a
+    // correlated ChannelToolResult on the same authenticated Chat stream.
+    CHANNEL_TOOL_CALL = 14;
+    CHANNEL_TOOL_CANCEL = 15;
   }
   string turn_id = 1;
   uint64 seq = 2;
@@ -152,6 +159,28 @@ message TurnEvent {
   double ts = 5;
   ResponseIntent presentation = 6;
   HeadMotionRequest motion = 7;
+  ChannelToolCall channel_tool_call = 8;
+}
+
+message ChannelToolCall {
+  string call_id = 1;
+  string name = 2;
+  google.protobuf.Struct arguments = 3;
+}
+
+message ChannelToolResult {
+  string turn_id = 1;
+  string call_id = 2;
+  string name = 3;
+  bool ok = 4;
+  google.protobuf.Struct content = 5;
+  string error_code = 6;
+  string error_message = 7;
+}
+
+message ChannelToolCancel {
+  string turn_id = 1;
+  string call_id = 2;
 }
 
 message HeadMotionRequest {

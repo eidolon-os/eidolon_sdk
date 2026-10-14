@@ -1,29 +1,34 @@
 from google.protobuf import struct_pb2 as _struct_pb2
 from google.protobuf import timestamp_pb2 as _timestamp_pb2
+from google.protobuf.internal import containers as _containers
 from google.protobuf.internal import enum_type_wrapper as _enum_type_wrapper
 from google.protobuf import descriptor as _descriptor
 from google.protobuf import message as _message
-from collections.abc import Mapping as _Mapping
+from collections.abc import Iterable as _Iterable, Mapping as _Mapping
 from typing import ClassVar as _ClassVar, Optional as _Optional, Union as _Union
 
 DESCRIPTOR: _descriptor.FileDescriptor
 
 class ChatRequest(_message.Message):
-    __slots__ = ("start", "cancel", "signal", "presentation_feedback", "motion_feedback")
+    __slots__ = ("start", "cancel", "signal", "presentation_feedback", "motion_feedback", "channel_tool_result", "channel_tool_cancel")
     START_FIELD_NUMBER: _ClassVar[int]
     CANCEL_FIELD_NUMBER: _ClassVar[int]
     SIGNAL_FIELD_NUMBER: _ClassVar[int]
     PRESENTATION_FEEDBACK_FIELD_NUMBER: _ClassVar[int]
     MOTION_FEEDBACK_FIELD_NUMBER: _ClassVar[int]
+    CHANNEL_TOOL_RESULT_FIELD_NUMBER: _ClassVar[int]
+    CHANNEL_TOOL_CANCEL_FIELD_NUMBER: _ClassVar[int]
     start: StartTurn
     cancel: CancelTurn
     signal: PushSignalInline
     presentation_feedback: PresentationFeedback
     motion_feedback: MotionFeedback
-    def __init__(self, start: _Optional[_Union[StartTurn, _Mapping]] = ..., cancel: _Optional[_Union[CancelTurn, _Mapping]] = ..., signal: _Optional[_Union[PushSignalInline, _Mapping]] = ..., presentation_feedback: _Optional[_Union[PresentationFeedback, _Mapping]] = ..., motion_feedback: _Optional[_Union[MotionFeedback, _Mapping]] = ...) -> None: ...
+    channel_tool_result: ChannelToolResult
+    channel_tool_cancel: ChannelToolCancel
+    def __init__(self, start: _Optional[_Union[StartTurn, _Mapping]] = ..., cancel: _Optional[_Union[CancelTurn, _Mapping]] = ..., signal: _Optional[_Union[PushSignalInline, _Mapping]] = ..., presentation_feedback: _Optional[_Union[PresentationFeedback, _Mapping]] = ..., motion_feedback: _Optional[_Union[MotionFeedback, _Mapping]] = ..., channel_tool_result: _Optional[_Union[ChannelToolResult, _Mapping]] = ..., channel_tool_cancel: _Optional[_Union[ChannelToolCancel, _Mapping]] = ...) -> None: ...
 
 class StartTurn(_message.Message):
-    __slots__ = ("turn_id", "conversation_id", "text", "realtime", "metadata", "trace_id", "speculative", "input_modality")
+    __slots__ = ("turn_id", "conversation_id", "text", "realtime", "metadata", "trace_id", "speculative", "input_modality", "channel_tool_capabilities")
     TURN_ID_FIELD_NUMBER: _ClassVar[int]
     CONVERSATION_ID_FIELD_NUMBER: _ClassVar[int]
     TEXT_FIELD_NUMBER: _ClassVar[int]
@@ -32,6 +37,7 @@ class StartTurn(_message.Message):
     TRACE_ID_FIELD_NUMBER: _ClassVar[int]
     SPECULATIVE_FIELD_NUMBER: _ClassVar[int]
     INPUT_MODALITY_FIELD_NUMBER: _ClassVar[int]
+    CHANNEL_TOOL_CAPABILITIES_FIELD_NUMBER: _ClassVar[int]
     turn_id: str
     conversation_id: str
     text: str
@@ -40,7 +46,8 @@ class StartTurn(_message.Message):
     trace_id: str
     speculative: bool
     input_modality: str
-    def __init__(self, turn_id: _Optional[str] = ..., conversation_id: _Optional[str] = ..., text: _Optional[str] = ..., realtime: _Optional[_Union[_struct_pb2.Struct, _Mapping]] = ..., metadata: _Optional[_Union[_struct_pb2.Struct, _Mapping]] = ..., trace_id: _Optional[str] = ..., speculative: bool = ..., input_modality: _Optional[str] = ...) -> None: ...
+    channel_tool_capabilities: _containers.RepeatedScalarFieldContainer[str]
+    def __init__(self, turn_id: _Optional[str] = ..., conversation_id: _Optional[str] = ..., text: _Optional[str] = ..., realtime: _Optional[_Union[_struct_pb2.Struct, _Mapping]] = ..., metadata: _Optional[_Union[_struct_pb2.Struct, _Mapping]] = ..., trace_id: _Optional[str] = ..., speculative: bool = ..., input_modality: _Optional[str] = ..., channel_tool_capabilities: _Optional[_Iterable[str]] = ...) -> None: ...
 
 class CancelTurn(_message.Message):
     __slots__ = ("turn_id", "played_chars", "played_ms")
@@ -67,7 +74,7 @@ class PushSignalInline(_message.Message):
     def __init__(self, modality: _Optional[str] = ..., label: _Optional[str] = ..., confidence: _Optional[float] = ..., raw: _Optional[_Union[_struct_pb2.Struct, _Mapping]] = ..., ts: _Optional[_Union[datetime.datetime, _timestamp_pb2.Timestamp, _Mapping]] = ...) -> None: ...
 
 class TurnEvent(_message.Message):
-    __slots__ = ("turn_id", "seq", "kind", "data", "ts", "presentation", "motion")
+    __slots__ = ("turn_id", "seq", "kind", "data", "ts", "presentation", "motion", "channel_tool_call")
     class Kind(int, metaclass=_enum_type_wrapper.EnumTypeWrapper):
         __slots__ = ()
         KIND_UNSPECIFIED: _ClassVar[TurnEvent.Kind]
@@ -84,6 +91,8 @@ class TurnEvent(_message.Message):
         HANDOFF: _ClassVar[TurnEvent.Kind]
         PRESENTATION: _ClassVar[TurnEvent.Kind]
         MOTION: _ClassVar[TurnEvent.Kind]
+        CHANNEL_TOOL_CALL: _ClassVar[TurnEvent.Kind]
+        CHANNEL_TOOL_CANCEL: _ClassVar[TurnEvent.Kind]
     KIND_UNSPECIFIED: TurnEvent.Kind
     STATE: TurnEvent.Kind
     DELTA: TurnEvent.Kind
@@ -98,6 +107,8 @@ class TurnEvent(_message.Message):
     HANDOFF: TurnEvent.Kind
     PRESENTATION: TurnEvent.Kind
     MOTION: TurnEvent.Kind
+    CHANNEL_TOOL_CALL: TurnEvent.Kind
+    CHANNEL_TOOL_CANCEL: TurnEvent.Kind
     TURN_ID_FIELD_NUMBER: _ClassVar[int]
     SEQ_FIELD_NUMBER: _ClassVar[int]
     KIND_FIELD_NUMBER: _ClassVar[int]
@@ -105,6 +116,7 @@ class TurnEvent(_message.Message):
     TS_FIELD_NUMBER: _ClassVar[int]
     PRESENTATION_FIELD_NUMBER: _ClassVar[int]
     MOTION_FIELD_NUMBER: _ClassVar[int]
+    CHANNEL_TOOL_CALL_FIELD_NUMBER: _ClassVar[int]
     turn_id: str
     seq: int
     kind: TurnEvent.Kind
@@ -112,7 +124,44 @@ class TurnEvent(_message.Message):
     ts: float
     presentation: ResponseIntent
     motion: HeadMotionRequest
-    def __init__(self, turn_id: _Optional[str] = ..., seq: _Optional[int] = ..., kind: _Optional[_Union[TurnEvent.Kind, str]] = ..., data: _Optional[_Union[_struct_pb2.Struct, _Mapping]] = ..., ts: _Optional[float] = ..., presentation: _Optional[_Union[ResponseIntent, _Mapping]] = ..., motion: _Optional[_Union[HeadMotionRequest, _Mapping]] = ...) -> None: ...
+    channel_tool_call: ChannelToolCall
+    def __init__(self, turn_id: _Optional[str] = ..., seq: _Optional[int] = ..., kind: _Optional[_Union[TurnEvent.Kind, str]] = ..., data: _Optional[_Union[_struct_pb2.Struct, _Mapping]] = ..., ts: _Optional[float] = ..., presentation: _Optional[_Union[ResponseIntent, _Mapping]] = ..., motion: _Optional[_Union[HeadMotionRequest, _Mapping]] = ..., channel_tool_call: _Optional[_Union[ChannelToolCall, _Mapping]] = ...) -> None: ...
+
+class ChannelToolCall(_message.Message):
+    __slots__ = ("call_id", "name", "arguments")
+    CALL_ID_FIELD_NUMBER: _ClassVar[int]
+    NAME_FIELD_NUMBER: _ClassVar[int]
+    ARGUMENTS_FIELD_NUMBER: _ClassVar[int]
+    call_id: str
+    name: str
+    arguments: _struct_pb2.Struct
+    def __init__(self, call_id: _Optional[str] = ..., name: _Optional[str] = ..., arguments: _Optional[_Union[_struct_pb2.Struct, _Mapping]] = ...) -> None: ...
+
+class ChannelToolResult(_message.Message):
+    __slots__ = ("turn_id", "call_id", "name", "ok", "content", "error_code", "error_message")
+    TURN_ID_FIELD_NUMBER: _ClassVar[int]
+    CALL_ID_FIELD_NUMBER: _ClassVar[int]
+    NAME_FIELD_NUMBER: _ClassVar[int]
+    OK_FIELD_NUMBER: _ClassVar[int]
+    CONTENT_FIELD_NUMBER: _ClassVar[int]
+    ERROR_CODE_FIELD_NUMBER: _ClassVar[int]
+    ERROR_MESSAGE_FIELD_NUMBER: _ClassVar[int]
+    turn_id: str
+    call_id: str
+    name: str
+    ok: bool
+    content: _struct_pb2.Struct
+    error_code: str
+    error_message: str
+    def __init__(self, turn_id: _Optional[str] = ..., call_id: _Optional[str] = ..., name: _Optional[str] = ..., ok: bool = ..., content: _Optional[_Union[_struct_pb2.Struct, _Mapping]] = ..., error_code: _Optional[str] = ..., error_message: _Optional[str] = ...) -> None: ...
+
+class ChannelToolCancel(_message.Message):
+    __slots__ = ("turn_id", "call_id")
+    TURN_ID_FIELD_NUMBER: _ClassVar[int]
+    CALL_ID_FIELD_NUMBER: _ClassVar[int]
+    turn_id: str
+    call_id: str
+    def __init__(self, turn_id: _Optional[str] = ..., call_id: _Optional[str] = ...) -> None: ...
 
 class HeadMotionRequest(_message.Message):
     __slots__ = ("command_id", "action", "times")
