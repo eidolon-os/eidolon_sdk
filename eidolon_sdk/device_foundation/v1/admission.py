@@ -658,6 +658,8 @@ class GrantDeliveryRecord(_Model):
 
 
 class EnrollmentRecoveryProjection(_Model):
+    # Public correlation evidence, never an authorization credential.
+    commissioning_proof_digest: str | None = Field(default=None, pattern=r"^sha256:[0-9a-f]{64}$")
     proposal: EnrollmentProposal
     approval_decision: ApprovalDecision | None
     grant_delivery: GrantDeliveryRecord | None

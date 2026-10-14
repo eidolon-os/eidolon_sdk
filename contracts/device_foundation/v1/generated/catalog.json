@@ -4,8 +4,8 @@
   "files": [
     {
       "path": "admission/schemas.schema.json",
-      "sha256": "f40799897a4f888f4c2f18099928086cc65e6c0209979ecfc1cd0a1a3a6a6125",
-      "size": 19195
+      "sha256": "70bffc1271fa161f5dfa85d40806323298b382381bb966d8327a0b96e9d10912",
+      "size": 19301
     },
     {
       "path": "baseline/cross-repo-heads.v1.json",
@@ -149,8 +149,8 @@
     },
     {
       "path": "generation/templates/device_foundation_v1.dart",
-      "sha256": "a81df9e87461d9cf065d7025b361013e5570998809e6edd9f794c6c072e336a8",
-      "size": 47856
+      "sha256": "afc83f97514d3e6aef63e95e09e0d4b10b5b8d5bd0d8488f0d7dd9aa4c63d2cb",
+      "size": 48172
     },
     {
       "path": "generation/templates/device_foundation_v1.py",
@@ -159,8 +159,8 @@
     },
     {
       "path": "generation/templates/device_foundation_v1_generated.h",
-      "sha256": "92884e38056e4889bc67afdca00961f49fae80ed1d9c161485a7f5c0cccb4c27",
-      "size": 18703
+      "sha256": "e63ce6959d0f388d89b10d8fbbf72d285c480fee5418f18e3e89e6b66ed37196",
+      "size": 18758
     },
     {
       "path": "golden/admission-credential.json",
@@ -335,5 +335,5 @@
   ],
   "generator": "device-foundation-v1-catalog",
   "generator_version": "1.0",
-  "source_digest": "sha256:ba71b990da98f014f0de80491bf7171a85e36b4c1ce3d024a3082aa54ee47bb6"
+  "source_digest": "sha256:f97941b9adf7d287a22b1bdf4cb65da7bd70f9b5e481663641af995df14839aa"
 }
