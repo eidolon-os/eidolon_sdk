@@ -176,6 +176,12 @@ message ChannelToolResult {
   google.protobuf.Struct content = 5;
   string error_code = 6;
   string error_message = 7;
+  // Explicit command outcome, separate from transport ok and resource state.
+  // Empty for legacy producers; accepted, completed, or failed otherwise.
+  string outcome_state = 8;
+  // Optional safe, reusable object references, not instructions or execution authority.
+  // Producer must omit credentials and transport URLs. Consumers bound retention.
+  google.protobuf.Struct reference_context = 9;
 }
 
 message ChannelToolCancel {
