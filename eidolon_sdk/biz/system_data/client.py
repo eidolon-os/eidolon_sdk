@@ -77,6 +77,19 @@ class SystemDataRuntimeClient(ServiceHTTPClient):
         )
         return _runtime_snapshot(response)
 
+    async def get_voiceprint_snapshot(self, companion_id: str):
+        from eidolon_sdk.biz.voiceprint import VoicePolicySnapshot
+        response = await self._get(
+            f"/api/companion-authority/v1/companions/{_quote(companion_id)}/voiceprint-snapshot")
+        return VoicePolicySnapshot.model_validate(response.json())
+
+    async def admit_voiceprint(self, companion_id: str, revision: int, profile_id: str | None):
+        from eidolon_sdk.biz.voiceprint import AdmissionResponse
+        response = await self._request("POST",
+            f"/api/companion-authority/v1/companions/{_quote(companion_id)}/voiceprint-admission",
+            json={"revision": revision, "profile_id": profile_id})
+        return AdmissionResponse.model_validate(response.json()).allowed
+
     async def get_owner_default_runtime(self, owner_id: str) -> CompanionRuntimeSnapshot:
         """The runtime of the Companion this Owner's unaddressed work goes to.
 
