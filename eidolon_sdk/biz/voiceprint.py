@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import math
+import hashlib
+import json
 from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
@@ -28,7 +30,7 @@ class ExtractedSample(Contract):
         norm = math.hypot(*value)
         if not math.isfinite(norm) or norm < 1e-8:
             raise ValueError("empty embedding")
-        return [x / norm for x in value]
+        return value if abs(norm - 1) < 1e-12 else [x / norm for x in value]
 
     @field_validator("quality")
     @classmethod
@@ -58,6 +60,7 @@ class SpeakerProfileView(Contract):
     revision: int
     enrollment_id: str
     recording_available: bool = False
+    validation_state: Literal['unvalidated'] = 'unvalidated'
 
 
 class PolicyUpdate(Contract):
@@ -71,6 +74,7 @@ class VoicePolicyView(Contract):
     revision: int = 0
     profiles: list[SpeakerProfileView] = Field(default_factory=list)
     allowed_profile_ids: list[str] = Field(default_factory=list)
+    readiness: SpeakerExtractionReadiness | None = None
 
 
 class VoiceTemplate(Contract):
@@ -111,11 +115,43 @@ class SpeakerExtractionReadiness(Contract):
     admission_ready: Literal[False] = False
 
 
-class EnrollmentCompletion(Contract):
-    """Trusted extraction and its optional original trial recording, published together."""
+class EnrollmentEvidence(Contract):
+    """Internal owner-authorized snapshot, never returned to a Mobile client."""
 
-    sample: ExtractedSample
-    recording: VoiceAudioRequest | None = None
+    enrollment: EnrollmentView
+    samples: dict[str, ExtractedSample]
+
+
+def enrollment_evidence_digest(samples: dict[str, ExtractedSample]) -> str:
+    payload = {key: value.model_dump(mode='json') for key, value in samples.items()}
+    return hashlib.sha256(json.dumps(payload, sort_keys=True, separators=(',', ':'),
+                                     allow_nan=False).encode()).hexdigest()
+
+
+class EnrollmentEvaluationRequest(Contract):
+    samples: dict[str, ExtractedSample] = Field(min_length=3, max_length=3)
+    trial: ExtractedSample
+    recording_sha256: str = Field(pattern=r'^[a-f0-9]{64}$')
+
+
+class EnrollmentEvaluation(Contract):
+    """Versioned numerical preparation, explicitly not calibrated identity approval."""
+
+    version: Literal['continuous-enrollment-v1'] = 'continuous-enrollment-v1'
+    evidence_digest: str = Field(pattern=r'^[a-f0-9]{64}$')
+    recording_sha256: str = Field(pattern=r'^[a-f0-9]{64}$')
+    template: ExtractedSample
+    trial: ExtractedSample
+    registration_min_similarity: float = Field(ge=-1, le=1)
+    trial_min_similarity: float = Field(ge=-1, le=1)
+    validation_state: Literal['unvalidated'] = 'unvalidated'
+
+
+class EnrollmentCompletion(Contract):
+    """Trusted evaluation bound to the exact registration and replay recording."""
+
+    evaluation: EnrollmentEvaluation
+    recording: VoiceAudioRequest
 
 
 class EnrollmentSampleRequest(VoiceAudioRequest):
