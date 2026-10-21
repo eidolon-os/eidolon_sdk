@@ -102,6 +102,15 @@ class VoiceAudioRequest(Contract):
     pcm_base64: str = Field(min_length=4, max_length=1280000)
 
 
+class SpeakerExtractionReadiness(Contract):
+    """Numerical extraction readiness is never Companion admission readiness."""
+
+    state: Literal['disabled', 'not_started', 'loading', 'ready', 'unavailable', 'closed']
+    extraction_ready: bool
+    # No calibrated admission implementation has been released yet.
+    admission_ready: Literal[False] = False
+
+
 class EnrollmentCompletion(Contract):
     """Trusted extraction and its optional original trial recording, published together."""
 
