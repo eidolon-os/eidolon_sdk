@@ -11,10 +11,13 @@ from eidolon_sdk.biz.contracts import (
 
 BODY_OP_SOUND_PLAY = "sound.play"
 BODY_OP_DISPLAY_UPDATE = "display.update"
+BODY_OP_DISPLAY_BRIGHTNESS = "display.brightness"
+BODY_OP_DISPLAY_BRIGHTNESS_GET = "display.brightness.get"
 BODY_OP_DEVICE_IDENTIFY = "device.identify"
 BODY_OP_DEVICE_ROLL_CALL = "device.roll_call"
 BODY_OP_ROOM_LEAVE = "room.leave"
 BODY_OP_VOLUME_SET = "volume.set"
+BODY_OP_VOLUME_GET = "volume.get"
 BODY_OP_DEVICE_REBOOT = "device.reboot"
 BODY_OP_SAFETY_STOP = "safety.stop"
 BODY_OP_PRESENCE_SET = "body.presence.set"
@@ -43,6 +46,36 @@ KNOWN_BODY_CAPABILITIES: dict[str, BodyCapability] = {
             "properties": {"text": {"type": "string"}, "ttl_ms": {"type": "integer"}},
             "required": ["text"],
             "additionalProperties": True,
+        },
+    ),
+    BODY_OP_DISPLAY_BRIGHTNESS: BodyCapability(
+        name=BODY_OP_DISPLAY_BRIGHTNESS,
+        description="Set the brightness of the device display, as a percentage.",
+        input_schema={
+            "type": "object",
+            "properties": {
+                "brightness": {"type": "integer", "minimum": 0, "maximum": 100},
+            },
+            "required": ["brightness"],
+            "additionalProperties": False,
+        },
+    ),
+    BODY_OP_DISPLAY_BRIGHTNESS_GET: BodyCapability(
+        name=BODY_OP_DISPLAY_BRIGHTNESS_GET,
+        description="Get the brightness of the device display, as a percentage.",
+        input_schema={
+            "type": "object",
+            "properties": {},
+            "required": [],
+            "additionalProperties": False,
+        },
+        result_schema={
+            "type": "object",
+            "properties": {
+                "brightness": {"type": "integer", "minimum": 0, "maximum": 100},
+            },
+            "required": ["brightness"],
+            "additionalProperties": False,
         },
     ),
     BODY_OP_DEVICE_IDENTIFY: BodyCapability(
@@ -92,7 +125,27 @@ KNOWN_BODY_CAPABILITIES: dict[str, BodyCapability] = {
         description="Set device playback volume.",
         input_schema={
             "type": "object",
-            "properties": {"volume": {"type": "number"}},
+            "properties": {
+                "volume": {"type": "number", "minimum": 0, "maximum": 100},
+            },
+            "required": ["volume"],
+            "additionalProperties": False,
+        },
+    ),
+    BODY_OP_VOLUME_GET: BodyCapability(
+        name=BODY_OP_VOLUME_GET,
+        description="Get device playback volume.",
+        input_schema={
+            "type": "object",
+            "properties": {},
+            "required": [],
+            "additionalProperties": False,
+        },
+        result_schema={
+            "type": "object",
+            "properties": {
+                "volume": {"type": "number", "minimum": 0, "maximum": 100},
+            },
             "required": ["volume"],
             "additionalProperties": False,
         },
