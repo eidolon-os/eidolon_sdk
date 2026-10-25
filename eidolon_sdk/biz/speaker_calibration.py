@@ -13,6 +13,10 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 from .voiceprint import ExtractedSample, VoicePolicySnapshot, SpeakerAdmissionLimits
 
 
+class SpeakerPolicyConfirmationRequired(ValueError):
+    """Personal approval belongs to a different criterion release."""
+
+
 class SpeakerAdmissionCalibration(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
     validation_state: Literal["calibrated", "controlled_trial"]
@@ -59,6 +63,12 @@ class SpeakerAdmissionCalibration(BaseModel):
             and 1 <= len(snapshot.templates) <= self.max_allowed_speakers
             and all(self.compatible(t.sample) for t in snapshot.templates)
         )
+
+    def require_supported(self, snapshot: VoicePolicySnapshot) -> None:
+        if snapshot.mode == "allowlist" and snapshot.calibration_digest != self.digest:
+            raise SpeakerPolicyConfirmationRequired("VOICE_POLICY_CONFIRMATION_REQUIRED")
+        if not self.supports(snapshot):
+            raise ValueError("SPEAKER_VERIFIED_CALIBRATION_SCOPE_MISMATCH")
 
     def compatible(self, sample: ExtractedSample) -> bool:
         return (sample.model_id, sample.weights_hash, sample.preprocessing_version) == (

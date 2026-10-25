@@ -76,6 +76,7 @@ def test_session_end_reasons_are_stable() -> None:
         "error",
         "proactive_done",
         "superseded",
+        "voice_policy_confirmation_required",
     }
 
 

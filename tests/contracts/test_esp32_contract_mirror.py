@@ -152,6 +152,7 @@ def test_esp32_topics_header_matches_python_wire_contract() -> None:
         "SESSION_APPLICATION_HOME_COMMAND": "kSessionApplicationHomeCommand",
     })
     unmirrored = {
+        "SESSION_END_VOICE_POLICY_CONFIRMATION_REQUIRED": "firmware ends the session; personal voice approval is managed in Mobile",
         # The ten aggregate sets. No client mirrors a set: each carries the
         # members it participates in as individual constants, and a C++ or Dart
         # copy of a frozenset would be a second place for membership to drift.
