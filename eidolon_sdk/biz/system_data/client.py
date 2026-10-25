@@ -83,11 +83,15 @@ class SystemDataRuntimeClient(ServiceHTTPClient):
             f"/api/companion-authority/v1/companions/{_quote(companion_id)}/voiceprint-snapshot")
         return VoicePolicySnapshot.model_validate(response.json())
 
-    async def admit_voiceprint(self, companion_id: str, revision: int, profile_id: str | None):
+    async def admit_voiceprint(self, companion_id: str, revision: int, profile_id: str | None,
+            *, profile_revision: int | None = None, calibration_digest: str = ''):
         from eidolon_sdk.biz.voiceprint import AdmissionResponse
+        payload = {"revision": revision, "profile_id": profile_id}
+        if profile_revision is not None or calibration_digest:
+            payload.update(profile_revision=profile_revision, calibration_digest=calibration_digest)
         response = await self._request("POST",
             f"/api/companion-authority/v1/companions/{_quote(companion_id)}/voiceprint-admission",
-            json={"revision": revision, "profile_id": profile_id})
+            json=payload)
         return AdmissionResponse.model_validate(response.json()).allowed
 
     async def get_owner_default_runtime(self, owner_id: str) -> CompanionRuntimeSnapshot:

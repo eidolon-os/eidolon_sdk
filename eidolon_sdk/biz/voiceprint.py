@@ -7,7 +7,7 @@ import hashlib
 import json
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 
 class Contract(BaseModel):
@@ -60,7 +60,7 @@ class SpeakerProfileView(Contract):
     revision: int
     enrollment_id: str
     recording_available: bool = False
-    validation_state: Literal['unvalidated'] = 'unvalidated'
+    validation_state: Literal["unvalidated", "validated"] = "unvalidated"
 
 
 class PolicyUpdate(Contract):
@@ -75,6 +75,8 @@ class VoicePolicyView(Contract):
     profiles: list[SpeakerProfileView] = Field(default_factory=list)
     allowed_profile_ids: list[str] = Field(default_factory=list)
     readiness: SpeakerExtractionReadiness | None = None
+    admission_state: Literal["unvalidated", "ready"] = "unvalidated"
+    calibration_digest: str = ""
 
 
 class VoiceTemplate(Contract):
@@ -89,11 +91,14 @@ class VoicePolicySnapshot(Contract):
     mode: Literal["off", "allowlist"]
     revision: int
     templates: list[VoiceTemplate] = Field(default_factory=list)
+    calibration_digest: str = ""
 
 
 class AdmissionRequest(Contract):
     revision: int = Field(ge=0)
     profile_id: str | None = None
+    profile_revision: int | None = Field(default=None, ge=1)
+    calibration_digest: str = ""
 
 
 class AdmissionResponse(Contract):
@@ -109,10 +114,24 @@ class VoiceAudioRequest(Contract):
 class SpeakerExtractionReadiness(Contract):
     """Numerical extraction readiness is never Companion admission readiness."""
 
-    state: Literal['disabled', 'not_started', 'loading', 'ready', 'unavailable', 'closed']
+    state: Literal["disabled", "not_started", "loading", "ready", "unavailable", "closed"]
     extraction_ready: bool
-    # No calibrated admission implementation has been released yet.
-    admission_ready: Literal[False] = False
+    validation_state: Literal["unavailable", "calibrated", "controlled_trial"] = "unavailable"
+    admission_ready: bool = False
+    calibration_digest: str = ""
+
+    @model_validator(mode="after")
+    def consistent_admission(self):
+        if self.admission_ready and (
+            not self.extraction_ready
+            or self.state != "ready"
+            or len(self.calibration_digest) != 64
+            or any(c not in "0123456789abcdef" for c in self.calibration_digest)
+        ):
+            raise ValueError("admission requires a ready versioned release")
+        if not self.admission_ready and self.calibration_digest:
+            raise ValueError("unavailable admission cannot advertise a release")
+        return self
 
 
 class EnrollmentEvidence(Contract):
@@ -123,28 +142,29 @@ class EnrollmentEvidence(Contract):
 
 
 def enrollment_evidence_digest(samples: dict[str, ExtractedSample]) -> str:
-    payload = {key: value.model_dump(mode='json') for key, value in samples.items()}
-    return hashlib.sha256(json.dumps(payload, sort_keys=True, separators=(',', ':'),
-                                     allow_nan=False).encode()).hexdigest()
+    payload = {key: value.model_dump(mode="json") for key, value in samples.items()}
+    return hashlib.sha256(
+        json.dumps(payload, sort_keys=True, separators=(",", ":"), allow_nan=False).encode()
+    ).hexdigest()
 
 
 class EnrollmentEvaluationRequest(Contract):
     samples: dict[str, ExtractedSample] = Field(min_length=3, max_length=3)
     trial: ExtractedSample
-    recording_sha256: str = Field(pattern=r'^[a-f0-9]{64}$')
+    recording_sha256: str = Field(pattern=r"^[a-f0-9]{64}$")
 
 
 class EnrollmentEvaluation(Contract):
     """Versioned numerical preparation, explicitly not calibrated identity approval."""
 
-    version: Literal['continuous-enrollment-v1'] = 'continuous-enrollment-v1'
-    evidence_digest: str = Field(pattern=r'^[a-f0-9]{64}$')
-    recording_sha256: str = Field(pattern=r'^[a-f0-9]{64}$')
+    version: Literal["continuous-enrollment-v1"] = "continuous-enrollment-v1"
+    evidence_digest: str = Field(pattern=r"^[a-f0-9]{64}$")
+    recording_sha256: str = Field(pattern=r"^[a-f0-9]{64}$")
     template: ExtractedSample
     trial: ExtractedSample
     registration_min_similarity: float = Field(ge=-1, le=1)
     trial_min_similarity: float = Field(ge=-1, le=1)
-    validation_state: Literal['unvalidated'] = 'unvalidated'
+    validation_state: Literal["unvalidated"] = "unvalidated"
 
 
 class EnrollmentCompletion(Contract):
@@ -154,5 +174,106 @@ class EnrollmentCompletion(Contract):
     recording: VoiceAudioRequest
 
 
+class VoiceProfileEvidence(Contract):
+    profile_id: str = Field(min_length=1, max_length=128)
+    revision: int = Field(ge=1)
+    evaluation: EnrollmentEvaluation
+
+
+class VoicePolicyEvidence(Contract):
+    """Private current enrollment evidence; no new recordings or device scope."""
+
+    owner_id: str = Field(min_length=1, max_length=128)
+    companion_id: str = Field(min_length=1, max_length=128)
+    revision: int = Field(ge=0)
+    profiles: list[VoiceProfileEvidence] = Field(min_length=1, max_length=5)
+
+    @field_validator("profiles")
+    @classmethod
+    def unique_profiles(cls, value):
+        if len({p.profile_id for p in value}) != len(value):
+            raise ValueError("duplicate profile")
+        return value
+
+    def digest(self):
+        return hashlib.sha256(
+            json.dumps(
+                self.model_dump(mode="json"), sort_keys=True, separators=(",", ":"), allow_nan=False
+            ).encode()
+        ).hexdigest()
+
+
+class VoicePolicyApproval(Contract):
+    """Trusted Channel evaluation; Data must still bind it transactionally."""
+
+    calibration_digest: str = Field(pattern=r"^[a-f0-9]{64}$")
+    evidence_digest: str = Field(pattern=r"^[a-f0-9]{64}$")
+
+
+class VoicePolicyActivation(PolicyUpdate):
+    """Internal only. Public PolicyUpdate cannot supply a release approval."""
+
+    approval: VoicePolicyApproval | None = None
+
+
 class EnrollmentSampleRequest(VoiceAudioRequest):
     sample_id: str = Field(min_length=1, max_length=64, pattern=r"^[A-Za-z0-9_-]+$")
+
+
+class SpeakerComparisonRequest(Contract):
+    """Internal numerical request. Only the authority supplies templates."""
+
+    probe: ExtractedSample
+    templates: list[VoiceTemplate] = Field(min_length=1, max_length=5)
+
+    @field_validator("templates")
+    @classmethod
+    def unique_profiles(cls, value):
+        if len({t.profile_id for t in value}) != len(value):
+            raise ValueError("duplicate profile")
+        return value
+
+
+class SpeakerSimilarity(Contract):
+    profile_id: str
+    revision: int
+    status: Literal["scored", "incompatible"]
+    similarity: float | None = Field(default=None, ge=-1, le=1)
+    display_name: str = ""
+
+    @model_validator(mode="after")
+    def score_matches_status(self):
+        if (self.status == "scored") != (self.similarity is not None):
+            raise ValueError("score and status disagree")
+        return self
+
+
+class SpeakerComparisonResult(Contract):
+    """No identity verdict, threshold or embedding is exposed by comparison."""
+
+    validation_state: Literal["unvalidated"] = "unvalidated"
+    scoring_version: Literal["normalized-template-cosine-v1"] = "normalized-template-cosine-v1"
+    model_id: str
+    weights_hash: str = Field(pattern=r"^[a-f0-9]{64}$")
+    preprocessing_version: str
+    scores: list[SpeakerSimilarity] = Field(min_length=1, max_length=5)
+
+
+class VoiceMatchTestResult(SpeakerComparisonResult):
+    companion_id: str
+    policy_revision: int
+    audio_ms: int = Field(ge=1500, le=30000)
+    extraction_ms: float = Field(ge=0)
+    elapsed_ms: float = Field(ge=0)
+
+
+class VoiceAdmissionFeedback(Contract):
+    """Session-scoped UI fact; never carries rejected speech or a reusable grant."""
+
+    schema_v: Literal[1] = 1
+    type: Literal["voice_admission"] = "voice_admission"
+    conversation_id: str = Field(min_length=1, max_length=64)
+    sequence: int = Field(ge=1)
+    state: Literal[
+        "ready", "checking", "accepted", "non_match", "inconclusive", "unavailable", "no_action"
+    ]

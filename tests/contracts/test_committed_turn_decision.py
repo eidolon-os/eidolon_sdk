@@ -32,6 +32,18 @@ def test_committed_turn_decision_round_trips_and_binds_exact_text() -> None:
     assert "source" not in metadata
 
 
+def test_verified_boundary_survives_remote_transport_without_becoming_framework_commit():
+    decision = CommittedTurnDecision.create(
+        text="本轮获准的完整请求", boundary=TurnCommitBoundary.SPEAKER_VERIFIED
+    )
+    metadata = decision.as_metadata()
+    assert metadata["evidence"]["boundary"] == "speaker_verified_commit"
+    parsed = CommittedTurnDecision.from_metadata(metadata)
+    assert parsed.evidence.boundary is TurnCommitBoundary.SPEAKER_VERIFIED
+    assert parsed.matches_text("本轮获准的完整请求")
+    assert not parsed.matches_text("另一轮未获准的声音")
+
+
 @pytest.mark.parametrize(
     "mutation",
     [
