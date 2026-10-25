@@ -111,6 +111,20 @@ class VoiceAudioRequest(Contract):
     pcm_base64: str = Field(min_length=4, max_length=1280000)
 
 
+class SpeakerAdmissionLimits(Contract):
+    """Published release limits for conversation, distinct from recording UX."""
+
+    max_allowed_speakers: int = Field(ge=1, le=5)
+    min_audio_ms: int = Field(ge=1500, le=30000)
+    max_audio_ms: int = Field(ge=1500, le=30000)
+
+    @model_validator(mode="after")
+    def ordered_audio_range(self):
+        if self.min_audio_ms > self.max_audio_ms:
+            raise ValueError("valid admission audio range required")
+        return self
+
+
 class SpeakerExtractionReadiness(Contract):
     """Numerical extraction readiness is never Companion admission readiness."""
 
@@ -119,6 +133,7 @@ class SpeakerExtractionReadiness(Contract):
     validation_state: Literal["unavailable", "calibrated", "controlled_trial"] = "unavailable"
     admission_ready: bool = False
     calibration_digest: str = ""
+    limits: SpeakerAdmissionLimits | None = None
 
     @model_validator(mode="after")
     def consistent_admission(self):
@@ -129,7 +144,7 @@ class SpeakerExtractionReadiness(Contract):
             or any(c not in "0123456789abcdef" for c in self.calibration_digest)
         ):
             raise ValueError("admission requires a ready versioned release")
-        if not self.admission_ready and self.calibration_digest:
+        if not self.admission_ready and (self.calibration_digest or self.limits is not None):
             raise ValueError("unavailable admission cannot advertise a release")
         return self
 
@@ -275,5 +290,5 @@ class VoiceAdmissionFeedback(Contract):
     conversation_id: str = Field(min_length=1, max_length=64)
     sequence: int = Field(ge=1)
     state: Literal[
-        "ready", "checking", "accepted", "non_match", "inconclusive", "unavailable", "no_action"
+        "ready", "checking", "accepted", "non_match", "inconclusive", "unavailable", "no_action", "audio_too_long"
     ]

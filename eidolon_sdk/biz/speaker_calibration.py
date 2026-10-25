@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
-from .voiceprint import ExtractedSample, VoicePolicySnapshot
+from .voiceprint import ExtractedSample, VoicePolicySnapshot, SpeakerAdmissionLimits
 
 
 class SpeakerAdmissionCalibration(BaseModel):
@@ -36,6 +36,13 @@ class SpeakerAdmissionCalibration(BaseModel):
         if self.min_audio_ms > self.max_audio_ms:
             raise ValueError("valid calibration audio range required")
         return self
+
+    @property
+    def limits(self) -> SpeakerAdmissionLimits:
+        return SpeakerAdmissionLimits(
+            max_allowed_speakers=self.max_allowed_speakers,
+            min_audio_ms=self.min_audio_ms, max_audio_ms=self.max_audio_ms,
+        )
 
     @property
     def digest(self) -> str:
