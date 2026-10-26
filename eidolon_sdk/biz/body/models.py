@@ -28,6 +28,36 @@ BodyCommandStatus = Literal[
 ]
 BodyRiskLevel = Literal["low", "medium", "high", "critical"]
 
+#: Transcription between two vocabularies that mean the same thing differently.
+#: A device acknowledges ``completed``, the control layer normalises it to
+#: ``succeeded``, and ``BodyCommandStatus`` knows neither — so a consumer
+#: comparing against ``done`` never observed a success.
+_CONTROL_TO_BODY_STATUS: dict[str, BodyCommandStatus] = {
+    "succeeded": "done",
+    "completed": "done",
+    "accepted": "accepted",
+    "sent": "sent",
+    "running": "running",
+    "queued": "queued",
+    "failed": "failed",
+    "unsupported": "unsupported",
+    "timeout": "timeout",
+    "offline": "offline",
+    "rejected": "rejected",
+}
+
+
+def body_status_from_control(status: str) -> BodyCommandStatus:
+    """Read a control-layer acknowledgement as a body-domain status.
+
+    An unrecognised acknowledgement becomes ``failed`` rather than being passed
+    through: a status this module cannot read is not evidence that anything
+    succeeded, which is the same rule ``command_status_from_ack`` applies one
+    layer down.
+    """
+
+    return _CONTROL_TO_BODY_STATUS.get(status.lower(), "failed")
+
 
 @dataclass(frozen=True, slots=True)
 class BodyCapability:
