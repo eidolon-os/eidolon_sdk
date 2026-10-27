@@ -79,7 +79,23 @@ class VoiceAudioRequest(Contract):
 
 class SpeakerExtractionRequest(VoiceAudioRequest):
     """Internal extraction purpose; registration retains its longer quality floor."""
-    purpose: Literal["enrollment"] = "enrollment"
+    purpose: Literal["enrollment", "recognition"] = "enrollment"
+    min_speech_ms: int = Field(default=1500, ge=300, le=30000)
+
+    @model_validator(mode="after")
+    def enrollment_quality_floor(self):
+        if self.purpose == "enrollment" and self.min_speech_ms < 1500:
+            raise ValueError("enrollment requires at least 1500 ms of speech")
+        return self
+
+
+class SpeakerAudioQuality(Contract):
+    """Bounded diagnostics; never PCM, embeddings, or identity evidence."""
+    audio_ms: int = Field(ge=0, le=30000)
+    required_speech_ms: int = Field(ge=300, le=30000)
+    speech_ms: int | None = Field(default=None, ge=0, le=30000)
+    clipping: float | None = Field(default=None, ge=0, le=1, allow_inf_nan=False)
+    rms: float | None = Field(default=None, ge=0, le=1, allow_inf_nan=False)
 
 
 class SpeakerAdmissionLimits(Contract):

@@ -25,3 +25,16 @@ def test_normalized_evidence_fingerprint_survives_wire_roundtrips():
     for _ in range(5):
         sample = ExtractedSample.model_validate_json(sample.model_dump_json())
         assert enrollment_evidence_digest({'0':sample}) == expected
+
+
+def test_conversation_floor_cannot_weaken_enrollment():
+    from eidolon_sdk.biz.voiceprint import SpeakerExtractionRequest, SpeakerAudioQuality
+    value = SpeakerExtractionRequest(pcm_base64='AAAA', purpose='recognition', min_speech_ms=600)
+    assert value.min_speech_ms == 600
+    assert SpeakerExtractionRequest(pcm_base64='AAAA').min_speech_ms == 1500
+    with pytest.raises(ValidationError):
+        SpeakerExtractionRequest(pcm_base64='AAAA', min_speech_ms=600)
+    with pytest.raises(ValidationError):
+        SpeakerExtractionRequest(pcm_base64='AAAA', purpose='recognition', min_speech_ms=0)
+    with pytest.raises(ValidationError):
+        SpeakerAudioQuality(audio_ms=1000, required_speech_ms=600, rms=float('nan'))
