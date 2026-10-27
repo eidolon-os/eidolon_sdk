@@ -16,6 +16,16 @@ class MemoryRealmSnapshot(BaseModel):
     lifecycle_state: Literal["active"]
 
 
+class PersonalMemoryRealmSnapshot(BaseModel):
+    """Data catalog binding, not a user authorization credential."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+    realm_id: str = Field(min_length=1, max_length=64)
+    owner_id: str = Field(min_length=1, max_length=64)
+    person_id: str = Field(min_length=1, max_length=64)
+    status: Literal["active"]
+
+
 class PersonaGenomeSnapshot(BaseModel):
     model_config = ConfigDict(frozen=True, extra="forbid")
 

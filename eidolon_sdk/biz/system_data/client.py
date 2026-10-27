@@ -10,7 +10,7 @@ from pydantic import ValidationError
 
 from eidolon_sdk.core.http import ServiceHTTPClient, authorization_header
 
-from .models import CompanionRuntimeSnapshot
+from .models import CompanionRuntimeSnapshot, PersonalMemoryRealmSnapshot
 
 
 class SystemDataError(Exception):
@@ -76,6 +76,22 @@ class SystemDataRuntimeClient(ServiceHTTPClient):
             params=params,
         )
         return _runtime_snapshot(response)
+
+    async def get_person_memory_realm(
+        self, *, owner_id: str, person_id: str
+    ) -> PersonalMemoryRealmSnapshot:
+        """Read an explicitly bound Realm; never create or fall back to Owner memory."""
+        response = await self._get(
+            f"/api/companion-authority/v1/owners/{_quote(owner_id)}/persons/"
+            f"{_quote(person_id)}/memory-realm"
+        )
+        try:
+            result = PersonalMemoryRealmSnapshot.model_validate(response.json())
+        except (ValueError, ValidationError) as exc:
+            raise SystemDataContractError("invalid personal memory Realm binding") from exc
+        if result.owner_id != owner_id or result.person_id != person_id:
+            raise SystemDataContractError("personal memory Realm binding is outside request scope")
+        return result
 
     async def get_owner_default_runtime(self, owner_id: str) -> CompanionRuntimeSnapshot:
         """The runtime of the Companion this Owner's unaddressed work goes to.

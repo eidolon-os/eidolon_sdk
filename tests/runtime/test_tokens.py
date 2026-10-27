@@ -66,7 +66,7 @@ def test_sign_runtime_token_carries_only_session_principal_and_target() -> None:
     payload = jwt.decode(token, SECRET, algorithms=["HS256"])
 
     assert payload["device_id"] == "web-123"
-    assert payload["runtime_token_version"] == 5
+    assert payload["runtime_token_version"] == 6
     assert "actor_kind" not in payload
     assert "actor_id" not in payload
     assert payload["owner_id"] == "owner-a"
@@ -138,7 +138,7 @@ async def test_runtime_token_verifier_rejects_expired_token() -> None:
     now = datetime.now(timezone.utc)
     token = jwt.encode(
         {
-            "runtime_token_version": 5,
+            "runtime_token_version": 6,
             "owner_id": "owner-a",
             "companion_id": "companion-a",
             "session_id": "session-a",
@@ -224,7 +224,7 @@ async def test_runtime_token_verifier_requires_owner_claims() -> None:
     exp = datetime.now(timezone.utc) + timedelta(seconds=60)
     token = jwt.encode(
         {
-            "runtime_token_version": 5,
+            "runtime_token_version": 6,
             "device_id": "device-1",
             "exp": int(exp.timestamp()),
         },
@@ -241,7 +241,7 @@ async def test_runtime_token_verifier_requires_session_claim() -> None:
     exp = datetime.now(timezone.utc) + timedelta(seconds=60)
     token = jwt.encode(
         {
-            "runtime_token_version": 5,
+            "runtime_token_version": 6,
             "owner_id": "owner-a",
             "companion_id": "companion-a",
             "exp": int(exp.timestamp()),
@@ -371,3 +371,41 @@ async def test_a_device_or_session_key_stays_a_switch() -> None:
 
             with pytest.raises(RuntimeTokenRevokedError, match=label):
                 await RuntimeTokenVerifier(secret=SECRET, revocation_kv=store).verify(token)
+
+
+@pytest.mark.asyncio
+async def test_person_v6_roundtrip_and_revocation():
+    token, _ = _sign(person_id="p", identity_epoch=0)
+    payload = jwt.decode(token, SECRET, algorithms=["HS256"])
+    assert payload["runtime_token_version"] == 6
+    identity = await RuntimeTokenVerifier(secret=SECRET).verify(token)
+    assert identity.person_id == "p" and identity.identity_epoch == 0
+    store = MemoryRevocationStore(keys=set(session_revocation_keys("session-a")))
+    with pytest.raises(RuntimeTokenRevokedError):
+        await RuntimeTokenVerifier(secret=SECRET, revocation_kv=store).verify(token)
+
+
+@pytest.mark.parametrize("binding", [
+    {"person_id": "p"}, {"identity_epoch": 1},
+    {"person_id": "p", "identity_epoch": True},
+    {"person_id": "p", "identity_epoch": -1},
+    {"person_id": "p", "identity_epoch": "1"},
+    {"person_id": " p", "identity_epoch": 1},
+])
+def test_person_signing_rejects_invalid_binding(binding):
+    with pytest.raises(ValueError):
+        _sign(**binding)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("version,extra", [
+    (5, {"person_id": "p", "identity_epoch": 1}),
+    (5, {"person_id": None}),
+    (5, {}), (6, {"person_id": None}), (6, {"person_id": "p", "identity_epoch": True}), (7, {}),
+])
+async def test_person_verifier_rejects_version_claim_conflicts(version, extra):
+    token, _ = _sign()
+    payload = jwt.decode(token, SECRET, algorithms=["HS256"])
+    payload.update(runtime_token_version=version, **extra)
+    with pytest.raises(RuntimeUnauthenticatedError):
+        await RuntimeTokenVerifier(secret=SECRET).verify(jwt.encode(payload, SECRET, algorithm="HS256"))
