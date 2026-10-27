@@ -19,7 +19,7 @@ class ExtractedSample(Contract):
     weights_hash: str = Field(pattern=r"^[a-f0-9]{64}$")
     preprocessing_version: str = Field(min_length=1, max_length=128)
     vector: list[float] = Field(min_length=2, max_length=2048)
-    speech_ms: int = Field(ge=1500, le=30000)
+    speech_ms: int = Field(ge=200, le=30000)
     quality: dict[str, float] = Field(default_factory=dict)
 
     @field_validator("vector")
@@ -41,6 +41,7 @@ class ExtractedSample(Contract):
 
 
 class EnrollmentCreate(Contract):
+    person_id: str = Field(min_length=1, max_length=64)
     operation_id: str = Field(min_length=1, max_length=64, pattern=r"^[A-Za-z0-9_-]+$")
     display_name: str = Field(min_length=1, max_length=80)
     profile_id: str | None = Field(default=None, max_length=64)
@@ -55,6 +56,7 @@ class EnrollmentView(Contract):
 
 
 class SpeakerProfileView(Contract):
+    person_id: str | None = None
     profile_id: str
     display_name: str
     revision: int
@@ -63,46 +65,10 @@ class SpeakerProfileView(Contract):
     validation_state: Literal["unvalidated", "validated"] = "unvalidated"
 
 
-class PolicyUpdate(Contract):
-    mode: Literal["off", "allowlist"]
-    expected_revision: int = Field(ge=0)
-
-
-class VoicePolicyView(Contract):
-    companion_id: str
-    mode: Literal["off", "allowlist"] = "off"
-    revision: int = 0
-    profiles: list[SpeakerProfileView] = Field(default_factory=list)
-    allowed_profile_ids: list[str] = Field(default_factory=list)
-    readiness: SpeakerExtractionReadiness | None = None
-    admission_state: Literal["unvalidated", "ready"] = "unvalidated"
-    calibration_digest: str = ""
-
-
 class VoiceTemplate(Contract):
     profile_id: str
     revision: int
     sample: ExtractedSample
-
-
-class VoicePolicySnapshot(Contract):
-    companion_id: str
-    owner_id: str
-    mode: Literal["off", "allowlist"]
-    revision: int
-    templates: list[VoiceTemplate] = Field(default_factory=list)
-    calibration_digest: str = ""
-
-
-class AdmissionRequest(Contract):
-    revision: int = Field(ge=0)
-    profile_id: str | None = None
-    profile_revision: int | None = Field(default=None, ge=1)
-    calibration_digest: str = ""
-
-
-class AdmissionResponse(Contract):
-    allowed: bool
 
 
 class VoiceAudioRequest(Contract):
@@ -111,11 +77,16 @@ class VoiceAudioRequest(Contract):
     pcm_base64: str = Field(min_length=4, max_length=1280000)
 
 
+class SpeakerExtractionRequest(VoiceAudioRequest):
+    """Internal extraction purpose; registration retains its longer quality floor."""
+    purpose: Literal["enrollment"] = "enrollment"
+
+
 class SpeakerAdmissionLimits(Contract):
     """Published release limits for conversation, distinct from recording UX."""
 
     max_allowed_speakers: int = Field(ge=1, le=5)
-    min_audio_ms: int = Field(ge=1500, le=30000)
+    min_audio_ms: int = Field(ge=300, le=30000)
     max_audio_ms: int = Field(ge=1500, le=30000)
 
     @model_validator(mode="after")
@@ -126,27 +97,9 @@ class SpeakerAdmissionLimits(Contract):
 
 
 class SpeakerExtractionReadiness(Contract):
-    """Numerical extraction readiness is never Companion admission readiness."""
-
+    """Numerical extraction readiness; never conversation authorization."""
     state: Literal["disabled", "not_started", "loading", "ready", "unavailable", "closed"]
     extraction_ready: bool
-    validation_state: Literal["unavailable", "calibrated", "controlled_trial"] = "unavailable"
-    admission_ready: bool = False
-    calibration_digest: str = ""
-    limits: SpeakerAdmissionLimits | None = None
-
-    @model_validator(mode="after")
-    def consistent_admission(self):
-        if self.admission_ready and (
-            not self.extraction_ready
-            or self.state != "ready"
-            or len(self.calibration_digest) != 64
-            or any(c not in "0123456789abcdef" for c in self.calibration_digest)
-        ):
-            raise ValueError("admission requires a ready versioned release")
-        if not self.admission_ready and (self.calibration_digest or self.limits is not None):
-            raise ValueError("unavailable admission cannot advertise a release")
-        return self
 
 
 class EnrollmentEvidence(Contract):
@@ -187,48 +140,6 @@ class EnrollmentCompletion(Contract):
 
     evaluation: EnrollmentEvaluation
     recording: VoiceAudioRequest
-
-
-class VoiceProfileEvidence(Contract):
-    profile_id: str = Field(min_length=1, max_length=128)
-    revision: int = Field(ge=1)
-    evaluation: EnrollmentEvaluation
-
-
-class VoicePolicyEvidence(Contract):
-    """Private current enrollment evidence; no new recordings or device scope."""
-
-    owner_id: str = Field(min_length=1, max_length=128)
-    companion_id: str = Field(min_length=1, max_length=128)
-    revision: int = Field(ge=0)
-    profiles: list[VoiceProfileEvidence] = Field(min_length=1, max_length=5)
-
-    @field_validator("profiles")
-    @classmethod
-    def unique_profiles(cls, value):
-        if len({p.profile_id for p in value}) != len(value):
-            raise ValueError("duplicate profile")
-        return value
-
-    def digest(self):
-        return hashlib.sha256(
-            json.dumps(
-                self.model_dump(mode="json"), sort_keys=True, separators=(",", ":"), allow_nan=False
-            ).encode()
-        ).hexdigest()
-
-
-class VoicePolicyApproval(Contract):
-    """Trusted Channel evaluation; Data must still bind it transactionally."""
-
-    calibration_digest: str = Field(pattern=r"^[a-f0-9]{64}$")
-    evidence_digest: str = Field(pattern=r"^[a-f0-9]{64}$")
-
-
-class VoicePolicyActivation(PolicyUpdate):
-    """Internal only. Public PolicyUpdate cannot supply a release approval."""
-
-    approval: VoicePolicyApproval | None = None
 
 
 class EnrollmentSampleRequest(VoiceAudioRequest):
@@ -275,20 +186,23 @@ class SpeakerComparisonResult(Contract):
 
 
 class VoiceMatchTestResult(SpeakerComparisonResult):
-    companion_id: str
-    policy_revision: int
+    person_id: str
+    person_revision: int
     audio_ms: int = Field(ge=1500, le=30000)
     extraction_ms: float = Field(ge=0)
     elapsed_ms: float = Field(ge=0)
 
 
-class VoiceAdmissionFeedback(Contract):
-    """Session-scoped UI fact; never carries rejected speech or a reusable grant."""
+class VoiceprintCollection(Contract):
+    profiles: list[SpeakerProfileView] = Field(default_factory=list)
+    readiness: SpeakerExtractionReadiness | None = None
 
-    schema_v: Literal[1] = 1
-    type: Literal["voice_admission"] = "voice_admission"
-    conversation_id: str = Field(min_length=1, max_length=64)
-    sequence: int = Field(ge=1)
-    state: Literal[
-        "ready", "checking", "accepted", "non_match", "inconclusive", "unavailable", "no_action", "audio_too_long"
-    ]
+class VoiceprintAssignment(Contract):
+    person_id: str = Field(min_length=1, max_length=64)
+    expected_revision: int = Field(ge=1)
+
+class PersonVoiceTemplates(Contract):
+    owner_id: str
+    person_id: str
+    person_revision: int = Field(ge=1)
+    templates: list[VoiceTemplate] = Field(default_factory=list)

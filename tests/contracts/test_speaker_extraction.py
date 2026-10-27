@@ -6,7 +6,7 @@ from eidolon_sdk.biz.voiceprint import SpeakerExtractionReadiness, VoiceAudioReq
 
 def test_extraction_readiness_does_not_authorize_admission():
     ready = SpeakerExtractionReadiness(state='ready', extraction_ready=True)
-    assert ready.admission_ready is False
+    assert "admission_ready" not in ready.model_dump()
     with pytest.raises(ValidationError):
         SpeakerExtractionReadiness(state='ready', extraction_ready=True, admission_ready=True)
 

@@ -10,11 +10,7 @@ from pathlib import Path
 from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
-from .voiceprint import ExtractedSample, VoicePolicySnapshot, SpeakerAdmissionLimits
-
-
-class SpeakerPolicyConfirmationRequired(ValueError):
-    """Personal approval belongs to a different criterion release."""
+from .voiceprint import ExtractedSample, SpeakerAdmissionLimits
 
 
 class SpeakerAdmissionCalibration(BaseModel):
@@ -27,7 +23,7 @@ class SpeakerAdmissionCalibration(BaseModel):
     scoring_version: Literal["normalized-template-cosine-v1"] = "normalized-template-cosine-v1"
     threshold: float = Field(ge=0, le=1, allow_inf_nan=False, strict=True)
     max_allowed_speakers: int = Field(ge=1, le=5, strict=True)
-    min_audio_ms: int = Field(ge=1500, le=30000, strict=True)
+    min_audio_ms: int = Field(ge=300, le=30000, strict=True)
     max_audio_ms: int = Field(ge=1500, le=30000, strict=True)
     registration_min_similarity: float = Field(ge=-1, le=1, allow_inf_nan=False, strict=True)
     trial_min_similarity: float = Field(ge=-1, le=1, allow_inf_nan=False, strict=True)
@@ -56,19 +52,7 @@ class SpeakerAdmissionCalibration(BaseModel):
             ).encode()
         ).hexdigest()
 
-    def supports(self, snapshot: VoicePolicySnapshot) -> bool:
-        return (
-            snapshot.mode == "allowlist"
-            and snapshot.calibration_digest == self.digest
-            and 1 <= len(snapshot.templates) <= self.max_allowed_speakers
-            and all(self.compatible(t.sample) for t in snapshot.templates)
-        )
 
-    def require_supported(self, snapshot: VoicePolicySnapshot) -> None:
-        if snapshot.mode == "allowlist" and snapshot.calibration_digest != self.digest:
-            raise SpeakerPolicyConfirmationRequired("VOICE_POLICY_CONFIRMATION_REQUIRED")
-        if not self.supports(snapshot):
-            raise ValueError("SPEAKER_VERIFIED_CALIBRATION_SCOPE_MISMATCH")
 
     def compatible(self, sample: ExtractedSample) -> bool:
         return (sample.model_id, sample.weights_hash, sample.preprocessing_version) == (
@@ -80,7 +64,7 @@ class SpeakerAdmissionCalibration(BaseModel):
 
 def load_calibration(path: str) -> SpeakerAdmissionCalibration:
     if not path:
-        raise ValueError("SPEAKER_VERIFIED_CALIBRATION_REQUIRED")
+        raise ValueError("SPEAKER_CALIBRATION_REQUIRED")
     try:
         with Path(path).expanduser().open("rb") as stream:
             raw = stream.read(16385)
@@ -89,4 +73,4 @@ def load_calibration(path: str) -> SpeakerAdmissionCalibration:
         return SpeakerAdmissionCalibration.model_validate_json(raw)
     except (OSError, ValueError):
         # Never echo an artifact or unrelated file contents into a session log.
-        raise ValueError("SPEAKER_VERIFIED_CALIBRATION_INVALID") from None
+        raise ValueError("SPEAKER_CALIBRATION_INVALID") from None

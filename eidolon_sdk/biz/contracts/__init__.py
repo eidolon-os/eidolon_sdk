@@ -140,7 +140,6 @@ SESSION_END_TYPE = "session_end"
 SESSION_END_IDLE_NORMAL = "idle_normal_end"
 SESSION_END_USER_LEFT = "user_left"
 SESSION_END_ERROR = "error"
-SESSION_END_VOICE_POLICY_CONFIRMATION_REQUIRED = "voice_policy_confirmation_required"
 SESSION_END_PROACTIVE_DONE = "proactive_done"
 SESSION_END_SUPERSEDED = "superseded"
 VALID_SESSION_END_REASONS = frozenset(
@@ -148,14 +147,12 @@ VALID_SESSION_END_REASONS = frozenset(
         SESSION_END_IDLE_NORMAL,
         SESSION_END_USER_LEFT,
         SESSION_END_ERROR,
-        SESSION_END_VOICE_POLICY_CONFIRMATION_REQUIRED,
         SESSION_END_PROACTIVE_DONE,
         SESSION_END_SUPERSEDED,
     }
 )
 SessionEndReason = Literal[
     "idle_normal_end", "user_left", "error", "proactive_done", "superseded",
-    "voice_policy_confirmation_required"
 ]
 
 # --------------------------------------------------------------------------- #

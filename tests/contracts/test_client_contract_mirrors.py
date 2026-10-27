@@ -320,7 +320,6 @@ def test_mobile_contract_mirror_matches_sdk() -> None:
         "PLAYBACK_STATE_IDLE": "playbackStateIdle",
         "PLAYBACK_STATE_AGENT_SPEAKING": "playbackStateAgentSpeaking",
         "SESSION_END_ERROR": "sessionEndError",
-        "SESSION_END_VOICE_POLICY_CONFIRMATION_REQUIRED": "sessionEndVoicePolicyConfirmationRequired",
     })
     _END_REASON_NOT_SHOWN = (
         "a reason for an ended session that this client does not surface; it shows that the "

@@ -50,12 +50,12 @@ def test_content_digest_survives_wire_and_changes_with_criteria(tmp_path):
 
 
 def test_loader_does_not_echo_missing_or_malformed_artifacts(tmp_path):
-    with pytest.raises(ValueError, match="^SPEAKER_VERIFIED_CALIBRATION_REQUIRED$"):
+    with pytest.raises(ValueError, match="^SPEAKER_CALIBRATION_REQUIRED$"):
         load_calibration("")
     path = tmp_path / "private.json"
     for raw in ("private content", "x" * 16385):
         path.write_text(raw)
-        with pytest.raises(ValueError, match="^SPEAKER_VERIFIED_CALIBRATION_INVALID$"):
+        with pytest.raises(ValueError, match="^SPEAKER_CALIBRATION_INVALID$"):
             load_calibration(str(path))
 
 
@@ -67,22 +67,3 @@ def test_controlled_trial_is_explicit_and_does_not_claim_evidence():
     assert trial.validation_state == "controlled_trial"
     assert trial.evidence_sha256 is None
     assert trial.digest != SpeakerAdmissionCalibration(**artifact()).digest
-
-
-def test_release_update_requires_confirmation_without_weakening_template_checks():
-    from eidolon_sdk.biz.speaker_calibration import SpeakerPolicyConfirmationRequired
-    from eidolon_sdk.biz.voiceprint import VoicePolicySnapshot, VoiceTemplate, ExtractedSample
-    original = SpeakerAdmissionCalibration(**artifact())
-    updated = original.model_copy(update={"threshold": 0.4})
-    sample = ExtractedSample(model_id=original.model_id, weights_hash=original.weights_hash,
-        preprocessing_version=original.preprocessing_version, vector=[1, 0], speech_ms=2000)
-    snapshot = VoicePolicySnapshot(owner_id="owner", companion_id="companion",
-        mode="allowlist", revision=1, calibration_digest=original.digest,
-        templates=[VoiceTemplate(profile_id="p", revision=1, sample=sample)])
-    with pytest.raises(SpeakerPolicyConfirmationRequired):
-        updated.require_supported(snapshot)
-    renewed = snapshot.model_copy(update={"calibration_digest": updated.digest})
-    updated.require_supported(renewed)
-    with pytest.raises(ValueError, match="SPEAKER_VERIFIED_CALIBRATION_SCOPE_MISMATCH"):
-        updated.require_supported(renewed.model_copy(update={"templates": []}))
-    assert snapshot.calibration_digest == original.digest

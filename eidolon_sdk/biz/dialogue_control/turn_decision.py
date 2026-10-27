@@ -23,7 +23,6 @@ class TurnCommitBoundary(str, Enum):
 
     FRAMEWORK_COMPLETED = "framework_completed_turn"
     PTT_SEGMENT = "ptt_segment_commit"
-    SPEAKER_VERIFIED = "speaker_verified_commit"
 
 
 def committed_turn_text_sha256(text: str) -> str:
