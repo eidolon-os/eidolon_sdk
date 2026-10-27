@@ -53,6 +53,7 @@ class RuntimeIdentity:
     scopes: tuple[str, ...]
     exp: datetime
     person_id: str | None = None
+    person_revision: int | None = None
     identity_epoch: int | None = None
 
 
@@ -84,6 +85,7 @@ def sign_runtime_token(
     device_id: str | None = None,
     scopes: Sequence[str] = (),
     person_id: str | None = None,
+    person_revision: int | None = None,
     identity_epoch: int | None = None,
     ttl_seconds: int,
 ) -> tuple[str, datetime]:
@@ -96,11 +98,11 @@ def sign_runtime_token(
     if isinstance(ttl_seconds, bool) or not isinstance(ttl_seconds, int) or ttl_seconds <= 0:
         raise ValueError("sign_runtime_token: ttl_seconds must be a positive integer")
 
-    _validate_person_binding(person_id, identity_epoch)
+    _validate_person_binding(person_id, identity_epoch, person_revision)
     now = datetime.now(timezone.utc)
     exp = now + timedelta(seconds=ttl_seconds)
     payload = {
-        "runtime_token_version": 6,
+        "runtime_token_version": 7,
         "owner_id": owner_id,
         "companion_id": companion_id,
         "session_id": session_id,
@@ -110,7 +112,7 @@ def sign_runtime_token(
         "iat": int(now.timestamp()),
     }
     if person_id is not None:
-        payload.update(person_id=person_id, identity_epoch=identity_epoch)
+        payload.update(person_id=person_id, identity_epoch=identity_epoch, person_revision=person_revision)
     if device_id is not None:
         _require_claim("device_id", device_id)
         payload["device_id"] = device_id
@@ -176,15 +178,16 @@ class RuntimeTokenVerifier:
         except jwt.PyJWTError as exc:
             raise RuntimeUnauthenticatedError(f"invalid token: {exc}") from exc
 
-        if type(payload.get("runtime_token_version")) is not int or payload["runtime_token_version"] != 6:
+        if type(payload.get("runtime_token_version")) is not int or payload["runtime_token_version"] != 7:
             raise RuntimeUnauthenticatedError("unsupported runtime_token_version")
         person_id = payload.get("person_id")
         identity_epoch = payload.get("identity_epoch")
+        person_revision = payload.get("person_revision")
         try:
-            _validate_person_binding(person_id, identity_epoch)
+            _validate_person_binding(person_id, identity_epoch, person_revision)
         except ValueError as exc:
             raise RuntimeUnauthenticatedError(str(exc)) from exc
-        if person_id is None and ("person_id" in payload or "identity_epoch" in payload):
+        if person_id is None and ("person_id" in payload or "identity_epoch" in payload or "person_revision" in payload):
             raise RuntimeUnauthenticatedError("personal identity claims cannot be null")
         device_id = payload.get("device_id")
         owner_id = payload.get("owner_id") or ""
@@ -224,6 +227,7 @@ class RuntimeTokenVerifier:
             scopes=tuple(payload.get("scopes") or ()),
             person_id=person_id,
             identity_epoch=identity_epoch,
+            person_revision=person_revision,
             exp=datetime.fromtimestamp(payload["exp"], tz=timezone.utc),
         )
 
@@ -259,11 +263,13 @@ def _kv_safe_token(value: str) -> str:
     return encoded.rstrip("=")
 
 
-def _validate_person_binding(person_id, identity_epoch):
-    if person_id is None and identity_epoch is None:
+def _validate_person_binding(person_id, identity_epoch, person_revision):
+    if person_id is None and identity_epoch is None and person_revision is None:
         return
     if (not isinstance(person_id, str) or not person_id.strip()
             or person_id != person_id.strip() or len(person_id) > 64):
         raise ValueError("personal runtime requires a valid person_id")
+    if type(person_revision) is not int or person_revision < 1:
+        raise ValueError("personal runtime requires a positive person_revision")
     if type(identity_epoch) is not int or identity_epoch < 0:
         raise ValueError("personal runtime requires a non-negative identity_epoch")

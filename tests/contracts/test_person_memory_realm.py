@@ -9,7 +9,7 @@ from eidolon_sdk.biz.system_data.client import (
 @pytest.mark.parametrize("owner,person,status", [("other", "p", "active"), ("o", "other", "active"), ("o", "p", "inactive")])
 async def test_realm_binding_must_match_request(owner, person, status):
     transport = httpx.MockTransport(lambda request: httpx.Response(200, json={
-        "owner_id": owner, "person_id": person, "realm_id": "r", "status": status,
+        "owner_id": owner, "person_id": person, "realm_id": "r", "status": status, "person_revision": 1,
     }))
     async with httpx.AsyncClient(transport=transport) as http:
         client = SystemDataRuntimeClient(http, "http://test", service_token="secret")

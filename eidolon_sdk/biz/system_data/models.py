@@ -23,6 +23,7 @@ class PersonalMemoryRealmSnapshot(BaseModel):
     realm_id: str = Field(min_length=1, max_length=64)
     owner_id: str = Field(min_length=1, max_length=64)
     person_id: str = Field(min_length=1, max_length=64)
+    person_revision: int = Field(ge=1, strict=True)
     status: Literal["active"]
 
 
