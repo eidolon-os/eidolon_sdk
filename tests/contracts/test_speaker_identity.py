@@ -23,3 +23,13 @@ def test_conclusive_identity_requires_versions_and_evidence_range():
     assert result.source.generation == 1
     with pytest.raises(ValidationError):
         SpeakerEvidenceSource(**(source().model_dump() | {'end_sample':0}))
+
+
+def test_voiceprint_profiles_require_a_person_from_creation():
+    from eidolon_sdk.biz.voiceprint import SpeakerProfileView
+
+    fields = dict(profile_id='v', display_name='Alice', revision=1, enrollment_id='e')
+    assert SpeakerProfileView(person_id='p', **fields).person_id == 'p'
+    for invalid in ({}, {'person_id': None}, {'person_id': ''}):
+        with pytest.raises(ValidationError):
+            SpeakerProfileView(**fields, **invalid)

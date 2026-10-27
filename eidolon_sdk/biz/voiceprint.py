@@ -1,4 +1,4 @@
-"""Voiceprint management and admission wire contracts, independent of inference."""
+"""Person-owned voiceprint management and numerical wire contracts, independent of inference."""
 
 from __future__ import annotations
 
@@ -56,7 +56,7 @@ class EnrollmentView(Contract):
 
 
 class SpeakerProfileView(Contract):
-    person_id: str | None = None
+    person_id: str = Field(min_length=1, max_length=64)
     profile_id: str
     display_name: str
     revision: int
@@ -196,10 +196,6 @@ class VoiceMatchTestResult(SpeakerComparisonResult):
 class VoiceprintCollection(Contract):
     profiles: list[SpeakerProfileView] = Field(default_factory=list)
     readiness: SpeakerExtractionReadiness | None = None
-
-class VoiceprintAssignment(Contract):
-    person_id: str = Field(min_length=1, max_length=64)
-    expected_revision: int = Field(ge=1)
 
 class PersonVoiceTemplates(Contract):
     owner_id: str
