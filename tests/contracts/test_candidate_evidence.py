@@ -44,3 +44,26 @@ def test_promotion_policy_cannot_weaken_independence_or_model_binding(change):
     with pytest.raises(ValidationError):
         CandidatePromotionPolicy(**(dict(version='v', decision_version='trial', model_id='m',
             weights_hash='a' * 64, preprocessing_version='v', min_similarity=.8) | change))
+
+
+def discovery_payload():
+    value = payload()['observation']
+    value.update(status='unknown', maturity=None, person_id=None, person_revision=None,
+                 profile_id=None, profile_revision=None)
+    return dict(policy_version='discovery', snapshot_revision='a' * 64, audio_sha256='b' * 64,
+        observation=value, sample=dict(model_id='m', weights_hash='a' * 64, preprocessing_version='v',
+            vector=[1, 0], speech_ms=2000, quality={'overlap_detected': 0}))
+
+
+def test_discovery_requires_explicit_single_speaker_evidence_and_matching_model():
+    from eidolon_sdk.biz.candidate_evidence import CandidateDiscovery
+    assert CandidateDiscovery(**discovery_payload()).observation.person_id is None
+    for quality in ({}, {'overlap_detected': 1}):
+        data = discovery_payload()
+        data['sample']['quality'] = quality
+        with pytest.raises(ValidationError, match='non-overlap'):
+            CandidateDiscovery(**data)
+    data = discovery_payload()
+    data['sample']['model_id'] = 'other'
+    with pytest.raises(ValidationError, match='model'):
+        CandidateDiscovery(**data)

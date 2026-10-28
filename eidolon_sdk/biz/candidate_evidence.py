@@ -4,7 +4,8 @@ from typing import Literal
 from pydantic import Field, model_validator
 
 from .person import PersonContract
-from .speaker_identity import SpeakerIdentityObservation
+from .speaker_identity import SpeakerIdentityObservation, SpeakerRecognitionPolicy
+from .voiceprint import ExtractedSample
 
 CANDIDATE_MIN_SPEECH_MS = 1500
 CANDIDATE_EVIDENCE_LIMIT = 5
@@ -59,3 +60,46 @@ class CandidatePromotionPolicy(PersonContract):
     min_total_speech_ms: int = Field(default=4500, ge=4500, le=150000)
     min_similarity: float = Field(ge=0, le=1, allow_inf_nan=False)
     max_evidence_age_s: int = Field(default=604800, ge=60, le=604800)
+
+
+class CandidateDiscoveryPolicy(PersonContract):
+    version: str = Field(min_length=1, max_length=128)
+    # Match thresholds retain their existing authority and meaning.
+    recognition: SpeakerRecognitionPolicy
+    max_existing_similarity: float = Field(ge=-1, le=1, allow_inf_nan=False)
+
+    @model_validator(mode='after')
+    def separated_from_match(self):
+        if self.max_existing_similarity >= self.recognition.threshold - self.recognition.min_person_margin:
+            raise ValueError('new identity requires a separate exclusion margin')
+        return self
+
+
+class CandidateDiscovery(PersonContract):
+    policy_version: str = Field(min_length=1, max_length=128)
+    snapshot_revision: str = Field(pattern=r'^[a-f0-9]{64}$')
+    audio_sha256: str = Field(pattern=r'^[a-f0-9]{64}$')
+    observation: SpeakerIdentityObservation
+    sample: ExtractedSample
+
+    @model_validator(mode='after')
+    def valid_unknown_source(self):
+        value, source = self.observation, self.observation.source
+        if value.status != 'unknown' or not value.session_id or not value.turn_id or source is None:
+            raise ValueError('discovery requires a conclusive scoped unknown observation')
+        if source.session_id != value.session_id or source.request_id != value.turn_id or source.sample_rate != 16000:
+            raise ValueError('discovery source scope mismatch')
+        duration_ms = (source.end_sample - source.start_sample) * 1000 / source.sample_rate
+        if not CANDIDATE_MIN_SPEECH_MS <= self.sample.speech_ms <= duration_ms <= 30000:
+            raise ValueError('discovery requires sufficient bounded speech')
+        if (self.sample.model_id, self.sample.weights_hash, self.sample.preprocessing_version) != (
+                value.model_id, value.weights_hash, value.preprocessing_version):
+            raise ValueError('sample does not match observation model')
+        if value.audio_quality is None or value.audio_quality.speech_ms != self.sample.speech_ms:
+            raise ValueError('sample does not match observation quality')
+        if not 0 < value.expires_at - value.issued_at <= 10:
+            raise ValueError('invalid discovery lifetime')
+        # Missing overlap evaluation is not evidence of a single speaker.
+        if self.sample.quality.get('overlap_detected') != 0:
+            raise ValueError('discovery requires explicit non-overlap evidence')
+        return self
