@@ -258,11 +258,28 @@ class _ManifestPart(BaseModel):
     )
 
 
+RECOGNITION_VOICEPRINT_PROPERTY = "recognition.voiceprint"
+RECOGNITION_FACE_PROPERTY = "recognition.face"
+RECOGNITION_PROPERTIES = frozenset({RECOGNITION_VOICEPRINT_PROPERTY, RECOGNITION_FACE_PROPERTY})
+
+
 class ManifestProperty(_ManifestPart):
     name: str = Field(min_length=1, max_length=128)
     schema_: dict[str, Any] = Field(alias="schema")
     observable: bool
     writable: bool
+
+    @model_validator(mode="after")
+    def _recognition_is_an_installed_capability(self) -> "ManifestProperty":
+        if self.name in RECOGNITION_PROPERTIES:
+            if (
+                self.writable or self.observable
+                or self.schema_.get("type") != "boolean"
+                or type(self.schema_.get("const")) is not bool
+                or set(self.schema_) != {"type", "const"}
+            ):
+                raise ValueError("recognition capability must be a non-observable, read-only boolean const")
+        return self
 
 
 class ManifestAction(_ManifestPart):
@@ -307,7 +324,7 @@ class DeviceCapabilityManifest(_ManifestPart):
     them requires knowing nothing about whether a Channel exists, whether this
     deployment runs a media transport, or whether this device should be given a
     conversational agent; all of that stays with the Channel Authority, which is
-    the only reader of a Manifest's content.
+    the reader responsible for channel provisioning.
 
     That distinction is the point. An Authority is deliberately opaque to what a
     Manifest *means*: requiring this vocabulary's own version field of a
@@ -335,6 +352,16 @@ class DeviceCapabilityManifest(_ManifestPart):
     @classmethod
     def _arrays(cls, value: object) -> object:
         return tuple(value) if isinstance(value, list) else value
+
+    @field_validator("properties", mode="after")
+    @classmethod
+    def _recognition_is_unambiguous(
+        cls, value: tuple[ManifestProperty, ...]
+    ) -> tuple[ManifestProperty, ...]:
+        names = [prop.name for prop in value if prop.name in RECOGNITION_PROPERTIES]
+        if len(names) != len(set(names)):
+            raise ValueError("duplicate recognition capability")
+        return value
 
     @field_validator("title", mode="after")
     @classmethod
