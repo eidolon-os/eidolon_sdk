@@ -21,12 +21,17 @@ class PersonProfile(PersonContract):
 
 
 class PersonCreate(PersonContract):
+    maturity: Literal["candidate", "established"] = "established"
+    is_named: bool = True
     person_id: str = Field(pattern=r"^[a-f0-9]{32}$")
     display_name: str = Field(min_length=1, max_length=128)
     profile: PersonProfile = Field(default_factory=PersonProfile)
 
 
 class PersonUpdate(PersonContract):
+    # Omission preserves naming state for older management clients. Naming is
+    # independent of evidence maturity and cannot promote a candidate.
+    is_named: bool | None = None
     expected_revision: int = Field(ge=1)
     display_name: str = Field(min_length=1, max_length=128)
     status: Literal["active", "inactive"]
@@ -34,6 +39,8 @@ class PersonUpdate(PersonContract):
 
 
 class PersonView(PersonContract):
+    maturity: Literal["candidate", "established"] = "established"
+    is_named: bool = True
     person_id: str
     owner_id: str
     display_name: str
