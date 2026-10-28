@@ -39,6 +39,7 @@ class PersonUpdate(PersonContract):
 
 
 class PersonView(PersonContract):
+    recognition_state: Literal["active", "retained"] = "active"
     maturity: Literal["candidate", "established"] = "established"
     is_named: bool = True
     person_id: str
