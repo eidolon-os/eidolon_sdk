@@ -16,6 +16,29 @@ class MemoryRealmSnapshot(BaseModel):
     lifecycle_state: Literal["active"]
 
 
+class PersonalMemoryRealmSnapshot(BaseModel):
+    """Data catalog binding, not a user authorization credential."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+    realm_id: str = Field(min_length=1, max_length=64)
+    owner_id: str = Field(min_length=1, max_length=64)
+    person_id: str = Field(min_length=1, max_length=64)
+    person_revision: int = Field(ge=1, strict=True)
+    status: Literal["active"]
+
+
+class PersonalMemoryState(BaseModel):
+    """Owner management state; never a runtime memory access grant."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+    owner_id: str
+    person_id: str
+    person_revision: int = Field(ge=1, strict=True)
+    person_status: Literal["active", "inactive"]
+    realm_id: str | None = None
+    state: Literal["unbound", "active", "inactive"]
+
+
 class PersonaGenomeSnapshot(BaseModel):
     model_config = ConfigDict(frozen=True, extra="forbid")
 
