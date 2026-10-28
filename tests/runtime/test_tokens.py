@@ -434,3 +434,32 @@ async def test_runtime_can_bind_distinct_audio_source_and_memory_session():
 def test_source_session_binding_is_canonical(source):
     with pytest.raises(ValueError):
         _sign(source_session_id=source)
+
+
+@pytest.mark.asyncio
+async def test_provisional_runtime_has_separate_version_and_session_binding():
+    token, _ = sign_runtime_token(secret=SECRET, owner_id="o", companion_id="c", session_id="s",
+        source_session_id="s", person_id="p", person_revision=1, identity_epoch=1,
+        memory_mode="provisional", ttl_seconds=60)
+    payload = jwt.decode(token, SECRET, algorithms=["HS256"])
+    assert payload["runtime_token_version"] == 8
+    with pytest.raises(RuntimeUnauthenticatedError, match="not supported"):
+        await RuntimeTokenVerifier(secret=SECRET).verify(token)
+    identity = await RuntimeTokenVerifier(secret=SECRET, allow_provisional=True).verify(token)
+    assert identity.memory_mode == "provisional"
+    for changes in (
+        {"runtime_token_version": 7}, {"memory_mode": "personal"},
+        {"source_session_id": "other"}, {"person_id": None},
+    ):
+        forged = jwt.encode({**payload, **changes}, SECRET, algorithm="HS256")
+        with pytest.raises(RuntimeUnauthenticatedError):
+            await RuntimeTokenVerifier(secret=SECRET, allow_provisional=True).verify(forged)
+
+
+@pytest.mark.parametrize("changes", [{"source_session_id": "other"}, {"memory_mode": "unknown"}])
+def test_provisional_signer_refuses_invalid_modes_or_sessions(changes):
+    fields = dict(secret=SECRET, owner_id="o", companion_id="c", session_id="s",
+        source_session_id="s", person_id="p", person_revision=1, identity_epoch=1,
+        memory_mode="provisional", ttl_seconds=60)
+    with pytest.raises(ValueError):
+        sign_runtime_token(**{**fields, **changes})

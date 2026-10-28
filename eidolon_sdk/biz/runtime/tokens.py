@@ -56,6 +56,7 @@ class RuntimeIdentity:
     source_session_id: str | None = None
     person_revision: int | None = None
     identity_epoch: int | None = None
+    memory_mode: str = "personal"
 
 
 def resolve_shared_secret(
@@ -89,6 +90,7 @@ def sign_runtime_token(
     source_session_id: str | None = None,
     person_revision: int | None = None,
     identity_epoch: int | None = None,
+    memory_mode: str = "personal",
     ttl_seconds: int,
 ) -> tuple[str, datetime]:
     """Return a JWT and its expiration datetime using an explicit caller TTL."""
@@ -101,10 +103,11 @@ def sign_runtime_token(
         raise ValueError("sign_runtime_token: ttl_seconds must be a positive integer")
 
     _validate_person_binding(person_id, identity_epoch, person_revision)
+    _validate_memory_mode(memory_mode, person_id, source_session_id, session_id)
     now = datetime.now(timezone.utc)
     exp = now + timedelta(seconds=ttl_seconds)
     payload = {
-        "runtime_token_version": 7,
+        "runtime_token_version": 8 if memory_mode == "provisional" else 7,
         "owner_id": owner_id,
         "companion_id": companion_id,
         "session_id": session_id,
@@ -113,6 +116,8 @@ def sign_runtime_token(
         "exp": int(exp.timestamp()),
         "iat": int(now.timestamp()),
     }
+    if memory_mode == "provisional":
+        payload["memory_mode"] = memory_mode
     if source_session_id is not None:
         _validate_source_session(source_session_id)
         payload["source_session_id"] = source_session_id
@@ -170,12 +175,14 @@ class RuntimeTokenVerifier:
         secret: str,
         algorithm: str = "HS256",
         revocation_kv: RuntimeRevocationStore | None = None,
+        allow_provisional: bool = False,
     ) -> None:
         if not secret:
             raise ValueError("RuntimeTokenVerifier: secret is required (empty)")
         self._secret = secret
         self._alg = algorithm
         self._kv = revocation_kv
+        self._allow_provisional = allow_provisional
 
     async def verify(self, token: str) -> RuntimeIdentity:
         try:
@@ -183,8 +190,15 @@ class RuntimeTokenVerifier:
         except jwt.PyJWTError as exc:
             raise RuntimeUnauthenticatedError(f"invalid token: {exc}") from exc
 
-        if type(payload.get("runtime_token_version")) is not int or payload["runtime_token_version"] != 7:
+        if type(payload.get("runtime_token_version")) is not int or payload["runtime_token_version"] not in (7, 8):
             raise RuntimeUnauthenticatedError("unsupported runtime_token_version")
+        version = payload["runtime_token_version"]
+        if version == 8 and not self._allow_provisional:
+            raise RuntimeUnauthenticatedError("provisional runtime is not supported by this consumer")
+        memory_mode = payload.get("memory_mode", "personal")
+        if ((version == 7 and "memory_mode" in payload)
+                or (version == 8 and memory_mode != "provisional")):
+            raise RuntimeUnauthenticatedError("memory mode does not match token version")
         person_id = payload.get("person_id")
         identity_epoch = payload.get("identity_epoch")
         person_revision = payload.get("person_revision")
@@ -211,6 +225,11 @@ class RuntimeTokenVerifier:
         ):
             if not claim_value:
                 raise RuntimeUnauthenticatedError(f"token missing {claim_name}")
+
+        try:
+            _validate_memory_mode(memory_mode, person_id, source_session_id, session_id)
+        except ValueError as exc:
+            raise RuntimeUnauthenticatedError(str(exc)) from exc
 
         if self._kv is not None:
             if device_id:
@@ -240,6 +259,7 @@ class RuntimeTokenVerifier:
             identity_epoch=identity_epoch,
             person_revision=person_revision,
             source_session_id=source_session_id,
+            memory_mode=memory_mode,
             exp=datetime.fromtimestamp(payload["exp"], tz=timezone.utc),
         )
 
@@ -290,3 +310,10 @@ def _validate_person_binding(person_id, identity_epoch, person_revision):
 def _validate_source_session(value):
     if not isinstance(value, str) or not value.strip() or value != value.strip() or len(value) > 128:
         raise ValueError("source_session_id must be a canonical nonempty string")
+
+
+def _validate_memory_mode(mode, person_id, source_session_id, session_id):
+    if mode not in ("personal", "provisional"):
+        raise ValueError("invalid runtime memory mode")
+    if mode == "provisional" and (person_id is None or source_session_id != session_id):
+        raise ValueError("provisional runtime requires a Person bound to the source session")
