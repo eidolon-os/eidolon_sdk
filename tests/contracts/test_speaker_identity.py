@@ -60,3 +60,21 @@ def test_observation_attestation_cannot_renew_expired_or_mismatched_evidence():
     with pytest.raises(ValueError):sign_observation(value,secret='x'*32,text='hello')
     value=value.model_copy(update={'issued_at':now,'expires_at':now+10,'source':source()})
     with pytest.raises(ValueError):sign_observation(value,secret='x'*32,text='hello')
+
+
+@pytest.mark.parametrize('change', [
+    {'subject_role': 'visible_person'}, {'modalities': ['face']},
+    {'modalities': ['voice', 'face']}, {'modalities': []},
+    {'maturity': 'candidate'}, {'is_named': False},
+])
+def test_unresolved_internal_contract_cannot_assert_visual_or_person_identity(change):
+    with pytest.raises(ValidationError):
+        SpeakerIdentityObservation(status='uncertain', owner_id='o', confidence='none',
+                                   reason='pending', **change)
+
+
+def test_internal_observation_rejects_mismatched_evidence_session():
+    with pytest.raises(ValidationError, match='evidence session'):
+        SpeakerIdentityObservation(status='uncertain', owner_id='o', session_id='other',
+            source=source().model_copy(update={'session_id': 'original'}),
+            confidence='none', reason='pending')

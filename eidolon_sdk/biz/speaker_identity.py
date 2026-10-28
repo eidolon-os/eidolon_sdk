@@ -28,6 +28,12 @@ class SpeakerEvidenceSource(Contract):
 
 class SpeakerIdentityObservation(Contract):
     schema_version: Literal[1] = 1
+    # Reserved subject/modality boundary: face evidence has no speaker
+    # association in this release and must never enter signed turn identity.
+    subject_role: Literal["speaker"] = "speaker"
+    modalities: list[Literal["voice"]] = Field(default_factory=lambda: ["voice"], min_length=1, max_length=1)
+    maturity: Literal["candidate", "established"] | None = None
+    is_named: bool | None = None
     status: Literal["identified", "unknown", "uncertain", "unavailable"]
     owner_id: str = Field(min_length=1)
     source: SpeakerEvidenceSource | None = None
@@ -53,6 +59,11 @@ class SpeakerIdentityObservation(Contract):
 
     @model_validator(mode="after")
     def consistent_identity(self):
+        if self.source is not None and self.source.session_id is not None:
+            if self.source.session_id != self.session_id:
+                raise ValueError("observation must address its evidence session")
+        if self.status != "identified" and (self.maturity is not None or self.is_named is not None):
+            raise ValueError("unresolved observations cannot assert Person lifecycle")
         identity = (self.person_id, self.person_revision, self.profile_id, self.profile_revision)
         if self.status == "identified":
             if not all(identity) or self.confidence not in {"validated", "controlled_trial"}:
@@ -78,6 +89,8 @@ class SpeakerIdentityObservation(Contract):
 
 
 class SpeakerCandidate(Contract):
+    maturity: Literal["candidate", "established"] = "established"
+    is_named: bool = True
     person_id: str = Field(min_length=1, max_length=64)
     person_revision: int = Field(ge=1)
     display_name: str = Field(min_length=1, max_length=128)
