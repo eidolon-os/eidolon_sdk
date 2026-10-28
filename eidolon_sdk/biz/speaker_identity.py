@@ -10,6 +10,10 @@ from .voiceprint import Contract, VoiceTemplate, SpeakerAudioQuality
 from .person import PersonProfile
 
 
+MAX_CANDIDATE_PERSONS = 20
+MAX_RECOGNITION_PERSONS = 25
+
+
 class SpeakerEvidenceSource(Contract):
     request_id: str = Field(min_length=1, max_length=128)
     session_id: str | None = None
@@ -101,7 +105,7 @@ class SpeakerCandidate(Contract):
 class SpeakerCandidates(Contract):
     owner_id: str = Field(min_length=1)
     revision: str = Field(pattern=r"^[a-f0-9]{64}$")
-    persons: list[SpeakerCandidate] = Field(default_factory=list, max_length=5)
+    persons: list[SpeakerCandidate] = Field(default_factory=list, max_length=MAX_RECOGNITION_PERSONS)
 
 
 class SpeakerRecognitionPolicy(Contract):
