@@ -40,11 +40,14 @@ class PersonView(PersonContract):
     status: Literal["active", "inactive"]
     revision: int
     profile: PersonProfile
+    identity_state: Literal["known", "missing"] = "known"
+    archived_at: str | None = None
+    deletion_state: Literal["none", "pending"] = "none"
 
 
 class PersonCollection(PersonContract):
     persons: list[PersonView] = Field(default_factory=list)
 
 
-class PersonDeletion(PersonContract):
-    deleted: Literal[True] = True
+class PersonArchival(PersonContract):
+    archived: Literal[True] = True
