@@ -102,12 +102,6 @@ class SpeakerCandidate(Contract):
     templates: list[VoiceTemplate] = Field(min_length=1, max_length=5)
 
 
-class SpeakerCandidates(Contract):
-    owner_id: str = Field(min_length=1)
-    revision: str = Field(pattern=r"^[a-f0-9]{64}$")
-    persons: list[SpeakerCandidate] = Field(default_factory=list, max_length=MAX_RECOGNITION_PERSONS)
-
-
 class SpeakerRecognitionPolicy(Contract):
     """Explicit deployment trial, never an admission or memory permission."""
     version: str = Field(min_length=1, max_length=128)
@@ -125,3 +119,23 @@ class SpeakerRecognitionPolicy(Contract):
         if self.min_unknown_speech_ms < self.min_speech_ms:
             raise ValueError("unknown speech floor cannot be below extraction floor")
         return self
+
+
+class CandidateDiscoveryPolicy(Contract):
+    version: str = Field(min_length=1, max_length=128)
+    # Match thresholds retain their existing authority and meaning.
+    recognition: SpeakerRecognitionPolicy
+    max_existing_similarity: float = Field(ge=-1, le=1, allow_inf_nan=False)
+
+    @model_validator(mode='after')
+    def separated_from_match(self):
+        if self.max_existing_similarity >= self.recognition.threshold - self.recognition.min_person_margin:
+            raise ValueError('new identity requires a separate exclusion margin')
+        return self
+
+
+class SpeakerCandidates(Contract):
+    discovery_policy: CandidateDiscoveryPolicy | None = None
+    owner_id: str = Field(min_length=1)
+    revision: str = Field(pattern=r"^[a-f0-9]{64}$")
+    persons: list[SpeakerCandidate] = Field(default_factory=list, max_length=MAX_RECOGNITION_PERSONS)

@@ -4,7 +4,8 @@ from typing import Literal
 from pydantic import Field, model_validator
 
 from .person import PersonContract
-from .speaker_identity import SpeakerIdentityObservation, SpeakerRecognitionPolicy
+from .speaker_identity import CandidateDiscoveryPolicy as CandidateDiscoveryPolicy
+from .speaker_identity import SpeakerIdentityObservation
 from .voiceprint import ExtractedSample
 
 CANDIDATE_MIN_SPEECH_MS = 1500
@@ -60,19 +61,6 @@ class CandidatePromotionPolicy(PersonContract):
     min_total_speech_ms: int = Field(default=4500, ge=4500, le=150000)
     min_similarity: float = Field(ge=0, le=1, allow_inf_nan=False)
     max_evidence_age_s: int = Field(default=604800, ge=60, le=604800)
-
-
-class CandidateDiscoveryPolicy(PersonContract):
-    version: str = Field(min_length=1, max_length=128)
-    # Match thresholds retain their existing authority and meaning.
-    recognition: SpeakerRecognitionPolicy
-    max_existing_similarity: float = Field(ge=-1, le=1, allow_inf_nan=False)
-
-    @model_validator(mode='after')
-    def separated_from_match(self):
-        if self.max_existing_similarity >= self.recognition.threshold - self.recognition.min_person_margin:
-            raise ValueError('new identity requires a separate exclusion margin')
-        return self
 
 
 class CandidateDiscovery(PersonContract):
