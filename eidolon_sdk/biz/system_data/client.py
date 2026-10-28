@@ -10,7 +10,9 @@ from pydantic import ValidationError
 
 from eidolon_sdk.core.http import ServiceHTTPClient, authorization_header
 
-from .models import CompanionRuntimeSnapshot, PersonalMemoryRealmSnapshot
+from .models import (
+    CompanionRuntimeSnapshot, PersonalMemoryRealmSnapshot, ProvisionalMemoryAccessSnapshot,
+)
 
 
 class SystemDataError(Exception):
@@ -91,6 +93,24 @@ class SystemDataRuntimeClient(ServiceHTTPClient):
             raise SystemDataContractError("invalid personal memory Realm binding") from exc
         if result.owner_id != owner_id or result.person_id != person_id:
             raise SystemDataContractError("personal memory Realm binding is outside request scope")
+        return result
+
+    async def get_person_provisional_memory_access(
+        self, *, owner_id: str, person_id: str, person_revision: int, session_id: str,
+    ) -> ProvisionalMemoryAccessSnapshot:
+        response = await self._get(
+            f"/api/companion-authority/v1/owners/{_quote(owner_id)}/persons/"
+            f"{_quote(person_id)}/provisional-memory/access",
+            params={"expected_revision": person_revision, "session_id": session_id},
+        )
+        try:
+            result = ProvisionalMemoryAccessSnapshot.model_validate(response.json())
+        except (ValueError, ValidationError) as exc:
+            raise SystemDataContractError("invalid provisional memory access") from exc
+        if (result.owner_id, result.person_id, result.person_revision, result.session_id) != (
+            owner_id, person_id, person_revision, session_id,
+        ):
+            raise SystemDataContractError("provisional memory access is outside request scope")
         return result
 
     async def get_owner_default_runtime(self, owner_id: str) -> CompanionRuntimeSnapshot:

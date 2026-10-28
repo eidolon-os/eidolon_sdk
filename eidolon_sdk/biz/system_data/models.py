@@ -27,6 +27,30 @@ class PersonalMemoryRealmSnapshot(BaseModel):
     status: Literal["active"]
 
 
+class ProvisionalMemoryPolicy(BaseModel):
+    """Independent Owner controls; neither permits ordinary private-memory recall."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+    save_allowed: bool = Field(default=False, strict=True)
+    session_recall_allowed: bool = Field(default=False, strict=True)
+
+
+class ProvisionalMemoryPolicyState(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+    owner_id: str = Field(min_length=1, max_length=64)
+    person_id: str = Field(min_length=1, max_length=64)
+    person_revision: int = Field(ge=1, strict=True)
+    realm_id: str = Field(min_length=1, max_length=64)
+    policy: ProvisionalMemoryPolicy
+
+
+class ProvisionalMemoryAccessSnapshot(ProvisionalMemoryPolicyState):
+    """Current catalog policy for this session, not identity proof or runner readiness."""
+
+    session_id: str = Field(min_length=1, max_length=256, pattern=r"\S")
+    scope: Literal["provisional_session"] = "provisional_session"
+
+
 class PersonalMemoryState(BaseModel):
     """Owner management state; never a runtime memory access grant."""
 

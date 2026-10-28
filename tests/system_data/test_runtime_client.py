@@ -154,3 +154,30 @@ async def test_runtime_client_rejects_response_outside_wire_contract() -> None:
 def test_runtime_client_requires_service_token() -> None:
     with pytest.raises(ValueError, match="service token"):
         SystemDataRuntimeClient(httpx.AsyncClient(), "http://data.local", service_token="")
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("changed", [None, "owner_id", "person_id", "person_revision", "session_id", "scope"])
+async def test_provisional_access_is_bound_to_exact_request(changed):
+    payload = {"owner_id": "o", "person_id": "p", "person_revision": 2, "realm_id": "r",
+               "session_id": "s", "scope": "provisional_session",
+               "policy": {"save_allowed": True, "session_recall_allowed": False}}
+    if changed is not None:
+        payload[changed] = 3 if changed == "person_revision" else "other"
+
+    def handler(request):
+        assert request.url.params["session_id"] == "s"
+        assert request.url.params["expected_revision"] == "2"
+        assert request.headers["authorization"] == "Bearer secret"
+        return httpx.Response(200, json=payload)
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as http:
+        client = SystemDataRuntimeClient(http, "http://data", service_token="secret")
+        if changed:
+            with pytest.raises(SystemDataContractError):
+                await client.get_person_provisional_memory_access(
+                    owner_id="o", person_id="p", person_revision=2, session_id="s")
+        else:
+            result = await client.get_person_provisional_memory_access(
+                owner_id="o", person_id="p", person_revision=2, session_id="s")
+            assert result.policy.save_allowed and not result.policy.session_recall_allowed
