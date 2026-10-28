@@ -56,13 +56,25 @@ class EnrollmentView(Contract):
 
 
 class SpeakerProfileView(Contract):
+    origin: Literal["enrollment", "observation"] = "enrollment"
+    source_observation_id: str | None = None
     person_id: str = Field(min_length=1, max_length=64)
     profile_id: str
     display_name: str
     revision: int
-    enrollment_id: str
+    enrollment_id: str | None = None
     recording_available: bool = False
     validation_state: Literal["unvalidated", "validated"] = "unvalidated"
+
+
+    @model_validator(mode="after")
+    def provenance(self):
+        if self.origin == "enrollment":
+            if not self.enrollment_id or self.source_observation_id is not None:
+                raise ValueError("enrollment profile requires only enrollment provenance")
+        elif self.enrollment_id is not None or not self.source_observation_id:
+            raise ValueError("observation profile requires only observation provenance")
+        return self
 
 
 class VoiceTemplate(Contract):

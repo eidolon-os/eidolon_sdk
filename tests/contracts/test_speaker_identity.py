@@ -78,3 +78,14 @@ def test_internal_observation_rejects_mismatched_evidence_session():
         SpeakerIdentityObservation(status='uncertain', owner_id='o', session_id='other',
             source=source().model_copy(update={'session_id': 'original'}),
             confidence='none', reason='pending')
+
+
+def test_observation_profile_provenance_never_fabricates_an_enrollment():
+    from eidolon_sdk.biz.voiceprint import SpeakerProfileView
+    fields = dict(person_id='p', profile_id='v', display_name='匿名', revision=1)
+    result = SpeakerProfileView(**fields, origin='observation', source_observation_id='observation')
+    assert result.enrollment_id is None
+    for source in [dict(origin='observation'), dict(origin='observation', enrollment_id='fake', source_observation_id='o'),
+                   dict(origin='enrollment', enrollment_id='e', source_observation_id='o')]:
+        with pytest.raises(ValidationError):
+            SpeakerProfileView(**fields, **source)
