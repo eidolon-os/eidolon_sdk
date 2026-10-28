@@ -6,7 +6,7 @@ probabilities. No consumer or automatic per-turn inference is installed here.
 
 from typing import Literal
 from pydantic import Field, model_validator
-from .voiceprint import Contract, VoiceTemplate
+from .voiceprint import Contract, VoiceTemplate, SpeakerAudioQuality
 from .person import PersonProfile
 
 
@@ -49,6 +49,7 @@ class SpeakerIdentityObservation(Contract):
     confidence: Literal["validated", "controlled_trial", "unvalidated", "none"]
     cosine_similarity: float | None = Field(default=None, ge=-1, le=1, allow_inf_nan=False)
     reason: str = Field(min_length=1, max_length=128)
+    audio_quality: SpeakerAudioQuality | None = None
 
     @model_validator(mode="after")
     def consistent_identity(self):
@@ -98,5 +99,12 @@ class SpeakerRecognitionPolicy(Contract):
     preprocessing_version: str = Field(min_length=1, max_length=128)
     threshold: float = Field(ge=0, le=1, allow_inf_nan=False)
     min_person_margin: float = Field(gt=0, le=1, allow_inf_nan=False)
-    min_speech_ms: int = Field(ge=1500, le=30000)
+    min_speech_ms: int = Field(ge=300, le=30000)
+    min_unknown_speech_ms: int = Field(default=1500, ge=300, le=30000)
     confidence: Literal["controlled_trial"] = "controlled_trial"
+
+    @model_validator(mode="after")
+    def unknown_requires_sufficient_speech(self):
+        if self.min_unknown_speech_ms < self.min_speech_ms:
+            raise ValueError("unknown speech floor cannot be below extraction floor")
+        return self
