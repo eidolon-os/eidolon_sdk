@@ -9,7 +9,7 @@ Claim that is active and a device that never gets a room.
 
 Signed by the operational key of the device the rest of this corpus describes,
 so `device_ref.device_instance_id` is the key that signs. The manifest
-assertion's `manifest_digest` is a digest `golden/device-manifest.json` already
+assertion's `manifest_ref.digest` is a digest `golden/device-manifest.json` already
 publishes — the assertion is about that document, so the two move together.
 """
 
@@ -93,7 +93,7 @@ def main() -> None:
             vector_id="DF-DEVICE-CONTROL-MANIFEST-ASSERTION-PROOF-001",
             description=(
                 "What a device signs to tell the Authority what it can do. The signed member "
-                "is the Manifest's digest, not the document, so the signature cannot carry "
+                "is the complete ManifestRef (id, revision, digest), so the signature cannot carry "
                 "from one set of capabilities to another; the digest here is the one "
                 "golden/device-manifest.json publishes for "
                 f"{ASSERTED_BOARD} without a camera, so the assertion and the document it "
@@ -103,7 +103,11 @@ def main() -> None:
             key=operational,
             document={
                 "device_ref": device_ref,
-                "manifest_digest": asserted_manifest_digest(),
+                "manifest_ref": {
+                    "manifest_id": ASSERTED_BOARD,
+                    "revision": 2,
+                    "digest": asserted_manifest_digest(),
+                },
                 "nonce": ASSERTION_NONCE,
                 "operation_type": "device-control.manifest-assert",
             },

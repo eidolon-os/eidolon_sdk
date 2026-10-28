@@ -42,7 +42,7 @@ class AssertDeviceManifest(_Model):
     contract: Literal["eidolon.device-foundation.manifest-assertion"] = (
         "eidolon.device-foundation.manifest-assertion"
     )
-    contract_version: Literal["1.0"] = "1.0"
+    contract_version: Literal["1.1"] = "1.1"
     device_ref: DeviceRef
     manifest: ManifestDocument
     nonce: str = Field(min_length=16, max_length=128, pattern=r"^[A-Za-z0-9_-]+$")
@@ -50,16 +50,16 @@ class AssertDeviceManifest(_Model):
     device_signature: str = Field(min_length=86, max_length=86, pattern=r"^[A-Za-z0-9_-]+$")
 
     def signing_document(self) -> dict[str, object]:
-        """Signs the content by its digest, which the Authority recomputes.
+        """Bind the complete reference, including its anti-replay revision.
 
-        Carrying the digest rather than the document keeps the document a device
-        has to canonicalize down to what it already computed, while still making
-        the signature refuse to carry from one set of capabilities to another.
+        The digest binds content; the revision orders declarations; the id names
+        the manifest being updated. None may change without a new signature.
+        Assertion 1.1 is the only accepted format; there is no digest-only fallback.
         """
 
         return {
             "device_ref": self.device_ref.model_dump(mode="json"),
-            "manifest_digest": self.manifest.digest,
+            "manifest_ref": self.manifest.ref.model_dump(mode="json"),
             "nonce": self.nonce,
             "operation_type": MANIFEST_ASSERTION_OPERATION,
         }

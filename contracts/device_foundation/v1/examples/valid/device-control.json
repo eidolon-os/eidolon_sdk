@@ -150,7 +150,7 @@
       "definition": "AssertDeviceManifest",
       "value": {
         "contract": "eidolon.device-foundation.manifest-assertion",
-        "contract_version": "1.0",
+        "contract_version": "1.1",
         "device_ref": {
           "device_instance_id": "device-instance-3164c593258209d757654dbd421d2bd9732fe088bce70d8c90be15dd98b587ba",
           "owner_domain_id": "owner-domain_01",

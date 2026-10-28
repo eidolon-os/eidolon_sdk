@@ -98,7 +98,7 @@ def _signed(manifest: ManifestDocument) -> tuple[AssertDeviceManifest, str]:
     )
     unsigned = {
         "device_ref": _device_ref().model_dump(mode="json"),
-        "manifest_digest": manifest.digest,
+        "manifest_ref": manifest.ref.model_dump(mode="json"),
         "nonce": "nonce-000000000000000",
         "operation_type": "device-control.manifest-assert",
     }
@@ -178,3 +178,23 @@ def test_every_manifest_model_parses_its_own_wire_form() -> None:
     for model in (manifest, assertion):
         assert type(model).model_validate(model.model_dump(mode="json")) == model
         assert type(model).model_validate_json(model.model_dump_json()) == model
+
+
+@pytest.mark.parametrize('field,value', [('revision', 99), ('manifest_id', 'other-manifest')])
+def test_signature_binds_manifest_order_and_name(field, value) -> None:
+    assertion, spki = _signed(_manifest(revision=2, camera=True))
+    wire = assertion.model_dump(mode='json')
+    wire['manifest'][field] = value
+    tampered = AssertDeviceManifest.model_validate(wire)
+    with pytest.raises(DeviceEraseContractError):
+        verify_p256_signature(public_key_spki=spki,
+                              signing_document=tampered.signing_document(),
+                              signature=tampered.device_signature)
+
+
+def test_digest_only_assertion_version_is_not_accepted() -> None:
+    assertion, _ = _signed(_manifest(revision=2, camera=True))
+    wire = assertion.model_dump(mode='json')
+    wire['contract_version'] = '1.0'
+    with pytest.raises(ValidationError):
+        AssertDeviceManifest.model_validate(wire)

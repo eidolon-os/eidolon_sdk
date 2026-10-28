@@ -1138,7 +1138,7 @@ def check_device_control_proof_vectors() -> int:
     # can produce, and the two goldens could drift apart while both stay green.
     manifest_cases = load_json(ROOT / "golden" / "device-manifest.json")["cases"]
     asserted_case = next(
-        (case for case in manifest_cases if case["digest"] == asserted["manifest_digest"]),
+        (case for case in manifest_cases if case["digest"] == asserted["manifest_ref"]["digest"]),
         None,
     )
     if asserted_case is None:
@@ -1150,9 +1150,9 @@ def check_device_control_proof_vectors() -> int:
         AssertDeviceManifest(
             device_ref=DeviceRef.model_validate(asserted["device_ref"]),
             manifest=ManifestDocument(
-                manifest_id="manifest_01",
-                revision=1,
-                digest=asserted["manifest_digest"],
+                manifest_id=asserted["manifest_ref"]["manifest_id"],
+                revision=asserted["manifest_ref"]["revision"],
+                digest=asserted["manifest_ref"]["digest"],
                 document=json.loads(asserted_case["canonical_utf8"]),
             ),
             nonce=asserted["nonce"],
@@ -1186,7 +1186,9 @@ def check_device_control_proof_vectors() -> int:
                 "document.device_ref.claim_generation",
                 "document.device_ref.trust_epoch",
                 "document.nonce", "document.operation_type",
-                *(("document.manifest_digest",) if "manifest_digest" in vector["document"] else ()),
+                *(("document.manifest_ref", "document.manifest_ref.manifest_id",
+                   "document.manifest_ref.revision", "document.manifest_ref.digest")
+                  if "manifest_ref" in vector["document"] else ()),
                 "canonical_utf8", "canonical_sha256", "public_key_spki", "key_id",
                 "signature", "signature_algorithm", "signature_encoding",
                 "mutate_each_field_must_fail",

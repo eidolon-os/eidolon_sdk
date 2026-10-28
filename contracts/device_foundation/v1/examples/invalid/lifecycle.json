@@ -140,7 +140,7 @@
       "error_contains": "'direction' is a required property",
       "value": {
         "contract": "eidolon.device-foundation.manifest-assertion",
-        "contract_version": "1.0",
+        "contract_version": "1.1",
         "device_ref": {
           "device_instance_id": "device-instance-3164c593258209d757654dbd421d2bd9732fe088bce70d8c90be15dd98b587ba",
           "owner_domain_id": "owner-domain_01",
@@ -189,6 +189,64 @@
         "public_key_spki": "MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM",
         "device_signature": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
       }
+    },
+    {
+      "case_id": "DF-CONTROL-ASSERT-MANIFEST-REJECTS-DIGEST-ONLY-VERSION",
+      "schema": "https://contracts.eidolon.live/device-foundation/v1/device-control/schemas.schema.json",
+      "definition": "AssertDeviceManifest",
+      "value": {
+        "contract": "eidolon.device-foundation.manifest-assertion",
+        "contract_version": "1.0",
+        "device_ref": {
+          "device_instance_id": "device-instance-3164c593258209d757654dbd421d2bd9732fe088bce70d8c90be15dd98b587ba",
+          "owner_domain_id": "owner-domain_01",
+          "owner_domain_generation": 3,
+          "claim_generation": 2,
+          "trust_epoch": 4
+        },
+        "manifest": {
+          "manifest_id": "esp-box-3",
+          "revision": 2,
+          "digest": "sha256:0c883ad7fe84a08fcc83b789c7dd44026459740150b39635053b44d1b7de4515",
+          "document": {
+            "actions": [],
+            "events": [],
+            "media": [
+              {
+                "codecs": [
+                  "opus"
+                ],
+                "direction": "bidirectional",
+                "kind": "audio"
+              },
+              {
+                "codecs": [
+                  "h264"
+                ],
+                "direction": "publish",
+                "kind": "video"
+              }
+            ],
+            "properties": [
+              {
+                "name": "interaction_mode",
+                "observable": false,
+                "schema": {
+                  "const": "full_duplex",
+                  "type": "string"
+                },
+                "writable": false
+              }
+            ],
+            "schema_version": 1,
+            "title": "eidolon-box3"
+          }
+        },
+        "nonce": "0123456789abcdefghij",
+        "public_key_spki": "MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM",
+        "device_signature": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+      },
+      "error_contains": "was expected"
     }
   ]
 }
