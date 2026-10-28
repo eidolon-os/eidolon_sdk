@@ -35,3 +35,12 @@ def test_short_or_impossible_speech_does_not_count(speech_ms):
     data['observation']['audio_quality']['speech_ms'] = speech_ms
     with pytest.raises(ValidationError):
         CandidateEvidence(**data)
+
+
+@pytest.mark.parametrize('change', [dict(min_turns=2), dict(min_turns=6),
+    dict(min_similarity=float('nan')), dict(weights_hash='unknown'), dict(min_total_speech_ms=100)])
+def test_promotion_policy_cannot_weaken_independence_or_model_binding(change):
+    from eidolon_sdk.biz.candidate_evidence import CandidatePromotionPolicy
+    with pytest.raises(ValidationError):
+        CandidatePromotionPolicy(**(dict(version='v', decision_version='trial', model_id='m',
+            weights_hash='a' * 64, preprocessing_version='v', min_similarity=.8) | change))

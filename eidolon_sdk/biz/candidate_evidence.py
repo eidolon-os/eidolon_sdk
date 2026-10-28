@@ -40,6 +40,22 @@ class CandidateEvidence(PersonContract):
 
 
 class CandidateEvidenceReceipt(PersonContract):
+    maturity: Literal["candidate", "established"] = "candidate"
+    person_revision: int = Field(ge=1)
     person_id: str
     accepted: bool
     independent_turns: int = Field(ge=0, le=CANDIDATE_EVIDENCE_LIMIT)
+
+
+class CandidatePromotionPolicy(PersonContract):
+    """Explicit model-bound trial policy; absent configuration disables promotion."""
+    version: str = Field(min_length=1, max_length=128)
+    decision_version: str = Field(min_length=1, max_length=128)
+    model_id: str = Field(min_length=1, max_length=128)
+    weights_hash: str = Field(pattern=r'^[a-f0-9]{64}$')
+    preprocessing_version: str = Field(min_length=1, max_length=128)
+    scoring_version: Literal['normalized-template-cosine-v1'] = 'normalized-template-cosine-v1'
+    min_turns: int = Field(default=3, ge=3, le=CANDIDATE_EVIDENCE_LIMIT)
+    min_total_speech_ms: int = Field(default=4500, ge=4500, le=150000)
+    min_similarity: float = Field(ge=0, le=1, allow_inf_nan=False)
+    max_evidence_age_s: int = Field(default=604800, ge=60, le=604800)
