@@ -35,6 +35,21 @@ class ProvisionalMemoryPolicy(BaseModel):
     session_recall_allowed: bool = Field(default=False, strict=True)
 
 
+class PersonMemoryDefaults(BaseModel):
+    """Owner defaults for future candidates and automatic promotion only."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+    candidate: ProvisionalMemoryPolicy = Field(default_factory=ProvisionalMemoryPolicy)
+    prepare_on_promotion: bool = Field(default=False, strict=True)
+
+
+class PersonMemoryDefaultsState(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+    owner_id: str = Field(min_length=1, max_length=64)
+    owner_revision: int = Field(ge=1, strict=True)
+    policy: PersonMemoryDefaults
+
+
 class ProvisionalMemoryPolicyState(BaseModel):
     model_config = ConfigDict(frozen=True, extra="forbid")
     owner_id: str = Field(min_length=1, max_length=64)
