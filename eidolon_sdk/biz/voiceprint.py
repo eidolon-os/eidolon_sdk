@@ -108,6 +108,7 @@ class SpeakerAudioQuality(Contract):
     speech_ms: int | None = Field(default=None, ge=0, le=30000)
     clipping: float | None = Field(default=None, ge=0, le=1, allow_inf_nan=False)
     rms: float | None = Field(default=None, ge=0, le=1, allow_inf_nan=False)
+    overlap_detected: float | None = Field(default=None, ge=0, le=1, allow_inf_nan=False)
 
 
 class SpeakerAdmissionLimits(Contract):

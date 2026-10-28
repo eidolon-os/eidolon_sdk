@@ -12,7 +12,7 @@ def payload():
         model_id='m', weights_hash='a' * 64, preprocessing_version='v',
         decision_version='trial', scoring_version='cosine', confidence='controlled_trial',
         maturity='candidate', reason='voice_match', issued_at=1, expires_at=11,
-        audio_quality=dict(audio_ms=2000, speech_ms=2000, required_speech_ms=1500)))
+        audio_quality=dict(audio_ms=2000, speech_ms=2000, required_speech_ms=1500, overlap_detected=0)))
 
 
 def test_bounded_candidate_evidence_roundtrip():
@@ -67,3 +67,11 @@ def test_discovery_requires_explicit_single_speaker_evidence_and_matching_model(
     data['sample']['model_id'] = 'other'
     with pytest.raises(ValidationError, match='model'):
         CandidateDiscovery(**data)
+
+
+@pytest.mark.parametrize('overlap', [None, 1, .5])
+def test_candidate_evidence_requires_explicit_non_overlap(overlap):
+    data = payload()
+    data['observation']['audio_quality']['overlap_detected'] = overlap
+    with pytest.raises(ValidationError, match='non-overlap'):
+        CandidateEvidence(**data)

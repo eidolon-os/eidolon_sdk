@@ -33,6 +33,8 @@ class CandidateEvidence(PersonContract):
         if (value.audio_quality is None or value.audio_quality.speech_ms is None
                 or value.audio_quality.speech_ms < CANDIDATE_MIN_SPEECH_MS):
             raise ValueError('insufficient independent speech')
+        if value.audio_quality.overlap_detected != 0:
+            raise ValueError('candidate evidence requires explicit non-overlap evidence')
         duration_ms = (source.end_sample - source.start_sample) * 1000 / source.sample_rate
         if value.audio_quality.speech_ms > duration_ms or duration_ms > 30000:
             raise ValueError('speech does not fit bounded source interval')
