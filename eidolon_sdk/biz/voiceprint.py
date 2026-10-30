@@ -89,6 +89,13 @@ class VoiceAudioRequest(Contract):
     pcm_base64: str = Field(min_length=4, max_length=1280000)
 
 
+class VoiceCaptureSession(Contract):
+    """Ephemeral microphone grant; credentials must never be persisted or logged."""
+    capture_id: str = Field(pattern=r"^[a-f0-9]{32}$")
+    server_urls: list[str] = Field(min_length=1, max_length=16)
+    token: str = Field(min_length=1)
+
+
 class SpeakerExtractionRequest(VoiceAudioRequest):
     """Internal extraction purpose; registration retains its longer quality floor."""
     purpose: Literal["enrollment", "recognition"] = "enrollment"
