@@ -13,7 +13,6 @@ def configuration():
             dict(
                 companion_id="companion-a",
                 output_device_id=device("output"),
-                role=dict(name="八戒", description="热情友好的旅伴"),
             )
         ],
     )
@@ -42,7 +41,8 @@ def test_revision_resolves_fresh_refs_without_changing_execution_version():
     )
     assert scene.assignment_revision == 1
     assert scene.input_device.claim_generation == 2
-    assert scene.members[0].role.name == "八戒"
+    assert scene.members[0].role is None
+    assert scene.reply_budget == 8  # Internal execution guard, not a Team setting.
     assert saved.revision == 7
 
 
@@ -89,3 +89,12 @@ def test_multiple_saved_teams_can_reference_same_companion():
         for name in ("team-a", "team-b")
     ]
     assert teams[0].configuration == teams[1].configuration
+
+
+def test_team_cannot_override_companion_profile_or_reply_limit():
+    config = configuration()
+    with pytest.raises(ValidationError):
+        TeamConfiguration(**(config | {"reply_budget": 3}))
+    config["members"][0]["role"] = {"name": "replacement"}
+    with pytest.raises(ValidationError):
+        TeamConfiguration(**config)

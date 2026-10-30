@@ -4,14 +4,13 @@ from collections.abc import Mapping
 from typing import Annotated, Self
 from pydantic import BaseModel, ConfigDict, Field, StringConstraints, model_validator
 from eidolon_sdk.device_foundation.v1 import DeviceInstanceId, DeviceRef
-from .coordination import CoordinationMember, CoordinationSelection, Identifier, SceneRole, RoleGroupStatus
+from .coordination import CoordinationMember, CoordinationSelection, Identifier, RoleGroupStatus
 
 
 class TeamMember(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
     companion_id: Identifier
     output_device_id: DeviceInstanceId
-    role: SceneRole | None = None
 
 
 class TeamConfiguration(BaseModel):
@@ -24,7 +23,6 @@ class TeamConfiguration(BaseModel):
     goal: Annotated[str, StringConstraints(strict=True, strip_whitespace=True, max_length=2000)] = (
         ""
     )
-    reply_budget: Annotated[int, Field(strict=True, ge=1, le=32)] = 8
 
     @model_validator(mode="after")
     def distinct_resources(self) -> Self:
@@ -63,12 +61,10 @@ class TeamConfiguration(BaseModel):
                 CoordinationMember(
                     companion_id=m.companion_id,
                     output_device=devices[m.output_device_id],
-                    role=m.role,
                 )
                 for m in self.members
             ),
             goal=self.goal,
-            reply_budget=self.reply_budget,
         )
 
 
