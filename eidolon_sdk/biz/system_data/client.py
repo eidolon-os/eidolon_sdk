@@ -8,6 +8,7 @@ from urllib.parse import quote
 import httpx
 from pydantic import ValidationError
 
+from eidolon_sdk.biz.speech_voice import CompanionSpeechVoice
 from eidolon_sdk.core.http import ServiceHTTPClient, authorization_header
 
 from .models import (
@@ -125,6 +126,19 @@ class SystemDataRuntimeClient(ServiceHTTPClient):
             f"/api/companion-authority/v1/owners/{_quote(owner_id)}/default-runtime-snapshot"
         )
         return _runtime_snapshot(response)
+
+    async def get_companion_speech_voice(self, companion_id: str) -> CompanionSpeechVoice:
+        """The Companion's voice choice, with its Owner voice and bindings when it chose one."""
+        response = await self._get(
+            f"/api/companion-authority/v1/companions/{_quote(companion_id)}/speech-voice"
+        )
+        try:
+            result = CompanionSpeechVoice.model_validate(response.json())
+        except (ValueError, ValidationError) as exc:
+            raise SystemDataContractError("invalid Companion speech voice") from exc
+        if result.companion_id != companion_id:
+            raise SystemDataContractError("speech voice is outside request scope")
+        return result
 
     async def get_companion_face(self, companion_id: str) -> bytes | None:
         response = await self._get(
