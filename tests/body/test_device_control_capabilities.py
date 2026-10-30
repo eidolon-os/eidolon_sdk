@@ -12,6 +12,8 @@ import pytest
 
 from eidolon_sdk.biz.body import (
     BODY_OP_DISPLAY_BRIGHTNESS,
+    BODY_OP_DISPLAY_BRIGHTNESS_GET,
+    BODY_OP_VOLUME_GET,
     BODY_OP_VOLUME_SET,
     KNOWN_BODY_CAPABILITIES,
     validate_capability_arguments,
@@ -65,3 +67,50 @@ def test_brightness_is_an_integer_percentage_not_a_display_text_update() -> None
 
     assert schema["properties"]["brightness"]["type"] == "integer"
     assert "text" not in schema["properties"]
+
+
+@pytest.mark.parametrize(
+    ("op", "field"),
+    [
+        (BODY_OP_VOLUME_GET, "volume"),
+        (BODY_OP_DISPLAY_BRIGHTNESS_GET, "brightness"),
+    ],
+)
+def test_read_capability_takes_no_arguments(op: str, field: str) -> None:
+    capability = KNOWN_BODY_CAPABILITIES[op]
+    schema = capability.input_schema
+
+    assert validate_capability_arguments(schema, {}) is None
+    assert schema["required"] == []
+    assert schema["properties"] == {}
+    assert schema["additionalProperties"] is False
+    assert field not in schema["properties"]
+
+
+@pytest.mark.parametrize(
+    ("op", "field"),
+    [
+        (BODY_OP_VOLUME_GET, "volume"),
+        (BODY_OP_DISPLAY_BRIGHTNESS_GET, "brightness"),
+    ],
+)
+def test_read_capability_declares_the_value_it_returns(op: str, field: str) -> None:
+    result_schema = KNOWN_BODY_CAPABILITIES[op].result_schema
+
+    assert result_schema["required"] == [field]
+    assert result_schema["additionalProperties"] is False
+    assert result_schema["properties"][field]["minimum"] == 0
+    assert result_schema["properties"][field]["maximum"] == 100
+
+
+@pytest.mark.parametrize(
+    ("op", "field"),
+    [
+        (BODY_OP_VOLUME_GET, "volume"),
+        (BODY_OP_DISPLAY_BRIGHTNESS_GET, "brightness"),
+    ],
+)
+def test_read_capability_refuses_a_payload_it_did_not_ask_for(op: str, field: str) -> None:
+    schema = KNOWN_BODY_CAPABILITIES[op].input_schema
+
+    assert validate_capability_arguments(schema, {field: 50}) is not None

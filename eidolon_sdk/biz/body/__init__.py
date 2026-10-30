@@ -34,6 +34,14 @@ from eidolon_sdk.biz.body.manifest import (
     MAX_CAPABILITIES_PER_DEVICE,
     validate_capability_arguments,
 )
+from eidolon_sdk.biz.body.events import (
+    BODY_STATE_CHANGED_TYPE,
+    BODY_STATE_KEYS,
+    MAX_DEVICE_EVENT_BYTES,
+    DeviceStateChangedEvent,
+    device_state_changed_from_event,
+    read_device_event,
+)
 from eidolon_sdk.biz.body.blackboard import (
     DEVICE_BLACKBOARD_BUCKET,
     DEVICE_BLACKBOARD_SCHEMA_VERSION,
@@ -78,4 +86,10 @@ __all__ = [
     "capability_to_dict",
     "command_result_to_dict",
     "device_to_dict",
+    "BODY_STATE_CHANGED_TYPE",
+    "BODY_STATE_KEYS",
+    "MAX_DEVICE_EVENT_BYTES",
+    "DeviceStateChangedEvent",
+    "device_state_changed_from_event",
+    "read_device_event",
 ]
