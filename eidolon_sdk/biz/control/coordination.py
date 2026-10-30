@@ -83,9 +83,21 @@ class RoleGroupStatus(BaseModel):
     state: Literal["preparing", "ready", "closing", "closed", "failed"]
     error: str = ""
     scenario: Literal["ip_role_group"]
+    round_error: str = ""
+    round_epoch: Annotated[int, Field(strict=True, ge=0)] = 0
     completion_basis: Literal["native_playout"]
 
 
 # Physical execution and receipt delivery have separate bounded budgets.
 STOP_EXECUTION_TIMEOUT = 2.0
 STOP_RECEIPT_TIMEOUT = STOP_EXECUTION_TIMEOUT + 1.0
+
+
+class TeamRoundStatus(BaseModel):
+    """Worker observation on the existing session-control channel; no dialogue text."""
+    model_config = ConfigDict(extra="forbid", frozen=True)
+    type: Literal["team_round_status"] = "team_round_status"
+    session_id: Identifier
+    conversation_id: Identifier
+    epoch: Annotated[int, Field(strict=True, ge=0)]
+    error: Annotated[str, Field(strict=True, max_length=128)] = ""
