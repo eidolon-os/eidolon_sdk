@@ -89,3 +89,18 @@ def test_templates_trials_and_probes_never_carry_windows():
 def test_a_sample_without_windows_digests_the_same_as_before():
     assert (enrollment_evidence_digest({"0": sample()})
             == enrollment_evidence_digest({"0": EnrollmentSample.model_validate(sample())}))
+
+
+def test_channel_calibration_samples_are_embeddings_of_public_replays():
+    from eidolon_sdk.biz.voiceprint import ChannelCalibrationSample, ChannelCalibrationUpload
+    windowed = EnrollmentSample(**sample().model_dump(),
+                                crops=[CalibrationCrop(speech_ms=900, vector=[1.0, 0.0])])
+    value = ChannelCalibrationSample(sample_id="s", channel="mobile", batch_id="replay-1",
+                                     captured_at=1.0, sample=windowed)
+    assert value.source == "public_replay"
+    assert ChannelCalibrationSample.model_validate_json(value.model_dump_json()).sample.crops
+    for change in ({"source": "household"}, {"batch_id": "../x"}, {"captured_at": 0}):
+        with pytest.raises(ValidationError):
+            ChannelCalibrationSample(**(value.model_dump() | change))
+    with pytest.raises(ValidationError):
+        ChannelCalibrationUpload(pcm_base64="AAAA", batch_id="bad id")
