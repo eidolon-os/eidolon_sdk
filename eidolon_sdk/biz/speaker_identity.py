@@ -154,12 +154,14 @@ class IdentityPolicy(Contract):
     # Below this, failing to match is not evidence of someone new.
     min_unknown_speech_ms: int = Field(ge=300, le=30000)
     prior_unknown: float = Field(gt=0, lt=1, allow_inf_nan=False)
-    # Posterior thresholds; ``discovery`` applies to the posterior of someone not enrolled.
-    personal_memory: float = Field(ge=0.5, lt=1, allow_inf_nan=False)
-    addressing: float = Field(ge=0.5, lt=1, allow_inf_nan=False)
-    speaker_label: float = Field(ge=0.5, lt=1, allow_inf_nan=False)
-    candidate_evidence: float = Field(ge=0.5, lt=1, allow_inf_nan=False)
-    discovery: float = Field(ge=0.5, lt=1, allow_inf_nan=False)
+    # Posterior thresholds; ``discovery`` applies to the posterior of someone
+    # not enrolled. A use without a threshold is off: nothing is decided for
+    # it (design §7.3 M2 — a use not yet calibrated ships switched off).
+    personal_memory: float | None = Field(ge=0.5, lt=1, allow_inf_nan=False)
+    addressing: float | None = Field(ge=0.5, lt=1, allow_inf_nan=False)
+    speaker_label: float | None = Field(ge=0.5, lt=1, allow_inf_nan=False)
+    candidate_evidence: float | None = Field(ge=0.5, lt=1, allow_inf_nan=False)
+    discovery: float | None = Field(ge=0.5, lt=1, allow_inf_nan=False)
 
     @model_validator(mode="after")
     def unknown_requires_sufficient_speech(self):

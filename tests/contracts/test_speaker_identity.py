@@ -175,3 +175,9 @@ def test_observation_profile_provenance_never_fabricates_an_enrollment():
                        dict(origin="enrollment", enrollment_id="e", source_observation_id="o")]:
         with pytest.raises(ValidationError):
             SpeakerProfileView(**fields, **provenance)
+
+
+def test_a_use_without_a_threshold_is_switched_off():
+    assert policy(personal_memory=None, discovery=None).personal_memory is None
+    with pytest.raises(ValidationError):
+        IdentityPolicy(**{k: v for k, v in policy().model_dump().items() if k != "addressing"})
