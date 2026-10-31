@@ -174,7 +174,10 @@ SESSION_CLOSE_TYPE = "session_close"
 # Match authenticated signalling identity, never a sender field in JSON.
 CHANNEL_PROVIDER_IDENTITY_PREFIX = "channel-provider-"
 SESSION_REJECTED_TYPE = "session_rejected"
-SESSION_REJECTION_CONFLICT = "conflict"
+# Every refused start is answered, so a device never waits out its own timeout
+# for a conversation that will not come. The reason says what to tell the person.
+SESSION_REJECTION_CONFLICT = "conflict"  # something else holds the device or Companion
+SESSION_REJECTION_UNAVAILABLE = "unavailable"  # the Host could not serve it now; asking again may
 
 SESSION_STARTED_TYPE = "session_started"
 SESSION_CONVERSATION_ID_FIELD = "conversation_id"

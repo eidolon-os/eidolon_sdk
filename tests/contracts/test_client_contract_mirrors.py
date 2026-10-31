@@ -300,6 +300,7 @@ def test_mobile_contract_mirror_matches_sdk() -> None:
         "CHANNEL_PROVIDER_IDENTITY_PREFIX": "channelProviderIdentityPrefix",
         "SESSION_REJECTED_TYPE": "sessionRejectedType",
         "SESSION_REJECTION_CONFLICT": "sessionRejectionConflict",
+        "SESSION_REJECTION_UNAVAILABLE": "sessionRejectionUnavailable",
         "SESSION_STARTED_TYPE": "sessionStartedType",
         "SESSION_END_TYPE": "sessionEndType",
         "SESSION_INTENT_FIELD": "sessionIntentField",

@@ -4,7 +4,7 @@ import json
 from eidolon_sdk.biz.control.shared_session import SharedSessionInvitation
 from eidolon_sdk.biz.contracts import (
     CHANNEL_PROVIDER_IDENTITY_PREFIX, SESSION_REJECTED_TYPE,
-    SESSION_REJECTION_CONFLICT, WIRE_SCHEMA_VERSION,
+    SESSION_REJECTION_CONFLICT, SESSION_REJECTION_UNAVAILABLE, WIRE_SCHEMA_VERSION,
 )
 
 HERE = Path(__file__).resolve().parent
@@ -23,12 +23,17 @@ def vectors():
     }))
     return {
         "shared-session-invite.json": invite.command(command_id="invite-golden"),
-        "session-rejected.json": {
-            "provider_identity": CHANNEL_PROVIDER_IDENTITY_PREFIX + "same-room",
-            "room": "same-room",
-            "payload": {"schema_v": WIRE_SCHEMA_VERSION, "type": SESSION_REJECTED_TYPE,
-                "conversation_id": "conversation-1", "reason": SESSION_REJECTION_CONFLICT},
-        },
+        "session-rejected.json": rejected(SESSION_REJECTION_CONFLICT),
+        "session-rejected-unavailable.json": rejected(SESSION_REJECTION_UNAVAILABLE),
+    }
+
+
+def rejected(reason):
+    return {
+        "provider_identity": CHANNEL_PROVIDER_IDENTITY_PREFIX + "same-room",
+        "room": "same-room",
+        "payload": {"schema_v": WIRE_SCHEMA_VERSION, "type": SESSION_REJECTED_TYPE,
+            "conversation_id": "conversation-1", "reason": reason},
     }
 
 

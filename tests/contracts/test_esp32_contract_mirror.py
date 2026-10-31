@@ -104,6 +104,7 @@ def test_esp32_topics_header_matches_python_wire_contract() -> None:
         "SESSION_CLOSE_TYPE": "kSessionCloseType",
         "SESSION_REJECTED_TYPE": "kSessionRejectedType",
         "SESSION_REJECTION_CONFLICT": "kSessionRejectionConflict",
+        "SESSION_REJECTION_UNAVAILABLE": "kSessionRejectionUnavailable",
         "SESSION_STARTED_TYPE": "kSessionStartedType",
         "SESSION_CONVERSATION_ID_FIELD": "kSessionConversationIdField",
         "SESSION_CONTROL_REQUEST_ID_FIELD": "kSessionControlRequestIdField",
