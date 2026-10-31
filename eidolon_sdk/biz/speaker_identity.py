@@ -102,22 +102,69 @@ class SpeakerCandidate(Contract):
     templates: list[VoiceTemplate] = Field(min_length=1, max_length=5)
 
 
+class DurationBand(Contract):
+    """Voiced-speech range with its own per-Person threshold; it ends where the next begins."""
+    name: str = Field(min_length=1, max_length=32, pattern=r"^[a-z0-9_]+$")
+    min_speech_ms: int = Field(ge=300, le=30000)
+    # Calibration never sets a threshold below the floor, whatever the cohort says.
+    floor: float = Field(ge=0, le=1, allow_inf_nan=False)
+    # The identified Person must lead every other Person by this much.
+    margin: float = Field(gt=0, le=1, allow_inf_nan=False)
+
+
+class CohortReference(Contract):
+    """Impostor embeddings delivered beside the model: public speakers only, no user data."""
+    path: str = Field(min_length=1, max_length=128, pattern=r"^[A-Za-z0-9._-]+$")
+    sha256: str = Field(pattern=r"^[a-f0-9]{64}$")
+    speakers: int = Field(ge=1)
+
+
+class RecognitionCalibration(Contract):
+    """How each Person's thresholds are derived; the derivation itself is deterministic."""
+    version: str = Field(min_length=1, max_length=128)
+    max_false_accept: float = Field(gt=0, le=0.05, allow_inf_nan=False)
+    # Below this share of a Person's own registration windows, a band only extends a track.
+    min_genuine_acceptance: float = Field(gt=0, le=1, allow_inf_nan=False)
+    min_genuine_scores: int = Field(ge=1, le=32)
+    bands: list[DurationBand] = Field(min_length=1, max_length=6)
+    cohort: CohortReference
+
+    @model_validator(mode="after")
+    def ascending_bands(self):
+        starts = [band.min_speech_ms for band in self.bands]
+        if starts != sorted(set(starts)) or len({b.name for b in self.bands}) != len(self.bands):
+            raise ValueError("bands must have distinct names and ascending starts")
+        return self
+
+    def band(self, speech_ms: int) -> DurationBand | None:
+        found = None
+        for band in self.bands:
+            if speech_ms >= band.min_speech_ms:
+                found = band
+        return found
+
+
 class SpeakerRecognitionPolicy(Contract):
     """Explicit deployment trial, never an admission or memory permission."""
     version: str = Field(min_length=1, max_length=128)
     model_id: str = Field(min_length=1, max_length=128)
     weights_hash: str = Field(pattern=r"^[a-f0-9]{64}$")
     preprocessing_version: str = Field(min_length=1, max_length=128)
+    # Without calibration (or for a Person with no registration windows) these
+    # fixed values decide; calibration replaces them per Person and band.
     threshold: float = Field(ge=0, le=1, allow_inf_nan=False)
     min_person_margin: float = Field(gt=0, le=1, allow_inf_nan=False)
     min_speech_ms: int = Field(ge=300, le=30000)
     min_unknown_speech_ms: int = Field(default=1500, ge=300, le=30000)
     confidence: Literal["controlled_trial"] = "controlled_trial"
+    calibration: RecognitionCalibration | None = None
 
     @model_validator(mode="after")
     def unknown_requires_sufficient_speech(self):
         if self.min_unknown_speech_ms < self.min_speech_ms:
             raise ValueError("unknown speech floor cannot be below extraction floor")
+        if self.calibration is not None and self.calibration.bands[0].min_speech_ms != self.min_speech_ms:
+            raise ValueError("calibrated bands must start at the extraction floor")
         return self
 
 

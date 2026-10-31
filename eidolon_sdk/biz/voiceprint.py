@@ -40,6 +40,61 @@ class ExtractedSample(Contract):
         return value
 
 
+class CalibrationCrop(Contract):
+    """A voiced window of a registration recording, embedded like a conversation probe.
+
+    Vectors are kept to six decimals; a cosine between two crops is accurate to
+    about 1e-5, far below any decision margin.
+    """
+
+    speech_ms: int = Field(ge=300, le=30000)
+    vector: list[float] = Field(min_length=2, max_length=2048)
+
+    @field_validator("vector")
+    @classmethod
+    def unit_vector(cls, value):
+        if not all(math.isfinite(x) for x in value):
+            raise ValueError("non-finite embedding")
+        norm = math.hypot(*value)
+        if not math.isfinite(norm) or norm < 1e-8:
+            raise ValueError("empty embedding")
+        scale = 1 if abs(norm - 1) < 1e-4 else norm
+        return [round(x / scale, 6) for x in value]
+
+
+class EnrollmentSample(ExtractedSample):
+    """A registration sample and windows of it, scored later like conversation probes."""
+
+    # A plain sample (one stored before windows existed) is one with no windows.
+    model_config = ConfigDict(extra="forbid", from_attributes=True)
+
+    crops: list[CalibrationCrop] = Field(default_factory=list, max_length=8)
+
+    def sample(self) -> ExtractedSample:
+        return ExtractedSample.model_validate(self.model_dump(exclude={"crops"}))
+
+
+def _without_windows(value):
+    # Templates, trials and probes are plain samples; windows belong to
+    # registration evidence only, even when an in-process caller passes one.
+    return value.sample() if isinstance(value, EnrollmentSample) else value
+
+
+class GenuineScore(Contract):
+    """One same-person score whose window never contributed to the template it was scored against."""
+
+    speech_ms: int = Field(ge=300, le=30000)
+    similarity: float = Field(ge=-1, le=1, allow_inf_nan=False)
+
+
+class TemplateCalibration(Contract):
+    """Same-person evidence that registration provides for free; never a threshold itself."""
+
+    version: Literal["enrollment-windows-v1"] = "enrollment-windows-v1"
+    crops: list[CalibrationCrop] = Field(default_factory=list, max_length=32)
+    genuine: list[GenuineScore] = Field(default_factory=list, max_length=32)
+
+
 class EnrollmentCreate(Contract):
     person_id: str = Field(min_length=1, max_length=64)
     operation_id: str = Field(min_length=1, max_length=64, pattern=r"^[A-Za-z0-9_-]+$")
@@ -81,6 +136,12 @@ class VoiceTemplate(Contract):
     profile_id: str
     revision: int
     sample: ExtractedSample
+    calibration: TemplateCalibration | None = None
+
+    @field_validator("sample", mode="before")
+    @classmethod
+    def plain_sample(cls, value):
+        return _without_windows(value)
 
 
 class VoiceAudioRequest(Contract):
@@ -142,19 +203,27 @@ class EnrollmentEvidence(Contract):
     """Internal owner-authorized snapshot, never returned to a Mobile client."""
 
     enrollment: EnrollmentView
-    samples: dict[str, ExtractedSample]
+    samples: dict[str, EnrollmentSample]
+
+
+def _evidence(value: ExtractedSample) -> dict:
+    # A sample without windows digests the same whichever type carries it.
+    data = value.model_dump(mode="json")
+    if not data.get("crops"):
+        data.pop("crops", None)
+    return data
 
 
 def enrollment_evidence_digest(samples: dict[str, ExtractedSample]) -> str:
-    payload = {key: value.model_dump(mode="json") for key, value in samples.items()}
+    payload = {key: _evidence(value) for key, value in samples.items()}
     return hashlib.sha256(
         json.dumps(payload, sort_keys=True, separators=(",", ":"), allow_nan=False).encode()
     ).hexdigest()
 
 
 class EnrollmentEvaluationRequest(Contract):
-    samples: dict[str, ExtractedSample] = Field(min_length=3, max_length=3)
-    trial: ExtractedSample
+    samples: dict[str, EnrollmentSample] = Field(min_length=3, max_length=3)
+    trial: EnrollmentSample
     recording_sha256: str = Field(pattern=r"^[a-f0-9]{64}$")
 
 
@@ -169,6 +238,12 @@ class EnrollmentEvaluation(Contract):
     registration_min_similarity: float = Field(ge=-1, le=1)
     trial_min_similarity: float = Field(ge=-1, le=1)
     validation_state: Literal["unvalidated"] = "unvalidated"
+    calibration: TemplateCalibration | None = None
+
+    @field_validator("template", "trial", mode="before")
+    @classmethod
+    def plain_samples(cls, value):
+        return _without_windows(value)
 
 
 class EnrollmentCompletion(Contract):
@@ -187,6 +262,11 @@ class SpeakerComparisonRequest(Contract):
 
     probe: ExtractedSample
     templates: list[VoiceTemplate] = Field(min_length=1, max_length=5)
+
+    @field_validator("probe", mode="before")
+    @classmethod
+    def plain_probe(cls, value):
+        return _without_windows(value)
 
     @field_validator("templates")
     @classmethod
