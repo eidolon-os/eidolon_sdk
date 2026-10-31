@@ -132,11 +132,19 @@ class SpeakerProfileView(Contract):
         return self
 
 
+# Registration captures only through the phone app, so registration
+# templates share one calibration channel (see speaker_identity.channel_class).
+REGISTRATION_CHANNEL = "mobile"
+
+
 class VoiceTemplate(Contract):
     profile_id: str
     revision: int
     sample: ExtractedSample
     calibration: TemplateCalibration | None = None
+    # The capture channel the template was built from; observation templates
+    # carry the channel of the probe that created them.
+    channel: str = Field(default=REGISTRATION_CHANNEL, min_length=1, max_length=96)
 
     @field_validator("sample", mode="before")
     @classmethod
@@ -178,19 +186,6 @@ class SpeakerAudioQuality(Contract):
     rms: float | None = Field(default=None, ge=0, le=1, allow_inf_nan=False)
     overlap_detected: float | None = Field(default=None, ge=0, le=1, allow_inf_nan=False)
 
-
-class SpeakerAdmissionLimits(Contract):
-    """Published release limits for conversation, distinct from recording UX."""
-
-    max_allowed_speakers: int = Field(ge=1, le=5)
-    min_audio_ms: int = Field(ge=300, le=30000)
-    max_audio_ms: int = Field(ge=1500, le=30000)
-
-    @model_validator(mode="after")
-    def ordered_audio_range(self):
-        if self.min_audio_ms > self.max_audio_ms:
-            raise ValueError("valid admission audio range required")
-        return self
 
 
 class SpeakerExtractionReadiness(Contract):
@@ -235,8 +230,6 @@ class EnrollmentEvaluation(Contract):
     recording_sha256: str = Field(pattern=r"^[a-f0-9]{64}$")
     template: ExtractedSample
     trial: ExtractedSample
-    registration_min_similarity: float = Field(ge=-1, le=1)
-    trial_min_similarity: float = Field(ge=-1, le=1)
     validation_state: Literal["unvalidated"] = "unvalidated"
     calibration: TemplateCalibration | None = None
 

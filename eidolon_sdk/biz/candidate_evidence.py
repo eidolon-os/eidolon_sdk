@@ -22,8 +22,8 @@ class CandidateEvidence(PersonContract):
     def independent_source(self):
         value = self.observation
         source = value.source
-        if value.status != 'identified' or value.maturity != 'candidate':
-            raise ValueError('candidate evidence requires an identified candidate')
+        if value.status != 'compared' or value.decided('candidate_evidence') is None:
+            raise ValueError('candidate evidence requires a candidate meeting its use threshold')
         if not value.session_id or not value.turn_id or source is None:
             raise ValueError('candidate evidence requires session and turn')
         if source.session_id != value.session_id or source.request_id != value.turn_id:
@@ -54,14 +54,15 @@ class CandidateEvidenceReceipt(PersonContract):
 class CandidatePromotionPolicy(PersonContract):
     """Explicit model-bound trial policy; absent configuration disables promotion."""
     version: str = Field(min_length=1, max_length=128)
-    decision_version: str = Field(min_length=1, max_length=128)
+    # Evidence counts only when decided under this identity policy.
+    identity_policy_version: str = Field(min_length=1, max_length=128)
     model_id: str = Field(min_length=1, max_length=128)
     weights_hash: str = Field(pattern=r'^[a-f0-9]{64}$')
     preprocessing_version: str = Field(min_length=1, max_length=128)
-    scoring_version: Literal['normalized-template-cosine-v1'] = 'normalized-template-cosine-v1'
     min_turns: int = Field(default=3, ge=3, le=CANDIDATE_EVIDENCE_LIMIT)
     min_total_speech_ms: int = Field(default=4500, ge=4500, le=150000)
-    min_similarity: float = Field(ge=0, le=1, allow_inf_nan=False)
+    # Each counted observation's posterior for the candidate.
+    min_posterior: float = Field(ge=0.5, lt=1, allow_inf_nan=False)
     max_evidence_age_s: int = Field(default=604800, ge=60, le=604800)
 
 
@@ -75,8 +76,9 @@ class CandidateDiscovery(PersonContract):
     @model_validator(mode='after')
     def valid_unknown_source(self):
         value, source = self.observation, self.observation.source
-        if value.status != 'unknown' or not value.session_id or not value.turn_id or source is None:
-            raise ValueError('discovery requires a conclusive scoped unknown observation')
+        if (value.status != 'compared' or not value.decisions.discovery
+                or not value.session_id or not value.turn_id or source is None):
+            raise ValueError('discovery requires scoped evidence of someone not enrolled')
         if source.session_id != value.session_id or source.request_id != value.turn_id or source.sample_rate != 16000:
             raise ValueError('discovery source scope mismatch')
         duration_ms = (source.end_sample - source.start_sample) * 1000 / source.sample_rate

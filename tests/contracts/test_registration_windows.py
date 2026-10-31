@@ -1,14 +1,8 @@
-"""Per-Person, per-duration calibration contracts (design §3.3)."""
+"""Registration windows: same-person evidence that registration gives for free."""
 
 import pytest
 from pydantic import ValidationError
 
-from eidolon_sdk.biz.speaker_identity import (
-    CohortReference,
-    DurationBand,
-    RecognitionCalibration,
-    SpeakerRecognitionPolicy,
-)
 from eidolon_sdk.biz.voiceprint import (
     CalibrationCrop,
     EnrollmentEvaluationRequest,
@@ -20,74 +14,9 @@ from eidolon_sdk.biz.voiceprint import (
 )
 
 
-def bands():
-    return [
-        DurationBand(name="short", min_speech_ms=600, floor=0.3, margin=0.1),
-        DurationBand(name="medium", min_speech_ms=1200, floor=0.3, margin=0.08),
-        DurationBand(name="long", min_speech_ms=2500, floor=0.3, margin=0.06),
-    ]
-
-
-def calibration(**change):
-    return RecognitionCalibration(**({
-        "version": "v", "max_false_accept": 0.005, "min_genuine_acceptance": 0.8,
-        "min_genuine_scores": 4, "bands": bands(),
-        "cohort": CohortReference(path="impostor-cohort.npz", sha256="a" * 64, speakers=70),
-    } | change))
-
-
-def policy(**change):
-    return SpeakerRecognitionPolicy(**({
-        "version": "v3", "model_id": "m", "weights_hash": "b" * 64,
-        "preprocessing_version": "p", "threshold": 0.55, "min_person_margin": 0.1,
-        "min_speech_ms": 600, "calibration": calibration(),
-    } | change))
-
-
 def sample(**change):
     return ExtractedSample(**({"model_id": "m", "weights_hash": "b" * 64,
         "preprocessing_version": "p", "vector": [0.6, 0.8], "speech_ms": 4000} | change))
-
-
-def test_a_probe_falls_in_the_last_band_it_reaches():
-    value = calibration()
-    assert value.band(599) is None
-    assert value.band(600).name == "short"
-    assert value.band(1199).name == "short"
-    assert value.band(1200).name == "medium"
-    assert value.band(30000).name == "long"
-
-
-@pytest.mark.parametrize("ordered", [
-    lambda b: [b[1], b[0], b[2]],
-    lambda b: [b[0], b[0].model_copy(update={"name": "again"}), b[2]],
-    lambda b: [b[0], b[1].model_copy(update={"name": "short"}), b[2]],
-])
-def test_bands_are_distinct_and_ascending(ordered):
-    with pytest.raises(ValidationError):
-        calibration(bands=ordered(bands()))
-
-
-def test_calibrated_bands_start_at_the_extraction_floor():
-    assert policy().calibration.bands[0].min_speech_ms == 600
-    with pytest.raises(ValidationError):
-        policy(min_speech_ms=800, min_unknown_speech_ms=1500)
-
-
-def test_an_uncalibrated_policy_still_reads():
-    assert policy(calibration=None).calibration is None
-
-
-@pytest.mark.parametrize("far", [0, 0.2])
-def test_false_accept_target_is_bounded(far):
-    with pytest.raises(ValidationError):
-        calibration(max_false_accept=far)
-
-
-def test_cohort_is_a_file_beside_the_model_not_a_path_elsewhere():
-    for path in ("../x.npz", "dir/x.npz", ""):
-        with pytest.raises(ValidationError):
-            CohortReference(path=path, sha256="a" * 64, speakers=1)
 
 
 def test_crop_vectors_stay_short_on_the_wire():
@@ -152,7 +81,7 @@ def test_templates_trials_and_probes_never_carry_windows():
     probe = SpeakerComparisonRequest(probe=windowed, templates=[template]).probe
     assert type(probe) is ExtractedSample
     evaluation = EnrollmentEvaluation(evidence_digest="d" * 64, recording_sha256="e" * 64,
-        template=windowed, trial=windowed, registration_min_similarity=1, trial_min_similarity=1)
+        template=windowed, trial=windowed)
     assert "crops" not in evaluation.template.model_dump()
     assert "crops" not in evaluation.trial.model_dump()
 
