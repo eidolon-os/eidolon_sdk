@@ -126,7 +126,7 @@ def policy(conditions=None, **change):
     return IdentityPolicy(**({
         "version": "p", "model_id": "m", "weights_hash": "a" * 64, "preprocessing_version": "v",
         "backend_version": "b", "min_speech_ms": 600, "min_unknown_speech_ms": 1500,
-        "prior_unknown": 0.5, "household_margin_llr": 1.0,
+        "prior_unknown": 0.5, "household_margin_llr": 1.0, "track_continuation_llr": 3.0,
         "conditions": conditions or {c: uses() for c in ("near_same", "far_same", "far_cross")},
     } | change))
 
@@ -134,7 +134,8 @@ def policy(conditions=None, **change):
 def test_identity_policy_bounds():
     assert policy().thresholds("far_cross").personal_memory == 0.99
     for change in ({"min_unknown_speech_ms": 500}, {"prior_unknown": 0}, {"prior_unknown": 1},
-                   {"household_margin_llr": -1}):
+                   {"household_margin_llr": -1}, {"track_continuation_llr": -0.1},
+                   {"track_continuation_llr": float("nan")}):
         with pytest.raises(ValidationError):
             policy(**change)
     for change in ({"personal_memory": 0.4}, {"discovery": 1.0}):

@@ -226,6 +226,9 @@ class IdentityPolicy(Contract):
     # scored against another member's phone template, reach a use's threshold,
     # that use in near_same needs an LLR this far above the highest of them.
     household_margin_llr: float = Field(ge=0, le=20, allow_inf_nan=False)
+    # A segment continues a conversation track of its own voice on the same device
+    # when its LLR against the track reaches this (design §3.2); below it, a new track.
+    track_continuation_llr: float = Field(ge=0, le=50, allow_inf_nan=False)
 
     @model_validator(mode="after")
     def complete(self):
