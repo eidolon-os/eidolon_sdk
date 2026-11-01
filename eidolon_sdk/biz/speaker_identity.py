@@ -3,7 +3,11 @@
 Recognition produces calibrated evidence: for each compared Person a
 log-likelihood ratio and an open-set posterior, plus the posterior that the
 speaker is someone not enrolled. Each use of identity has its own threshold
-(design §3.3); the observation records which Person, if any, meets it.
+in each comparison condition (design §3.3): registration happens on the
+phone and speech arrives on every device, and how well one model separates
+speakers differs by an order of magnitude between a phone template scored
+against the phone and against a far-field device. The observation records
+which Person, if any, meets each use's threshold.
 Consumers read the decision for their own use and never apply a threshold
 of their own. Posteriors are calibrated estimates, not proof of identity.
 """
@@ -13,13 +17,17 @@ from typing import Literal
 from pydantic import Field, model_validator
 
 from .person import PersonProfile
-from .voiceprint import Contract, SpeakerAudioQuality, VoiceTemplate
+from .voiceprint import REGISTRATION_CHANNEL, Contract, SpeakerAudioQuality, VoiceTemplate
 
 MAX_CANDIDATE_PERSONS = 20
 MAX_RECOGNITION_PERSONS = 25
 MAX_EVIDENCE = 5
 
 PERSON_USES = ("personal_memory", "addressing", "speaker_label", "candidate_evidence")
+# near_same: a phone template against the phone; far_same: a device's own
+# observation template against that device; far_cross: anything else.
+IDENTITY_CONDITIONS = ("near_same", "far_same", "far_cross")
+IdentityCondition = Literal["near_same", "far_same", "far_cross"]
 
 
 def channel_class(device_kind: str | None) -> str:
@@ -27,6 +35,13 @@ def channel_class(device_kind: str | None) -> str:
     if not device_kind:
         return "unknown"
     return "mobile" if device_kind.startswith("eidolon-mobile") else device_kind
+
+
+def comparison_condition(template_channel: str, probe_channel: str) -> IdentityCondition:
+    """Which calibration and thresholds a template-probe comparison falls under."""
+    if template_channel != probe_channel or probe_channel == "unknown":
+        return "far_cross"
+    return "near_same" if probe_channel == REGISTRATION_CHANNEL else "far_same"
 
 
 class SpeakerEvidenceSource(Contract):
@@ -91,6 +106,8 @@ class SpeakerIdentityObservation(Contract):
     policy_version: str | None = None
     evidence: list[PersonEvidence] = Field(default_factory=list, max_length=MAX_EVIDENCE)
     posterior_unknown: float | None = Field(default=None, ge=0, le=1, allow_inf_nan=False)
+    # The condition of the leading Person's comparison, whose thresholds decided.
+    condition: IdentityCondition | None = None
     decisions: IdentityDecisions = Field(default_factory=IdentityDecisions)
     display_name: str | None = Field(default=None, max_length=128)
     profile: PersonProfile | None = None
@@ -113,7 +130,8 @@ class SpeakerIdentityObservation(Contract):
                 raise ValueError("one evidence entry per Person")
             if sum(e.posterior for e in self.evidence) + self.posterior_unknown > 1 + 1e-6:
                 raise ValueError("posteriors exceed one")
-        elif self.evidence or self.posterior_unknown is not None or self.decisions != IdentityDecisions():
+        elif (self.evidence or self.posterior_unknown is not None or self.condition is not None
+              or self.decisions != IdentityDecisions()):
             raise ValueError("only compared evidence can carry posteriors or decisions")
         compared = {e.person_id: e for e in self.evidence}
         if not self.decisions.persons() <= compared.keys():
@@ -143,6 +161,18 @@ class SpeakerCandidate(Contract):
     templates: list[VoiceTemplate] = Field(min_length=1, max_length=5)
 
 
+class UseThresholds(Contract):
+    """Posterior thresholds in one condition; ``discovery`` applies to the posterior
+    of someone not enrolled. A use without a threshold is off in that condition:
+    nothing is decided for it (design §7.3 M2 — a use not yet shown to meet its
+    false-acceptance limit there ships switched off)."""
+    personal_memory: float | None = Field(ge=0.5, lt=1, allow_inf_nan=False)
+    addressing: float | None = Field(ge=0.5, lt=1, allow_inf_nan=False)
+    speaker_label: float | None = Field(ge=0.5, lt=1, allow_inf_nan=False)
+    candidate_evidence: float | None = Field(ge=0.5, lt=1, allow_inf_nan=False)
+    discovery: float | None = Field(ge=0.5, lt=1, allow_inf_nan=False)
+
+
 class IdentityPolicy(Contract):
     """Delivered with the model: how calibrated evidence becomes per-use decisions."""
     version: str = Field(min_length=1, max_length=128)
@@ -154,20 +184,22 @@ class IdentityPolicy(Contract):
     # Below this, failing to match is not evidence of someone new.
     min_unknown_speech_ms: int = Field(ge=300, le=30000)
     prior_unknown: float = Field(gt=0, lt=1, allow_inf_nan=False)
-    # Posterior thresholds; ``discovery`` applies to the posterior of someone
-    # not enrolled. A use without a threshold is off: nothing is decided for
-    # it (design §7.3 M2 — a use not yet calibrated ships switched off).
-    personal_memory: float | None = Field(ge=0.5, lt=1, allow_inf_nan=False)
-    addressing: float | None = Field(ge=0.5, lt=1, allow_inf_nan=False)
-    speaker_label: float | None = Field(ge=0.5, lt=1, allow_inf_nan=False)
-    candidate_evidence: float | None = Field(ge=0.5, lt=1, allow_inf_nan=False)
-    discovery: float | None = Field(ge=0.5, lt=1, allow_inf_nan=False)
+    conditions: dict[IdentityCondition, UseThresholds]
+    # Household guard (design §3.3 L7): when a member's registration windows,
+    # scored against another member's phone template, reach a use's threshold,
+    # that use in near_same needs an LLR this far above the highest of them.
+    household_margin_llr: float = Field(ge=0, le=20, allow_inf_nan=False)
 
     @model_validator(mode="after")
-    def unknown_requires_sufficient_speech(self):
+    def complete(self):
         if self.min_unknown_speech_ms < self.min_speech_ms:
             raise ValueError("unknown speech floor cannot be below extraction floor")
+        if set(self.conditions) != set(IDENTITY_CONDITIONS):
+            raise ValueError("every comparison condition needs its thresholds")
         return self
+
+    def thresholds(self, condition: IdentityCondition) -> UseThresholds:
+        return self.conditions[condition]
 
 
 class CandidateDiscoveryPolicy(Contract):

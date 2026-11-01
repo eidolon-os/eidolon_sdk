@@ -9,7 +9,9 @@ from eidolon_sdk.biz.speaker_identity import (
     PersonEvidence,
     SpeakerEvidenceSource,
     SpeakerIdentityObservation,
+    UseThresholds,
     channel_class,
+    comparison_condition,
 )
 
 
@@ -28,7 +30,7 @@ def compared(**change):
         "status": "compared", "reason": "compared", "owner_id": "o", "source": source(),
         "model_id": "m", "weights_hash": "a" * 64, "preprocessing_version": "v",
         "backend_version": "b", "policy_version": "p", "evidence": [evidence()],
-        "posterior_unknown": 0.03,
+        "posterior_unknown": 0.03, "condition": "near_same",
     } | change))
 
 
@@ -36,7 +38,7 @@ def test_evidence_without_comparison_carries_no_posterior_or_decision():
     value = SpeakerIdentityObservation(status="uncertain", owner_id="o", reason="speech_too_short")
     assert value.evidence == [] and value.decisions == IdentityDecisions()
     for change in ({"evidence": [evidence()]}, {"posterior_unknown": 0.5},
-                   {"decisions": IdentityDecisions(discovery=True)}):
+                   {"decisions": IdentityDecisions(discovery=True)}, {"condition": "near_same"}):
         with pytest.raises(ValidationError):
             SpeakerIdentityObservation(status="unavailable", owner_id="o", reason="timeout", **change)
 
@@ -103,21 +105,59 @@ def test_every_phone_app_is_one_channel(kind, expected):
     assert channel_class(kind) == expected
 
 
-def policy(**change):
+@pytest.mark.parametrize("template,probe,expected", [
+    ("mobile", "mobile", "near_same"),
+    ("esp-box-3", "esp-box-3", "far_same"),
+    ("mobile", "esp-box-3", "far_cross"),
+    ("esp-box-3", "mobile", "far_cross"),
+    ("esp-box-3", "m5stack-stackchan", "far_cross"),
+    ("unknown", "unknown", "far_cross"),
+])
+def test_the_condition_follows_the_template_and_probe_channels(template, probe, expected):
+    assert comparison_condition(template, probe) == expected
+
+
+def uses(**change):
+    return {"personal_memory": 0.99, "addressing": 0.9, "speaker_label": 0.9,
+            "candidate_evidence": 0.95, "discovery": 0.99} | change
+
+
+def policy(conditions=None, **change):
     return IdentityPolicy(**({
         "version": "p", "model_id": "m", "weights_hash": "a" * 64, "preprocessing_version": "v",
         "backend_version": "b", "min_speech_ms": 600, "min_unknown_speech_ms": 1500,
-        "prior_unknown": 0.5, "personal_memory": 0.99, "addressing": 0.9, "speaker_label": 0.9,
-        "candidate_evidence": 0.95, "discovery": 0.99,
+        "prior_unknown": 0.5, "household_margin_llr": 1.0,
+        "conditions": conditions or {c: uses() for c in ("near_same", "far_same", "far_cross")},
     } | change))
 
 
 def test_identity_policy_bounds():
-    assert policy().personal_memory == 0.99
+    assert policy().thresholds("far_cross").personal_memory == 0.99
     for change in ({"min_unknown_speech_ms": 500}, {"prior_unknown": 0}, {"prior_unknown": 1},
-                   {"personal_memory": 0.4}, {"discovery": 1.0}):
+                   {"household_margin_llr": -1}):
         with pytest.raises(ValidationError):
             policy(**change)
+    for change in ({"personal_memory": 0.4}, {"discovery": 1.0}):
+        with pytest.raises(ValidationError):
+            UseThresholds(**uses(**change))
+
+
+def test_every_condition_has_its_own_thresholds():
+    value = policy({"near_same": uses(), "far_same": uses(personal_memory=None),
+                    "far_cross": uses(personal_memory=None, addressing=0.95)})
+    assert value.thresholds("near_same").personal_memory == 0.99
+    assert value.thresholds("far_same").personal_memory is None
+    assert value.thresholds("far_cross").addressing == 0.95
+    with pytest.raises(ValidationError, match="every comparison condition"):
+        policy({"near_same": uses(), "far_same": uses()})
+    with pytest.raises(ValidationError):
+        policy({"near_same": uses(), "far_same": uses(), "far_cross": uses(), "elsewhere": uses()})
+
+
+def test_a_compared_observation_names_its_condition():
+    assert compared().condition == "near_same"
+    with pytest.raises(ValidationError):
+        compared(condition="cross")
 
 
 @pytest.mark.parametrize("change", [
@@ -178,6 +218,6 @@ def test_observation_profile_provenance_never_fabricates_an_enrollment():
 
 
 def test_a_use_without_a_threshold_is_switched_off():
-    assert policy(personal_memory=None, discovery=None).personal_memory is None
+    assert UseThresholds(**uses(personal_memory=None, discovery=None)).personal_memory is None
     with pytest.raises(ValidationError):
-        IdentityPolicy(**{k: v for k, v in policy().model_dump().items() if k != "addressing"})
+        UseThresholds(**{k: v for k, v in uses().items() if k != "addressing"})
