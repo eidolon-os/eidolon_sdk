@@ -221,3 +221,17 @@ def test_a_use_without_a_threshold_is_switched_off():
     assert UseThresholds(**uses(personal_memory=None, discovery=None)).personal_memory is None
     with pytest.raises(ValidationError):
         UseThresholds(**{k: v for k, v in uses().items() if k != "addressing"})
+
+
+def test_every_turn_with_measured_audio_names_its_voice():
+    from eidolon_sdk.biz.voiceprint import SpeakerAudioQuality
+
+    heard = SpeakerAudioQuality(audio_ms=2000, required_speech_ms=600, speech_ms=450)
+    value = SpeakerIdentityObservation(
+        status="uncertain", reason="speech_too_short", owner_id="o", session_id="s", turn_id="r",
+        source=source(session_id="s"), track_id="k1", audio_quality=heard)
+    voice = value.voice_ref()
+    assert voice.key() == ("o", "s", "r") and (voice.track_id, voice.speech_ms) == ("k1", 450)
+    assert compared().voice_ref() is None  # no session, turn or measured speech
+    with pytest.raises(ValidationError, match="audio evidence"):
+        SpeakerIdentityObservation(status="unavailable", reason="timeout", owner_id="o", track_id="k1")

@@ -61,6 +61,31 @@ class SpeakerEvidenceSource(Contract):
         return self
 
 
+class VoiceRef(Contract):
+    """A voice heard in one turn, by which attribution names it (design §3.5).
+
+    ``turn_id`` is the Channel turn the observation was signed for; the Agent
+    receives it as the turn's trace id. Every turn with audio evidence has one,
+    whether or not anyone was recognised.
+    """
+    owner_id: str = Field(min_length=1)
+    session_id: str = Field(min_length=1, max_length=128)
+    turn_id: str = Field(min_length=1, max_length=128)
+    # The conversation track (design §3.2); absent until tracks exist.
+    track_id: str | None = Field(default=None, min_length=1, max_length=64)
+    source: SpeakerEvidenceSource
+    speech_ms: int = Field(ge=0, le=30000)
+
+    @model_validator(mode="after")
+    def scoped_source(self):
+        if self.source.request_id != self.turn_id or self.source.session_id not in (None, self.session_id):
+            raise ValueError("voice source must belong to its turn")
+        return self
+
+    def key(self) -> tuple[str, str, str]:
+        return self.owner_id, self.session_id, self.turn_id
+
+
 class PersonEvidence(Contract):
     person_id: str = Field(min_length=1, max_length=64)
     person_revision: int = Field(ge=1)
@@ -95,6 +120,8 @@ class SpeakerIdentityObservation(Contract):
     reason: str = Field(min_length=1, max_length=128)
     owner_id: str = Field(min_length=1)
     source: SpeakerEvidenceSource | None = None
+    # The conversation track the evidence continued (design §3.2), once tracks exist.
+    track_id: str | None = Field(default=None, min_length=1, max_length=64)
     session_id: str = Field(default="", max_length=128)
     turn_id: str = Field(default="", max_length=128)
     issued_at: float = Field(default=0, ge=0, allow_inf_nan=False)
@@ -118,6 +145,8 @@ class SpeakerIdentityObservation(Contract):
         if self.source is not None and self.source.session_id is not None:
             if self.source.session_id != self.session_id:
                 raise ValueError("observation must address its evidence session")
+        if self.track_id is not None and self.source is None:
+            raise ValueError("a track continues only on audio evidence")
         if self.status == "compared":
             if self.source is None:
                 raise ValueError("compared evidence requires an audio source")
@@ -149,6 +178,14 @@ class SpeakerIdentityObservation(Contract):
         """The evidence of the Person meeting ``use``, if any."""
         person = getattr(self.decisions, use)
         return next((e for e in self.evidence if e.person_id == person), None) if person else None
+
+    def voice_ref(self) -> VoiceRef | None:
+        """The voice this turn heard, when there is audio evidence with measured speech."""
+        speech_ms = self.audio_quality.speech_ms if self.audio_quality is not None else None
+        if self.source is None or speech_ms is None or not (self.session_id and self.turn_id):
+            return None
+        return VoiceRef(owner_id=self.owner_id, session_id=self.session_id, turn_id=self.turn_id,
+                        track_id=self.track_id, source=self.source, speech_ms=speech_ms)
 
 
 class SpeakerCandidate(Contract):
