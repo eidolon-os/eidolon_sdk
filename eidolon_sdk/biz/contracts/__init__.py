@@ -182,6 +182,11 @@ SESSION_REJECTION_UNAVAILABLE = "unavailable"  # the Host could not serve it now
 SESSION_STARTED_TYPE = "session_started"
 SESSION_CONVERSATION_ID_FIELD = "conversation_id"
 SESSION_CONTROL_REQUEST_ID_FIELD = "control_request_id"
+# Optional on session_open: milliseconds from the person's action (a press, a
+# tap) to the client sending the request. The Host can time everything after
+# it receives the request, not what the client did before; this is that part.
+# Measurement only -- the Provider grants nothing on it and ignores bad values.
+SESSION_ACTION_TO_SEND_MS_FIELD = "action_to_send_ms"
 SESSION_CONVERSATION_ID_MAX_LENGTH = 64
 VALID_SESSION_REQUEST_TYPES = frozenset({SESSION_OPEN_TYPE, SESSION_CLOSE_TYPE})
 SessionRequestType = Literal["session_open", "session_close"]

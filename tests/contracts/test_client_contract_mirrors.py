@@ -297,6 +297,7 @@ def test_mobile_contract_mirror_matches_sdk() -> None:
         "SESSION_OPEN_TYPE": "sessionOpenType",
         "SESSION_CLOSE_TYPE": "sessionCloseType",
         "SESSION_CONVERSATION_ID_FIELD": "sessionConversationIdField",
+        "SESSION_ACTION_TO_SEND_MS_FIELD": "sessionActionToSendMsField",
         "CHANNEL_PROVIDER_IDENTITY_PREFIX": "channelProviderIdentityPrefix",
         "SESSION_REJECTED_TYPE": "sessionRejectedType",
         "SESSION_REJECTION_CONFLICT": "sessionRejectionConflict",
