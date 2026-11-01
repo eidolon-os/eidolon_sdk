@@ -311,35 +311,3 @@ class PersonVoiceTemplates(Contract):
     person_id: str
     person_revision: int = Field(ge=1)
     templates: list[VoiceTemplate] = Field(default_factory=list)
-
-
-class ChannelCalibrationUpload(VoiceAudioRequest):
-    """One replayed recording of public speech, captured through the phone app."""
-    batch_id: str = Field(min_length=1, max_length=64, pattern=r"^[A-Za-z0-9_-]+$")
-
-
-class ChannelCalibrationSample(Contract):
-    """A public speaker's voice heard through one household channel (design §8.2, 1c-a).
-
-    Never a household member's voice and never audio: the embedding and its
-    registration-style windows, kept as in-domain impostor evidence for this
-    Owner's channel.
-    """
-    sample_id: str = Field(min_length=1, max_length=64)
-    channel: str = Field(min_length=1, max_length=96)
-    source: Literal["public_replay"] = "public_replay"
-    batch_id: str = Field(min_length=1, max_length=64, pattern=r"^[A-Za-z0-9_-]+$")
-    captured_at: float = Field(gt=0, allow_inf_nan=False)
-    sample: EnrollmentSample
-
-
-class ChannelCalibrationBatch(Contract):
-    batch_id: str
-    channel: str
-    samples: int = Field(ge=0)
-    first_captured_at: float
-    last_captured_at: float
-
-
-class ChannelCalibrationCollection(Contract):
-    batches: list[ChannelCalibrationBatch] = Field(default_factory=list)
