@@ -10,20 +10,30 @@ from typing import ClassVar as _ClassVar, Optional as _Optional, Union as _Union
 DESCRIPTOR: _descriptor.FileDescriptor
 
 class ChatRequest(_message.Message):
-    __slots__ = ("start", "cancel", "signal", "presentation_feedback", "motion_feedback", "channel_tool_result")
+    __slots__ = ("start", "cancel", "signal", "presentation_feedback", "motion_feedback", "channel_tool_result", "late_speaker_observation")
     START_FIELD_NUMBER: _ClassVar[int]
     CANCEL_FIELD_NUMBER: _ClassVar[int]
     SIGNAL_FIELD_NUMBER: _ClassVar[int]
     PRESENTATION_FEEDBACK_FIELD_NUMBER: _ClassVar[int]
     MOTION_FEEDBACK_FIELD_NUMBER: _ClassVar[int]
     CHANNEL_TOOL_RESULT_FIELD_NUMBER: _ClassVar[int]
+    LATE_SPEAKER_OBSERVATION_FIELD_NUMBER: _ClassVar[int]
     start: StartTurn
     cancel: CancelTurn
     signal: PushSignalInline
     presentation_feedback: PresentationFeedback
     motion_feedback: MotionFeedback
     channel_tool_result: ChannelToolResult
-    def __init__(self, start: _Optional[_Union[StartTurn, _Mapping]] = ..., cancel: _Optional[_Union[CancelTurn, _Mapping]] = ..., signal: _Optional[_Union[PushSignalInline, _Mapping]] = ..., presentation_feedback: _Optional[_Union[PresentationFeedback, _Mapping]] = ..., motion_feedback: _Optional[_Union[MotionFeedback, _Mapping]] = ..., channel_tool_result: _Optional[_Union[ChannelToolResult, _Mapping]] = ...) -> None: ...
+    late_speaker_observation: LateSpeakerObservation
+    def __init__(self, start: _Optional[_Union[StartTurn, _Mapping]] = ..., cancel: _Optional[_Union[CancelTurn, _Mapping]] = ..., signal: _Optional[_Union[PushSignalInline, _Mapping]] = ..., presentation_feedback: _Optional[_Union[PresentationFeedback, _Mapping]] = ..., motion_feedback: _Optional[_Union[MotionFeedback, _Mapping]] = ..., channel_tool_result: _Optional[_Union[ChannelToolResult, _Mapping]] = ..., late_speaker_observation: _Optional[_Union[LateSpeakerObservation, _Mapping]] = ...) -> None: ...
+
+class LateSpeakerObservation(_message.Message):
+    __slots__ = ("trace_id", "token")
+    TRACE_ID_FIELD_NUMBER: _ClassVar[int]
+    TOKEN_FIELD_NUMBER: _ClassVar[int]
+    trace_id: str
+    token: str
+    def __init__(self, trace_id: _Optional[str] = ..., token: _Optional[str] = ...) -> None: ...
 
 class StartTurn(_message.Message):
     __slots__ = ("turn_id", "conversation_id", "text", "realtime", "metadata", "trace_id", "speculative", "input_modality", "channel_tool_capabilities")

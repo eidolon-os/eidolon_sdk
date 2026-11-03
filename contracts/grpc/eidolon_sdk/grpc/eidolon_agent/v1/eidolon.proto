@@ -43,7 +43,19 @@ message ChatRequest {
     PresentationFeedback presentation_feedback = 4;
     MotionFeedback motion_feedback = 5;
     ChannelToolResult channel_tool_result = 6;
+    LateSpeakerObservation late_speaker_observation = 7;
   }
+}
+
+// The signed speaker observation of a turn whose recognition was still running
+// when the turn was committed (its StartTurn carried an observation with reason
+// "recognition_pending"). Sent at most once, as soon as recognition finishes;
+// the Agent waits for it at most 150 ms before compiling the turn's context
+// (design §3.4) and ignores it afterwards. ``trace_id`` is the turn's
+// StartTurn.trace_id, the turn the observation was signed for.
+message LateSpeakerObservation {
+  string trace_id = 1;
+  string token = 2;
 }
 
 message StartTurn {
