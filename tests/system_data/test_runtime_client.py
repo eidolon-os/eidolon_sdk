@@ -181,3 +181,30 @@ async def test_provisional_access_is_bound_to_exact_request(changed):
             result = await client.get_person_provisional_memory_access(
                 owner_id="o", person_id="p", person_revision=2, session_id="s")
             assert result.policy.save_allowed and not result.policy.session_recall_allowed
+
+
+@pytest.mark.asyncio
+async def test_runtime_client_reads_the_owner_attribution_feed_after_its_cursor() -> None:
+    ref = {"owner_id": "owner-a", "session_id": "s", "turn_id": "t", "speech_ms": 2000,
+           "source": {"request_id": "t", "session_id": "s", "input_id": "mic", "generation": 1,
+                      "sample_rate": 16000, "start_sample": 0, "end_sample": 32000, "channel": "mobile"}}
+    change = {"seq": 7, "attribution": {"attribution_id": "va_1", "revision": 1, "owner_id": "owner-a",
+                                        "person_id": "p", "person_revision": 1, "refs": [ref],
+                                        "source": "turn", "recorded_at": 1.0}}
+    seen: list[httpx.Request] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        seen.append(request)
+        owner = request.url.path.split("/")[5]
+        return httpx.Response(200, json={"owner_id": owner, "changes": [change] if owner == "owner-a" else [],
+                                         "next_after": 7})
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as http:
+        client = SystemDataRuntimeClient(http, "http://data", service_token="service-token")
+        feed = await client.voice_attributions(owner_id="owner-a", after=3)
+        assert [c.attribution.person_id for c in feed.changes] == ["p"] and feed.next_after == 7
+        assert seen[0].url.path == "/api/companion-authority/v1/owners/owner-a/voiceprints/attributions"
+        assert dict(seen[0].url.params) == {"after": "3", "limit": "100"}
+        assert seen[0].headers["authorization"] == "Bearer service-token"
+        with pytest.raises(SystemDataContractError):
+            await client.voice_attributions(owner_id="owner-a", after=9)

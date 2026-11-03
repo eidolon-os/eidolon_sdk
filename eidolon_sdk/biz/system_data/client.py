@@ -80,6 +80,22 @@ class SystemDataRuntimeClient(ServiceHTTPClient):
         )
         return _runtime_snapshot(response)
 
+    async def voice_attributions(self, *, owner_id: str, after: int = 0, limit: int = 100):
+        """Attribution changes after a cursor, oldest first (design §3.5)."""
+        from eidolon_sdk.biz.voice_attribution import VoiceAttributionFeed
+
+        response = await self._get(
+            f"/api/companion-authority/v1/owners/{_quote(owner_id)}/voiceprints/attributions",
+            params={"after": after, "limit": limit},
+        )
+        try:
+            result = VoiceAttributionFeed.model_validate(response.json())
+        except (ValueError, ValidationError) as exc:
+            raise SystemDataContractError("invalid voice attribution feed") from exc
+        if result.owner_id != owner_id or result.next_after < after:
+            raise SystemDataContractError("voice attribution feed is outside request scope")
+        return result
+
     async def get_person_memory_realm(
         self, *, owner_id: str, person_id: str
     ) -> PersonalMemoryRealmSnapshot:
