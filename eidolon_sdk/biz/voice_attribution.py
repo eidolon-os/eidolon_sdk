@@ -168,3 +168,33 @@ class VoiceAttribution(Contract):
     def owned_refs(self):
         _distinct_refs(self.owner_id, self.refs)
         return self
+
+
+MAX_FEED_CHANGES = 100
+
+
+class VoiceAttributionChange(Contract):
+    """An attribution as of its latest change; ``seq`` orders changes per Owner."""
+    seq: int = Field(ge=1)
+    attribution: VoiceAttribution
+
+
+class VoiceAttributionFeed(Contract):
+    """Attribution changes after a cursor, oldest first (design §3.5).
+
+    Every change (recorded, revoked) takes the Owner's next sequence number,
+    so a reader that keeps ``next_after`` misses none and sees each
+    attribution's latest state.
+    """
+    owner_id: str = Field(min_length=1)
+    changes: list[VoiceAttributionChange] = Field(default_factory=list, max_length=MAX_FEED_CHANGES)
+    next_after: int = Field(ge=0)
+
+    @model_validator(mode="after")
+    def ordered(self):
+        seqs = [c.seq for c in self.changes]
+        if seqs != sorted(set(seqs)) or (seqs and self.next_after != seqs[-1]):
+            raise ValueError("changes must be ordered and end at the cursor")
+        if any(c.attribution.owner_id != self.owner_id for c in self.changes):
+            raise ValueError("changes must belong to the Owner")
+        return self

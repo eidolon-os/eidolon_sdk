@@ -170,3 +170,40 @@ def test_an_attribution_records_its_source_and_can_be_revoked():
         attribution(source="guess")
     with pytest.raises(ValidationError, match="one reference per turn"):
         attribution(refs=[ref("t1"), ref("t1")])
+
+
+def test_a_track_sample_keeps_the_mean_it_was_calibrated_on():
+    track = ExtractedSample.track_mean([[1.0, 0.0], [0.0, 1.0]], 9000, **MODEL)
+    assert track.vector == pytest.approx([2 ** -0.5, 2 ** -0.5])
+    assert track.mean_length == pytest.approx(2 ** -0.5)
+    assert track.scored_vector() == pytest.approx([0.5, 0.5])
+    assert ExtractedSample.model_validate(track.model_dump(mode="json")).scored_vector() == pytest.approx([0.5, 0.5])
+    assert sample().scored_vector() == [1.0, 0.0]
+
+
+def test_a_track_sample_needs_segments_of_one_dimension_and_caps_its_speech():
+    with pytest.raises(ValueError):
+        ExtractedSample.track_mean([], 9000, **MODEL)
+    with pytest.raises(ValueError):
+        ExtractedSample.track_mean([[1.0, 0.0], [1.0, 0.0, 0.0]], 9000, **MODEL)
+    assert ExtractedSample.track_mean([[1.0, 0.0]], 45000, **MODEL).speech_ms == 30000
+    with pytest.raises(ValidationError):
+        sample(mean_length=0)
+
+
+def _attribution(**change):
+    return VoiceAttribution(**({"attribution_id": "a1", "revision": 1, "owner_id": "o", "person_id": "p",
+                                "person_revision": 1, "refs": [ref("t1")], "source": "turn",
+                                "recorded_at": 1.0} | change))
+
+
+def test_a_feed_is_ordered_and_ends_at_its_cursor():
+    from eidolon_sdk.biz.voice_attribution import VoiceAttributionChange, VoiceAttributionFeed
+    one = VoiceAttributionChange(seq=3, attribution=_attribution())
+    two = VoiceAttributionChange(seq=5, attribution=_attribution(attribution_id="a2", refs=[ref("t2")]))
+    assert VoiceAttributionFeed(owner_id="o", changes=[one, two], next_after=5).next_after == 5
+    assert VoiceAttributionFeed(owner_id="o", next_after=9).changes == []
+    for bad in ({"changes": [two, one], "next_after": 3}, {"changes": [one, two], "next_after": 9},
+                {"changes": [one], "next_after": 3, "owner_id": "x"}):
+        with pytest.raises(ValidationError):
+            VoiceAttributionFeed(**({"owner_id": "o"} | bad))

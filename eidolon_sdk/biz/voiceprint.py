@@ -21,6 +21,10 @@ class ExtractedSample(Contract):
     vector: list[float] = Field(min_length=2, max_length=2048)
     speech_ms: int = Field(ge=200, le=30000)
     quality: dict[str, float] = Field(default_factory=dict)
+    # A conversation track's sample is the plain mean of its segments' unit
+    # vectors, and is calibrated as that mean. ``vector`` is always unit; this
+    # is the mean's own length, so scoring can rebuild it (design §3.2).
+    mean_length: float | None = Field(default=None, gt=0, le=1, allow_inf_nan=False)
 
     @field_validator("vector")
     @classmethod
@@ -31,6 +35,22 @@ class ExtractedSample(Contract):
         if not math.isfinite(norm) or norm < 1e-8:
             raise ValueError("empty embedding")
         return value if abs(norm - 1) < 1e-12 else [x / norm for x in value]
+
+    @classmethod
+    def track_mean(cls, vectors, speech_ms: int, *, model_id: str, weights_hash: str,
+                   preprocessing_version: str) -> "ExtractedSample":
+        """The sample of a track: the plain mean of its segments' unit vectors."""
+        dims = {len(v) for v in vectors}
+        if not vectors or len(dims) != 1:
+            raise ValueError("a track mean needs segments of one dimension")
+        mean = [math.fsum(column) / len(vectors) for column in zip(*vectors)]
+        return cls(model_id=model_id, weights_hash=weights_hash,
+                   preprocessing_version=preprocessing_version, vector=mean,
+                   speech_ms=min(speech_ms, 30000), mean_length=min(1.0, math.hypot(*mean)))
+
+    def scored_vector(self) -> list[float]:
+        """The vector as the back-end was calibrated on it: a track's mean, or the unit vector."""
+        return self.vector if self.mean_length is None else [x * self.mean_length for x in self.vector]
 
     @field_validator("quality")
     @classmethod
