@@ -14,6 +14,9 @@ class MemoryRealmSnapshot(BaseModel):
 
     realm_id: str = Field(min_length=1, max_length=64)
     lifecycle_state: Literal["active"]
+    #: This Realm is the Owner's household layer, read and written whoever
+    #: speaks; false when the Owner switched that layer off (design §3.6).
+    household_memory: bool = Field(default=True, strict=True)
 
 
 class PersonalMemoryRealmSnapshot(BaseModel):
@@ -36,11 +39,18 @@ class ProvisionalMemoryPolicy(BaseModel):
 
 
 class PersonMemoryDefaults(BaseModel):
-    """Owner defaults for future candidates and automatic promotion only."""
+    """The Owner's memory policy.
+
+    Defaults for future candidates and automatic promotion, which never
+    rewrite an existing Person's permissions; and whether the household layer
+    is on: the Owner's default Realm, which every speaker reads and writes
+    (design §3.6). On unless the Owner turns it off.
+    """
 
     model_config = ConfigDict(frozen=True, extra="forbid")
     candidate: ProvisionalMemoryPolicy = Field(default_factory=ProvisionalMemoryPolicy)
     prepare_on_promotion: bool = Field(default=False, strict=True)
+    household_memory: bool = Field(default=True, strict=True)
 
 
 class PersonMemoryDefaultsState(BaseModel):
