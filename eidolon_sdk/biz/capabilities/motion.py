@@ -20,6 +20,7 @@ def definitions():
                     "description": "False: return acceptance and let speech continue while the response-owned action runs. True: wait for completion."},
             }} if name in {"motion.nod", "motion.shake", "motion.look", "motion.play"} else value["input_schema"]),
             supports_background=name in {"motion.nod", "motion.shake", "motion.look", "motion.play"},
+            supports_response_attachment=name in {"motion.nod", "motion.shake", "motion.look", "motion.play"},
             required_output="motion",
             body_control=True,
             resource_preview_arguments={"summary": True} if name == "motion.catalog" else None,

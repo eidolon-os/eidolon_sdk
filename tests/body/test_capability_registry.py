@@ -30,6 +30,7 @@ def test_extension_projects_without_changing_generic_names():
     assert not registry.accept(
         ["example.blink"], snapshot, conversation_id="session", outputs={"motion": False}
     )
+
     with pytest.raises(ValueError):
         registry.accept(
             ["example.blink"], snapshot, conversation_id="other", outputs={"motion": True}
@@ -39,6 +40,22 @@ def test_extension_projects_without_changing_generic_names():
         registry.accept(
             ["example.blink"], snapshot, conversation_id="session", outputs={"motion": True}
         )
+
+
+def test_response_attachment_is_explicit_and_requires_background():
+    with pytest.raises(ValueError, match="requires background"):
+        extension(supports_response_attachment=True)
+    definition = extension(supports_background=True, supports_response_attachment=True)
+    assert definition.supports_response_attachment
+    assert not installed_registry().get("music.play").supports_response_attachment
+
+
+def test_unmodified_packages_keep_their_previous_digest():
+    from eidolon_sdk.biz.capabilities import digest
+    definition = extension()
+    previous = definition.model_dump(mode="json")
+    previous.pop("supports_response_attachment")
+    assert definition.contract_digest == digest(previous)
 
 
 def test_conflict_and_mutation_are_isolated():

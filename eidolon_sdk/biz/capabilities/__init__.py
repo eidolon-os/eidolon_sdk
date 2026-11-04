@@ -71,6 +71,10 @@ class CapabilityDefinition(BaseModel):
     # Retained only in the current session, never as completion evidence.
     reference_result_path: tuple[str, ...] = ()
     supports_background: bool = False
+    # Opt-in semantic use, not inferred from background execution or a tool name.
+    # The Agent may attach this command to a public response without waiting for
+    # completion. Transport, authorization and execution remain unchanged.
+    supports_response_attachment: bool = False
     resource_preview_arguments: dict[str, Any] | None = None
     completion_basis: Literal["software_sequence", "configuration_applied", "unconfirmed"] = (
         "software_sequence"
@@ -78,13 +82,20 @@ class CapabilityDefinition(BaseModel):
 
     @model_validator(mode="after")
     def schemas(self):
+        if self.supports_response_attachment and not self.supports_background:
+            raise ValueError("response attachment requires background execution")
         check_schema(self.input_schema)
         check_schema(self.result_schema, root=False)
         return self
 
     @property
     def contract_digest(self):
-        return digest(self.model_dump(mode="json"))
+        value = self.model_dump(mode="json")
+        # An absent optional use is the old contract. Do not invalidate music
+        # and other unmodified packages merely by adding this SDK field.
+        if not self.supports_response_attachment:
+            value.pop("supports_response_attachment")
+        return digest(value)
 
     def action(self):
         return {
