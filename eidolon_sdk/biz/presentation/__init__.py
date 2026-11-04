@@ -99,7 +99,9 @@ class SessionOutputPlan(Contract):
     outputs: OutputSelection
     inputs: InputSelection = Field(default_factory=lambda: InputSelection(microphone=True))
     expression_profile: Literal["eidolon.face.v1"] | None = None
-    motion_profile: Literal["stackchan.head.v1"] | None = None
+    motion_profile: Literal["stackchan.head.v1", "eidolon.motion.v1"] | None = None
+
+    motion_capabilities: tuple[str, ...] = ()
 
     @model_serializer(mode="wrap")
     def serialize_output_plan(self, handler):
@@ -107,6 +109,8 @@ class SessionOutputPlan(Contract):
         # Older devices reject unknown plan keys; only opted-in firmware sees this.
         if self.motion_profile is None:
             value.pop("motion_profile", None)
+        if not self.motion_capabilities:
+            value.pop("motion_capabilities", None)
         return value
 
 
