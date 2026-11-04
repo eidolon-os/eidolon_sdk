@@ -179,6 +179,34 @@
       }
     },
     {
+      "case_id": "DF-SETUP-QR-PAYLOAD-REJECTS-LONG-BLE-NAME",
+      "schema": "https://contracts.eidolon.live/device-foundation/v1/common/schemas.schema.json",
+      "definition": "SetupQrPayload",
+      "error_contains": "too long",
+      "value": {
+        "ver": "v1",
+        "name": "eidolon-m5stack-stackchan-a1b2c3",
+        "username": "eidolon-setup",
+        "pop": "40718256",
+        "transport": "ble",
+        "security": 2
+      }
+    },
+    {
+      "case_id": "DF-SETUP-QR-PAYLOAD-REJECTS-SHORT-CODE",
+      "schema": "https://contracts.eidolon.live/device-foundation/v1/common/schemas.schema.json",
+      "definition": "SetupQrPayload",
+      "error_contains": "does not match",
+      "value": {
+        "ver": "v1",
+        "name": "eidolon-box3-a1b2c3",
+        "username": "eidolon-setup",
+        "pop": "4071825",
+        "transport": "ble",
+        "security": 2
+      }
+    },
+    {
       "case_id": "DF-SETUP-DESCRIPTOR-REJECTS-ZERO-DURATION",
       "schema": "https://contracts.eidolon.live/device-foundation/v1/common/schemas.schema.json",
       "definition": "SetupDescriptor",

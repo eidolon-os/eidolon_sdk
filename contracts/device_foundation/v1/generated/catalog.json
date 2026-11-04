@@ -34,13 +34,13 @@
     },
     {
       "path": "common/schemas.schema.json",
-      "sha256": "b26744468c93aab7072a67f87912d25a59d423594578303cea178fea14db7433",
-      "size": 32634
+      "sha256": "e5770cd2c12b288415c055a51cee2a4bd813f4bd7d9f0675f6a43c30e8f27b72",
+      "size": 34186
     },
     {
       "path": "conformance/run.py",
-      "sha256": "becc557e66d24a1cd677fd0356b6a5aaa4a23b209f1e216822157f0d7952b8b7",
-      "size": 132043
+      "sha256": "dceac0c33378ec59bec888e6593b3a6193fb95c15cc4b8f2a2b2bd0c8c4786d1",
+      "size": 146014
     },
     {
       "path": "delivery-port/schemas.schema.json",
@@ -84,8 +84,8 @@
     },
     {
       "path": "examples/invalid/common.json",
-      "sha256": "48e4c9ec9ae51d5512228e0184ebc9dd17d5373fd66f298d9a257ca6b3cbbbde",
-      "size": 16558
+      "sha256": "c96a039a48515f64c2d5365448075b3d3759e3bc68c70b727f55ec63589b9cbc",
+      "size": 17465
     },
     {
       "path": "examples/invalid/device-erase.json",
@@ -114,8 +114,8 @@
     },
     {
       "path": "examples/valid/common.json",
-      "sha256": "da3f6e78f50e874d091656c59aa67e87c58d9c09ac4acfdf5f624df9b98e8c54",
-      "size": 17294
+      "sha256": "bc843ed1e973d3272fbdff9d924a28cf2fe39aa4bdc86b1ce71b62c9c6f456df",
+      "size": 18109
     },
     {
       "path": "examples/valid/delivery-and-events.json",
@@ -144,23 +144,23 @@
     },
     {
       "path": "generation/generate.py",
-      "sha256": "ac6b899a7b14e589cbc868c6a308eba82469fb835ac87c94db68af0738389909",
-      "size": 5217
+      "sha256": "0cd8d58adca60ceedd13ee34cff9ee839de67578a55797aec9f827822ff34c39",
+      "size": 5390
     },
     {
       "path": "generation/templates/device_foundation_v1.dart",
-      "sha256": "afc83f97514d3e6aef63e95e09e0d4b10b5b8d5bd0d8488f0d7dd9aa4c63d2cb",
-      "size": 48172
+      "sha256": "cb98adf04bd40a54d66f7756f977303558bc8967d6beb4d8bcbbe9e20d74988e",
+      "size": 51045
     },
     {
       "path": "generation/templates/device_foundation_v1.py",
-      "sha256": "1ed4c9d374123fb926e997939ce0c2cf4fef369d9054b2370a115467b5065ac5",
-      "size": 1356
+      "sha256": "90a35b330ccb45e4972045c70e790b57c06b8ffaca4e8b327a14cb4f857a9f00",
+      "size": 1390
     },
     {
       "path": "generation/templates/device_foundation_v1_generated.h",
-      "sha256": "e63ce6959d0f388d89b10d8fbbf72d285c480fee5418f18e3e89e6b66ed37196",
-      "size": 18758
+      "sha256": "4e6b0cce46cf305fd5804ca6a24a0bffcbc1650ac32a8089a57babc99490a547",
+      "size": 22634
     },
     {
       "path": "golden/admission-credential.json",
@@ -171,6 +171,11 @@
       "path": "golden/admission-event-stream.json",
       "sha256": "31e9821d2160536ecdd51506c71492db0e8cc180b0a0a702068b6b88ab729104",
       "size": 1806
+    },
+    {
+      "path": "golden/ble-provisioning-transport.json",
+      "sha256": "0620e13bd1695443d92b0f6c5f208c2f162f69a00214169622b75dfd7d18c9c3",
+      "size": 1090
     },
     {
       "path": "golden/canonical-vectors.json",
@@ -258,6 +263,11 @@
       "size": 2299
     },
     {
+      "path": "golden/protocomm-endpoint-chunking.json",
+      "sha256": "c77625044c7ac5b320797628206f15b3d919516b57992a4d262211180c80b029",
+      "size": 13159
+    },
+    {
       "path": "golden/protocomm-security2-framing.json",
       "sha256": "d7fc6c98aa7569c13faac9b2db44499799986e23f797b64b3845b018b519053a",
       "size": 698
@@ -268,9 +278,19 @@
       "size": 1785
     },
     {
+      "path": "golden/setup-code-verifier.json",
+      "sha256": "fe4cf7f6d7d13f365eb271f7afe7fc8ea7e97e52e83e3f233f8603cdfa8403dc",
+      "size": 3375
+    },
+    {
       "path": "golden/setup-descriptor.json",
       "sha256": "fb8a600f9eda52f489fb49c9bfd37144078fbe8f1498e711b71a77e67559c540",
       "size": 2525
+    },
+    {
+      "path": "golden/setup-qr-payload.json",
+      "sha256": "9da0934602d36123ec9f6f44c22ba0d20cf1da3eeeac4b93a5bb138a92de8764",
+      "size": 3261
     },
     {
       "path": "lifecycle/schemas.schema.json",
@@ -299,8 +319,8 @@
     },
     {
       "path": "requirements/requirements.json",
-      "sha256": "50bc34af267d569619aad301d44c53749ddc5448fcab6ca068ecab8b680ff58b",
-      "size": 59099
+      "sha256": "ccb73a2cfc2eb6802e790782bf0fde2682879842eeb3b38ca0aec92f57abac6b",
+      "size": 62495
     },
     {
       "path": "state-vectors/commissioning-runtime.json",
@@ -335,5 +355,5 @@
   ],
   "generator": "device-foundation-v1-catalog",
   "generator_version": "1.0",
-  "source_digest": "sha256:c1cbb0eaef5439c157b4dfff4dbf08e28937da02ee575164f7e36bdd9d2d8a4b"
+  "source_digest": "sha256:d48cf9d853ba605c6224eedb0e7a44564061aa86ede74e5805ae4dfdb276714f"
 }

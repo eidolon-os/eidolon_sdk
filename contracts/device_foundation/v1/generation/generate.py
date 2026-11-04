@@ -75,6 +75,9 @@ def _binding_definitions() -> set[str]:
         # instead of being refused. Listed here so every language has to be
         # able to say it, and to refuse what is not one.
         "DeviceInstanceId",
+        # Built by the firmware and parsed by the phone. A key either end did
+        # not know would be a device whose screen no phone can read.
+        "SetupQrPayload",
     }
     for relative in (
         "admission/schemas.schema.json",

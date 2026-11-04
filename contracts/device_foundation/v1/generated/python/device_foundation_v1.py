@@ -16,7 +16,7 @@ from eidolon_sdk.device_foundation.v1 import (  # noqa: F401
     ManifestDocument, ManifestRef, OperationalPublicKey, OwnerDomainId,
     RevokeClaim, RevokeClaimResult, DeliverEnvelope, DeliveryAcceptance,
     DeviceEvidenceEnvelope, SetupDescriptor, SetupDescriptorTrust,
-    SetupWindowRemainingSeconds,
+    SetupQrPayload, SetupQrTransport, SetupWindowRemainingSeconds,
 )
 
 __all__ = [name for name in globals() if not name.startswith("_")]

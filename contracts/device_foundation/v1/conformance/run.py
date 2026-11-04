@@ -92,6 +92,12 @@ from eidolon_sdk.device_foundation.v1 import (  # noqa: E402
     manifest_digest,
     read_admission_credential,
 )
+from eidolon_sdk.device_foundation.v1 import (  # noqa: E402
+    REQUEST_LIMITS as ENDPOINT_REQUEST_LIMITS,
+    ChunkedEndpoint,
+    SetupQrPayload,
+    setup_qr_payload_canonical_bytes,
+)
 
 _ALGORITHM_NAME = "HS256"
 
@@ -2638,6 +2644,262 @@ def check_p1_exit_evidence() -> int:
     return 1
 
 
+def check_setup_qr_payload_vector(
+    schemas: dict[str, dict[str, Any]], registry: Registry
+) -> int:
+    """Hold the on-screen QR payload, its schema and the Python model to each other.
+
+    The firmware builds these bytes and the phone parses them, each from its own
+    binding, and both compare against this vector. Every rejected shape has to
+    fail the schema and the model alike, or one end would accept what the other
+    refuses — a device whose code no phone can scan.
+    """
+
+    vector = load_json(ROOT / "golden" / "setup-qr-payload.json")
+    definition = schemas[
+        "https://contracts.eidolon.live/device-foundation/v1/common/schemas.schema.json"
+    ]["$defs"]["SetupQrPayload"]
+    if sorted(definition["required"]) != vector["espressif_keys"] or sorted(
+        definition["properties"]
+    ) != vector["espressif_keys"]:
+        raise ConformanceError("setup QR payload keys are not exactly Espressif's keys")
+    validator = Draft202012Validator(
+        {"$ref": vector["schema"]}, registry=registry, format_checker=FORMAT_CHECKER
+    )
+    for shape in ("ble", "softap"):
+        payload = vector[shape]["payload"]
+        if payload["transport"] != shape:
+            raise ConformanceError(f"setup QR {shape} vector carries another transport")
+        errors = list(validator.iter_errors(payload))
+        if errors:
+            raise ConformanceError(f"setup QR {shape} payload is invalid: {errors[0].message}")
+        canonical = canonical_bytes(payload)
+        if canonical.decode() != vector[shape]["canonical_utf8"]:
+            raise ConformanceError(f"setup QR {shape} canonical bytes mismatch")
+        if setup_qr_payload_canonical_bytes(SetupQrPayload.model_validate(payload)) != canonical:
+            raise ConformanceError(f"setup QR {shape}: the SDK model renders other bytes")
+        if "sha256:" + hashlib.sha256(canonical).hexdigest() != vector[shape]["canonical_sha256"]:
+            raise ConformanceError(f"setup QR {shape} canonical digest mismatch")
+    for case in vector["rejected"]:
+        if validator.is_valid(case["payload"]):
+            raise ConformanceError(f"setup QR schema accepted rejected case {case['case']}")
+        try:
+            SetupQrPayload.model_validate(case["payload"])
+        except ValueError:
+            pass
+        else:
+            raise ConformanceError(f"setup QR model accepted rejected case {case['case']}")
+    require_field_inventory(
+        vector,
+        golden="setup-qr-payload",
+        validated={
+            "schema", "espressif_keys", "rejected",
+            "ble", "ble.payload", "ble.canonical_utf8", "ble.canonical_sha256",
+            "softap", "softap.payload", "softap.canonical_utf8", "softap.canonical_sha256",
+        },
+        descriptive={"vector_id"},
+        opaque={"ble.payload", "softap.payload", "rejected"},
+    )
+    return 1
+
+
+def check_setup_code_verifier_vector() -> int:
+    """Recompute every setup-code verifier from the group, independently of the SDK.
+
+    The first vector is the firmware's own development pair, produced by
+    ESP-IDF's `srp6a.py` long before this contract existed. Matching it is what
+    shows the formula here is the one Espressif's clients run; matching only a
+    vector this repository generated would show nothing but self-consistency.
+    """
+
+    vector = load_json(ROOT / "golden" / "setup-code-verifier.json")
+    n = int(vector["n_hex"], 16)
+    if n.bit_length() != 3072 or vector["group"] != "RFC5054-3072" or vector["g"] != 5:
+        raise ConformanceError("setup code verifier is not over the RFC 5054 3072-bit group")
+    if vector["hash"] != "SHA-512" or vector["verifier_bytes"] != 384:
+        raise ConformanceError("setup code verifier hash or width drifted")
+    if vector["salt_bytes"] != 16 or vector["salt_first_byte_nonzero"] is not True:
+        raise ConformanceError("setup code salt rule drifted")
+    if vector["code_digits"] != 8:
+        raise ConformanceError("setup code length drifted")
+    if vector["x_formula"] != "SHA-512(salt || SHA-512(username || ':' || password))":
+        raise ConformanceError("setup code x formula drifted")
+    expected_weak = sorted({str(d) * 8 for d in range(10)} | {"12345678", "87654321"})
+    if vector["weak_codes"] != expected_weak:
+        raise ConformanceError("setup code weak-code list drifted")
+    names = set()
+    for case in vector["vectors"]:
+        names.add(case["name"])
+        salt = bytes.fromhex(case["salt_hex"])
+        if len(salt) != 16 or salt[0] == 0:
+            raise ConformanceError(f"setup code vector {case['name']} breaks the salt rule")
+        inner = hashlib.sha512(f"{case['username']}:{case['password']}".encode()).digest()
+        x = int.from_bytes(hashlib.sha512(salt + inner).digest(), "big")
+        if pow(vector["g"], x, n).to_bytes(384, "big").hex() != case["verifier_hex"]:
+            raise ConformanceError(f"setup code vector {case['name']} verifier mismatch")
+    if names != {"firmware-development-pair", "screen-code"}:
+        raise ConformanceError("setup code verifier vectors are incomplete")
+    for salt_hex in vector["rejected_salts_hex"]:
+        salt = bytes.fromhex(salt_hex)
+        if len(salt) == 16 and salt[0] != 0:
+            raise ConformanceError(f"setup code rejected salt {salt_hex} is an acceptable salt")
+    require_field_inventory(
+        vector,
+        golden="setup-code-verifier",
+        validated={
+            "group", "n_hex", "g", "hash", "x_formula", "verifier_bytes", "salt_bytes",
+            "salt_first_byte_nonzero", "code_digits", "weak_codes", "vectors",
+            "rejected_salts_hex",
+        },
+        descriptive={"vector_id"},
+        opaque={"vectors"},
+    )
+    return len(vector["vectors"])
+
+
+def check_endpoint_chunking_vector() -> int:
+    """Replay every scripted exchange against the reference endpoint, byte for byte.
+
+    The device's C++ core and the controller's codec are both tested against
+    these steps, so the steps have to be what the reference actually answers.
+    Each frame is also decoded here with its own struct, so a header layout that
+    drifted in the reference would not quietly drift the vector with it.
+    """
+
+    vector = load_json(ROOT / "golden" / "protocomm-endpoint-chunking.json")
+    header = vector["header_layout"].split()[0]
+    if (vector["magic_hex"], vector["version"], vector["header_bytes"], header) != (
+        "e1d0", 1, 16, ">2sBBHHII"
+    ):
+        raise ConformanceError("endpoint frame header drifted")
+    if vector["max_frame_bytes"] + vector["security2_tag_bytes"] > 481:
+        raise ConformanceError("a full endpoint frame no longer fits the smallest BLE characteristic")
+    if vector["max_chunk_bytes"] != vector["max_frame_bytes"] - vector["header_bytes"]:
+        raise ConformanceError("endpoint chunk size disagrees with the frame size")
+    if vector["request_limits"] != ENDPOINT_REQUEST_LIMITS:
+        raise ConformanceError("endpoint request limits disagree with the SDK")
+    if vector["request_limits"]["eidolon-trust"] != 16 * 1024:
+        raise ConformanceError("the framed trust limit must equal the unframed handover limit")
+    if sorted(vector["request_limits"]) != vector["framed_endpoints"]:
+        raise ConformanceError("framed endpoints and their limits disagree")
+    if set(vector["framed_endpoints"]) & set(vector["never_framed_endpoints"]):
+        raise ConformanceError("an endpoint is both framed and never framed")
+    ops = {"PUT": 1, "GET": 2, "ABORT": 3}
+    statuses = {
+        "CONTINUE": 0, "READY": 1, "PENDING": 2, "DATA": 3, "MALFORMED": 0x80,
+        "SEQUENCE": 0x81, "TOO_LARGE": 0x82, "BUSY": 0x83, "UNKNOWN_TRANSFER": 0x84,
+        "UNSUPPORTED_VERSION": 0x85,
+    }
+    if vector["ops"] != ops or vector["statuses"] != statuses:
+        raise ConformanceError("endpoint frame ops or statuses drifted")
+
+    def replay(case: dict[str, Any], label: str) -> None:
+        request = case["request_utf8"].encode()
+        response = case["response_utf8"].encode()
+        polls = {"left": case["pending_polls"]}
+
+        def handler(whole: bytes | None) -> bytes | None:
+            if whole is not None and whole != request:
+                raise ConformanceError(f"{label}: reference reassembled another request")
+            if polls["left"] > 0:
+                polls["left"] -= 1
+                return None
+            return response
+
+        endpoint = ChunkedEndpoint(case["endpoint"], handler)
+        for index, step in enumerate(case["steps"]):
+            sent = bytes.fromhex(step["request_hex"])
+            answer = endpoint.handle(sent).hex()
+            if answer != step["response_hex"]:
+                raise ConformanceError(f"{label} step {index}: reference answered {answer}")
+            raw = bytes.fromhex(answer)
+            if len(raw) < 16 or raw[:2] != b"\xe1\xd0" or raw[2] != 1:
+                raise ConformanceError(f"{label} step {index}: response is not a frame")
+            if len(raw) > vector["max_frame_bytes"]:
+                raise ConformanceError(f"{label} step {index}: response frame too large")
+
+    for name, case in vector["exchanges"].items():
+        replay(case, f"exchange {name}")
+        delivered = bytearray()
+        for step in case["steps"]:
+            raw = bytes.fromhex(step["response_hex"])
+            if raw[3] == statuses["DATA"]:
+                delivered.extend(raw[16:])
+        if bytes(delivered) != case["response_utf8"].encode():
+            raise ConformanceError(f"exchange {name}: DATA chunks do not reassemble the response")
+    refused = {}
+    for case in vector["refused"]:
+        replay(case, f"refused {case['name']}")
+        refused[case["name"]] = bytes.fromhex(case["steps"][-1]["response_hex"])[3]
+    expected_refusals = {
+        "unsupported-version": 0x85, "transfer-id-zero": 0x80, "length-mismatch": 0x80,
+        "request-over-limit": 0x82, "out-of-order-offset": 0x81, "get-unknown-transfer": 0x84,
+        "second-transfer-while-busy": 0x83, "frame-shorter-than-header": 0x80,
+    }
+    if refused != expected_refusals:
+        raise ConformanceError(f"endpoint frame refusals drifted: {refused}")
+    require_field_inventory(
+        vector,
+        golden="protocomm-endpoint-chunking",
+        validated={
+            "magic_hex", "version", "header_bytes", "header_layout", "max_frame_bytes",
+            "max_chunk_bytes", "security2_tag_bytes", "request_limits", "ops", "statuses",
+            "framed_endpoints", "never_framed_endpoints", "exchanges", "refused",
+        },
+        descriptive={"vector_id"},
+        opaque={"request_limits", "ops", "statuses", "exchanges", "refused"},
+    )
+    return len(vector["exchanges"]) + len(vector["refused"])
+
+
+def check_ble_provisioning_transport_vector() -> int:
+    """The BLE setup transport a controller can find and a device must offer."""
+
+    vector = load_json(ROOT / "golden" / "ble-provisioning-transport.json")
+    service = vector["service_uuid"]
+    if re.fullmatch(r"[0-9a-f]{4}0000-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}", service) is None:
+        raise ConformanceError("BLE service UUID must leave its second 16-bit group for endpoint ids")
+    if bytes.fromhex(service.replace("-", ""))[::-1].hex() != vector["service_uuid_little_endian_hex"]:
+        raise ConformanceError("BLE service UUID byte order mismatch")
+    ids = vector["endpoint_ids"]
+    expected_ids = {
+        "prov-ctrl": "ff4f", "prov-scan": "ff50", "prov-session": "ff51", "prov-config": "ff52",
+        "proto-ver": "ff53", "eidolon-descriptor": "ff54", "eidolon-trust": "ff55",
+        "eidolon-status": "ff56", "eidolon-terminal-ack": "ff57",
+    }
+    if ids != expected_ids:
+        raise ConformanceError("BLE endpoint ids drifted from the creation order")
+    if vector["example_characteristic_uuid"] != service[:4] + ids["prov-session"] + service[8:]:
+        raise ConformanceError("BLE characteristic UUID rule drifted")
+    if vector["endpoint_discovery"] != "characteristic-user-description-0x2901":
+        raise ConformanceError("BLE endpoints must be discovered by name, not by id")
+    if vector["device_name_max_bytes"] != 29 or vector["device_name_pattern"] != (
+        "^eidolon-[a-z0-9]+-[0-9a-f]{6}$"
+    ):
+        raise ConformanceError("BLE device name rule drifted")
+    if vector["framing"] != "required" or vector["requested_mtu"] != 517:
+        raise ConformanceError("BLE framing or MTU rule drifted")
+    if vector["terminal_delivery"] != "disconnect-after-accepted-terminal-ack":
+        raise ConformanceError("BLE terminal delivery rule drifted")
+    if vector["proto_ver_app_info"] != {"label": "eidolon", "ver": "1", "cap": ["frame-v1", "setup-code"]}:
+        raise ConformanceError("BLE proto-ver capabilities drifted")
+    if vector["link_encryption"] != "none-security2-only":
+        raise ConformanceError("BLE link encryption rule drifted")
+    require_field_inventory(
+        vector,
+        golden="ble-provisioning-transport",
+        validated={
+            "service_uuid", "service_uuid_little_endian_hex", "endpoint_discovery", "endpoint_ids",
+            "example_characteristic_uuid", "device_name_max_bytes", "device_name_pattern",
+            "requested_mtu", "framing", "terminal_delivery", "proto_ver_app_info",
+            "link_encryption",
+        },
+        descriptive={"vector_id", "characteristic_uuid_rule"},
+        opaque={"endpoint_ids", "proto_ver_app_info"},
+    )
+    return 1
+
+
 def run() -> dict[str, int]:
     schemas, registry = _load_schemas()
     return {
@@ -2662,6 +2924,10 @@ def run() -> dict[str, int]:
         ),
         "claim_event_stream_vectors": check_admission_event_stream(),
         "protocomm_vectors": check_protocomm_framing(),
+        "setup_qr_payload_vectors": check_setup_qr_payload_vector(schemas, registry),
+        "setup_code_verifier_vectors": check_setup_code_verifier_vector(),
+        "endpoint_chunking_vectors": check_endpoint_chunking_vector(),
+        "ble_provisioning_transport_vectors": check_ble_provisioning_transport_vector(),
         "commissioning_voucher": check_commissioning_voucher(),
         "profiles": check_profile(),
         "host_independent_sources": check_host_independence(),
