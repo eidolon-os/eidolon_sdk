@@ -70,6 +70,8 @@ class CapabilityDefinition(BaseModel):
     # JSON object path in a successful tool result to reusable resource descriptors.
     # Retained only in the current session, never as completion evidence.
     reference_result_path: tuple[str, ...] = ()
+    supports_background: bool = False
+    resource_preview_arguments: dict[str, Any] | None = None
     completion_basis: Literal["software_sequence", "configuration_applied", "unconfirmed"] = (
         "software_sequence"
     )

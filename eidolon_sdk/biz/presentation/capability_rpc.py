@@ -85,6 +85,7 @@ def definitions() -> dict[str, dict]:
             "input_schema": {
                 "type": "object", "properties": {
                     "query": {"type": "string", "maxLength": 128},
+                    "summary": {"type": "boolean", "default": False, "description": "Compact representative resource index for conversational expression."},
                     "offset": {"type": "integer", "minimum": 0, "default": 0},
                     "limit": {"type": "integer", "minimum": 1, "maximum": 12, "default": 12},
                 }, "additionalProperties": False,
