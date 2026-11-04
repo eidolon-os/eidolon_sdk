@@ -5,6 +5,8 @@ from pydantic import Field
 from . import Contract, Identifier
 
 PROFILE = "eidolon.motion.v1"
+REGISTRY_PROFILE = "eidolon.motion.v2"
+INVOKE_V2 = "eidolon.capability.invoke.v2"
 INVOKE = "eidolon.capability.invoke.v1"
 STATUS = "eidolon.execution.status.v1"
 CANCEL = "eidolon.execution.cancel.v1"
@@ -23,6 +25,14 @@ class CapabilityInvocation(ExecutionScope):
     arguments: dict[str, Any]
     expires_at_ms: int = Field(strict=True, gt=0)
     max_duration_ms: int = Field(strict=True, ge=1, le=30000)
+
+
+class RegisteredInvocation(CapabilityInvocation):
+    protocol_version: Literal[2] = 2
+    capability_version: int = Field(strict=True, ge=1)
+    contract_digest: str = Field(pattern=r"^[a-f0-9]{64}$")
+    capability_set_revision: str = Field(pattern=r"^[a-f0-9]{64}$")
+    binding_ref: Identifier
 
 
 class ExecutionSnapshot(Contract):

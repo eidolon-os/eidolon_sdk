@@ -89,7 +89,11 @@
     "motion_profile": {
       "anyOf": [
         {
-          "const": "stackchan.head.v1",
+          "enum": [
+            "stackchan.head.v1",
+            "eidolon.motion.v1",
+            "eidolon.motion.v2"
+          ],
           "type": "string"
         },
         {
@@ -98,6 +102,14 @@
       ],
       "default": null,
       "title": "Motion Profile"
+    },
+    "motion_capabilities": {
+      "default": [],
+      "items": {
+        "type": "string"
+      },
+      "title": "Motion Capabilities",
+      "type": "array"
     }
   },
   "required": [

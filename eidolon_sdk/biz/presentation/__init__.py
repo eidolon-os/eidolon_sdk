@@ -99,7 +99,7 @@ class SessionOutputPlan(Contract):
     outputs: OutputSelection
     inputs: InputSelection = Field(default_factory=lambda: InputSelection(microphone=True))
     expression_profile: Literal["eidolon.face.v1"] | None = None
-    motion_profile: Literal["stackchan.head.v1", "eidolon.motion.v1"] | None = None
+    motion_profile: Literal["stackchan.head.v1", "eidolon.motion.v1", "eidolon.motion.v2"] | None = None
 
     motion_capabilities: tuple[str, ...] = ()
 
