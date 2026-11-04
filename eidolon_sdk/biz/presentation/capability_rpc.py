@@ -59,11 +59,11 @@ def definitions() -> dict[str, dict]:
             "input_schema": empty,
         },
         "motion.nod": {
-            "description": "点头。Only an explicit request, not quoted, negated or hypothetical. Repeat 1–3 times.",
+            "description": "点头。Use for an explicit request or a fitting conversational gesture; respect requests to stay still. Do not act on quoted, negated or hypothetical instructions. Repeat 1–3 times.",
             "input_schema": repeats,
         },
         "motion.shake": {
-            "description": "摇头。Execute an explicitly requested head shake, repeat 1–3 times.",
+            "description": "摇头。Use on request or as a fitting conversational gesture, never on negated instructions. Repeat 1–3 times.",
             "input_schema": repeats,
         },
         "motion.look": {
@@ -81,11 +81,17 @@ def definitions() -> dict[str, dict]:
             },
         },
         "motion.catalog": {
-            "description": "List the installed, approved body-expression clips and their actual effects before choosing motion.play.",
-            "input_schema": empty,
+            "description": "Discover installed body-expression resources before choosing motion.play. Search names/descriptions with query (try English keywords for official resources), or browse pages. Use returned IDs only; reuse discovered IDs within this session.",
+            "input_schema": {
+                "type": "object", "properties": {
+                    "query": {"type": "string", "maxLength": 128},
+                    "offset": {"type": "integer", "minimum": 0, "default": 0},
+                    "limit": {"type": "integer", "minimum": 1, "maximum": 12, "default": 12},
+                }, "additionalProperties": False,
+            },
         },
         "motion.play": {
-            "description": "Play an installed body-expression clip returned by motion.catalog. A body expression is not a face smile or audible laughter. Never invent clip IDs.",
+            "description": "Play an installed body-expression clip returned by motion.catalog. Use on explicit request or sparingly to express emotion naturally in conversation; avoid repetitive gestures and respect stillness requests. A body expression is not a face smile or audible laughter. Never invent clip IDs.",
             "input_schema": {
                 "type": "object",
                 "properties": {"clip_id": {"type": "string", "minLength": 1, "maxLength": 96}},

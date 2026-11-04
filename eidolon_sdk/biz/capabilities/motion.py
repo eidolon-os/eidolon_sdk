@@ -15,6 +15,7 @@ def definitions():
             input_schema=value["input_schema"],
             required_output="motion",
             body_control=True,
+            reference_result_path=("result", "clips") if name == "motion.catalog" else (),
             execution_location="device",
             side_effect=name != "motion.catalog",
             preempts_active=name == "motion.stop",

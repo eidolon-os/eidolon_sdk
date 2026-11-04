@@ -67,6 +67,9 @@ class CapabilityDefinition(BaseModel):
     timeout_s: float = Field(default=30, gt=0, le=120)
     legacy_channel: bool = False
     preempts_active: bool = False
+    # JSON object path in a successful tool result to reusable resource descriptors.
+    # Retained only in the current session, never as completion evidence.
+    reference_result_path: tuple[str, ...] = ()
     completion_basis: Literal["software_sequence", "configuration_applied", "unconfirmed"] = (
         "software_sequence"
     )
