@@ -16,13 +16,16 @@ the session wire, which is why they live outside ``biz.contracts``.
 
 from __future__ import annotations
 
+AUDIO_INPUT_AEC = "aec"
+AUDIO_INPUT_AGC = "agc"
+AUDIO_INPUT_NS = "ns"
 AUDIO_INPUT_AEC_PROPERTY = "audio.input.aec"
 AUDIO_INPUT_AGC_PROPERTY = "audio.input.agc"
 AUDIO_INPUT_NS_PROPERTY = "audio.input.ns"
 AUDIO_INPUT_STAGE_PROPERTIES = {
-    "aec": AUDIO_INPUT_AEC_PROPERTY,
-    "agc": AUDIO_INPUT_AGC_PROPERTY,
-    "ns": AUDIO_INPUT_NS_PROPERTY,
+    AUDIO_INPUT_AEC: AUDIO_INPUT_AEC_PROPERTY,
+    AUDIO_INPUT_AGC: AUDIO_INPUT_AGC_PROPERTY,
+    AUDIO_INPUT_NS: AUDIO_INPUT_NS_PROPERTY,
 }
 AUDIO_INPUT_DEVICE = "device"
 AUDIO_INPUT_NONE = "none"
