@@ -518,6 +518,34 @@
       "waiver_expires_at": null
     },
     {
+      "requirement_id": "DF-COMM-021",
+      "normative_text_ref": "10.4 every shipped device model MUST declare in models/setup.json how a person opens and cancels setup mode at the device and how it gives its one-time setup code; a firmware build MUST refuse Eidolon mode for a board that is not declared, and the Mobile app MUST show the declared words",
+      "owner": "eidolon_sdk+eidolon-client-esp32+eidolon_client_mobile+eidolon_client_reachy_mini",
+      "schema_ids": ["common/SetupModelCatalog", "common/SetupModel"],
+      "producer_tests": ["CONFORMANCE::check_setup_models", "ESP32::main/CMakeLists.txt refuses an undeclared Eidolon board"],
+      "consumer_tests": ["MOBILE::test/setup_models_test.dart", "REACHY::tests/test_setup_mode.py::SetupModelTests"],
+      "simulator_vectors": ["models/setup.json"],
+      "integration_tests": [],
+      "hil_tests": ["BOX3::long-press-cancels-setup-mode"],
+      "status": "planned",
+      "waiver_reason": null,
+      "waiver_expires_at": null
+    },
+    {
+      "requirement_id": "DF-COMM-022",
+      "normative_text_ref": "10.3 a device without a screen MUST speak the one-time setup code drawn for each setup window when the window opens and again on its declared gesture; it MUST NOT open setup with a code it did not draw for that window",
+      "owner": "eidolon_sdk+eidolon_client_reachy_mini",
+      "schema_ids": ["common/SetupModel", "common/CommissioningProfile"],
+      "producer_tests": ["REACHY::tests/test_setup_mode.py::PromptTests::test_setup_presence_reads_the_code_and_touch_repeats_it", "REACHY::tests/test_setup_mode.py::PromptTests::test_a_touch_mid_sentence_starts_the_code_over"],
+      "consumer_tests": [],
+      "simulator_vectors": [],
+      "integration_tests": [],
+      "hil_tests": ["REACHY::antenna-hold-opens-setup-and-reads-the-code"],
+      "status": "planned",
+      "waiver_reason": null,
+      "waiver_expires_at": null
+    },
+    {
       "requirement_id": "DF-COMM-010",
       "normative_text_ref": "16.1 DF-COMM-010 failure/cancel MUST restore previous network/radio mode without changing Claim/Mount/Assignment",
       "owner": "eidolon-client-esp32",

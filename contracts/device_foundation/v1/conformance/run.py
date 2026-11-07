@@ -1663,6 +1663,34 @@ def check_protocomm_framing() -> int:
     return 1
 
 
+def check_setup_models(schemas: dict[str, dict[str, Any]], registry: Registry) -> int:
+    """Hold the per-model setup declarations to their schema and to one another.
+
+    Each name a model goes by is a key somebody looks it up by: the descriptor's
+    kind (the firmware build and the catalog), the SoftAP name (the phone before
+    it connects) and the Manifest id (the Host's device list). Two models
+    sharing one of them would show a person the wrong gesture.
+    """
+
+    catalog = load_json(ROOT / "models" / "setup.json")
+    validator = Draft202012Validator(
+        {
+            "$ref": "https://contracts.eidolon.live/device-foundation/v1/common/"
+            "schemas.schema.json#/$defs/SetupModelCatalog"
+        },
+        registry=registry,
+        format_checker=FORMAT_CHECKER,
+    )
+    errors = sorted(validator.iter_errors(catalog), key=lambda item: list(item.path))
+    if errors:
+        raise ConformanceError(f"models/setup.json is invalid: {errors[0].message}")
+    for key in ("device_kind", "ssid_model", "manifest_id"):
+        names = [model[key] for model in catalog["models"]]
+        if len(names) != len(set(names)):
+            raise ConformanceError(f"models/setup.json repeats a {key}")
+    return len(catalog["models"])
+
+
 def check_profile() -> int:
     profile = load_json(ROOT / "profile" / "eidolon-trust-p256-hpke-v1.json")
     if profile["profile_id"] != "eidolon-trust-p256-hpke-v1":
@@ -2929,6 +2957,7 @@ def run() -> dict[str, int]:
         "endpoint_chunking_vectors": check_endpoint_chunking_vector(),
         "ble_provisioning_transport_vectors": check_ble_provisioning_transport_vector(),
         "commissioning_voucher": check_commissioning_voucher(),
+        "setup_models": check_setup_models(schemas, registry),
         "profiles": check_profile(),
         "host_independent_sources": check_host_independence(),
         "requirements": check_traceability(schemas),

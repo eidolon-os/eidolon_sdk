@@ -34,13 +34,13 @@
     },
     {
       "path": "common/schemas.schema.json",
-      "sha256": "e5770cd2c12b288415c055a51cee2a4bd813f4bd7d9f0675f6a43c30e8f27b72",
-      "size": 34186
+      "sha256": "9b463fa9069f488fe36456f09b535d6967d712d1c4a4603864ea34c3536ba27f",
+      "size": 37865
     },
     {
       "path": "conformance/run.py",
-      "sha256": "dceac0c33378ec59bec888e6593b3a6193fb95c15cc4b8f2a2b2bd0c8c4786d1",
-      "size": 146014
+      "sha256": "3825ab4c00c9b2729d707bcb9036c68bffa8f53f973cd618e3273ede2223e37f",
+      "size": 147340
     },
     {
       "path": "delivery-port/schemas.schema.json",
@@ -84,8 +84,8 @@
     },
     {
       "path": "examples/invalid/common.json",
-      "sha256": "c96a039a48515f64c2d5365448075b3d3759e3bc68c70b727f55ec63589b9cbc",
-      "size": 17465
+      "sha256": "c9a843497168b7306fc9145f2172cb59e126dd11d9686c37dd6c26d3805abd3b",
+      "size": 18730
     },
     {
       "path": "examples/invalid/device-erase.json",
@@ -114,8 +114,8 @@
     },
     {
       "path": "examples/valid/common.json",
-      "sha256": "bc843ed1e973d3272fbdff9d924a28cf2fe39aa4bdc86b1ce71b62c9c6f456df",
-      "size": 18109
+      "sha256": "b8fa814171a96c6f83fe5362168760932a9339c244363d4940c54b8a20cf11ae",
+      "size": 19819
     },
     {
       "path": "examples/valid/delivery-and-events.json",
@@ -139,8 +139,8 @@
     },
     {
       "path": "generation/config.json",
-      "sha256": "18873c0f96619a25bd254962d87db3e7ec88c7cf0c39f56d928e04714a23de76",
-      "size": 1569
+      "sha256": "37d60fdb7377e1b31f488ebc0d1c3ca2d95f3512a93efb5e517f2ca896af6b18",
+      "size": 1590
     },
     {
       "path": "generation/generate.py",
@@ -149,8 +149,8 @@
     },
     {
       "path": "generation/templates/device_foundation_v1.dart",
-      "sha256": "cb98adf04bd40a54d66f7756f977303558bc8967d6beb4d8bcbbe9e20d74988e",
-      "size": 51045
+      "sha256": "b30cce95d062aa6baccfb9de15a26771dfdc3520cfa59315f524141be8b68b8f",
+      "size": 55688
     },
     {
       "path": "generation/templates/device_foundation_v1.py",
@@ -224,7 +224,7 @@
     },
     {
       "path": "golden/device-control-manifest-assertion-proof.json",
-      "sha256": "6ce206c815a3c2a32d45fb708ec4d5aaa542dcd6b32650a3ef92a6ea26b7ae53",
+      "sha256": "54dc74760944bfef759372f1de95249eaaffe55af613e70d350022c0ba702414",
       "size": 2487
     },
     {
@@ -244,8 +244,8 @@
     },
     {
       "path": "golden/device-manifest.json",
-      "sha256": "b5b2a4fd23b64b21da3ca2331479d003a0cdc84c719846b86553d1770b65e2a1",
-      "size": 3423
+      "sha256": "4335522b7de8785d9a08dd6ec4bc5017cf09cecbaf9a009fb5fd68b0e9db0643",
+      "size": 4659
     },
     {
       "path": "golden/es256-vectors.json",
@@ -298,6 +298,11 @@
       "size": 4153
     },
     {
+      "path": "models/setup.json",
+      "sha256": "ad96b25a34649f3436b2e0c323f5f8b7f692d33520bda3339e702c98920c7dbf",
+      "size": 2842
+    },
+    {
       "path": "profile/eidolon-trust-p256-hpke-v1.json",
       "sha256": "469584fb54ffc1618cbeff99405f1236b9d0ebab530720ec63759b42b2636159",
       "size": 3164
@@ -319,8 +324,8 @@
     },
     {
       "path": "requirements/requirements.json",
-      "sha256": "ccb73a2cfc2eb6802e790782bf0fde2682879842eeb3b38ca0aec92f57abac6b",
-      "size": 62495
+      "sha256": "757114740728a15efd1defb16c1fa48f0cb488a91681b33de00a6137b429ea09",
+      "size": 64426
     },
     {
       "path": "state-vectors/commissioning-runtime.json",
@@ -355,5 +360,5 @@
   ],
   "generator": "device-foundation-v1-catalog",
   "generator_version": "1.0",
-  "source_digest": "sha256:d48cf9d853ba605c6224eedb0e7a44564061aa86ede74e5805ae4dfdb276714f"
+  "source_digest": "sha256:791756a73dd11014c705a1eed0df0c632dbea7cef776293bb91fa65ff1ce5f01"
 }

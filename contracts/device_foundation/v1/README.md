@@ -47,3 +47,8 @@ uv run python contracts/device_foundation/v1/baseline/verify.py \
 
 Generated output comprises `generated/catalog.json` plus the declared Dart and C++ bindings.
 The generator is the only writer for those binding files, and `--check` is the no-drift gate.
+
+`models/setup.json` declares, for every shipped device model, how a person opens and cancels
+setup mode at the device and whether the device shows or speaks its one-time setup code
+(`SetupModelCatalog`, DF-COMM-021). It is the one list: firmware refuses an Eidolon build for a
+board that is not in it, and the Mobile app shows its words, each through its SDK lock.
