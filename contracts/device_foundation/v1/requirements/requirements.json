@@ -491,7 +491,7 @@
     },
     {
       "requirement_id": "DF-COMM-019",
-      "normative_text_ref": "16.1 a setup code MUST be drawn on the device per setup window, its SRP verifier derived on the device with a salt whose first byte is not zero, and failed handshakes MUST be bounded per window",
+      "normative_text_ref": "16.1 a setup code MUST be drawn on the device per setup window, its SRP verifier derived on the device with a salt whose first byte is not zero, and the code MUST stay valid for as long as that window is open",
       "owner": "eidolon_sdk+eidolon-client-esp32",
       "schema_ids": ["common/SetupQrPayload"],
       "producer_tests": ["CONFORMANCE::check_setup_code_verifier_vector", "ESP32::setup-code-secret-known-answers"],
