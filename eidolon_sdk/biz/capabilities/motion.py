@@ -29,9 +29,9 @@ def definitions():
             side_effect=name != "motion.catalog",
             preempts_active=name == "motion.stop",
             completion_basis="configuration_applied"
-            if name in {"motion.catalog", "behavior.speech_motion"}
+            if name in {"motion.catalog", "behavior.speech_motion", "attention.follow"}
             else "software_sequence",
-            idempotent=name in {"motion.catalog", "behavior.speech_motion"},
+            idempotent=name in {"motion.catalog", "behavior.speech_motion", "attention.follow"},
             timeout_s=45,
         )
         for name, value in motion_definitions().items()

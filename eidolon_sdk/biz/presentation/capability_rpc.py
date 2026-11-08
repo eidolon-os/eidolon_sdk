@@ -109,6 +109,15 @@ def definitions() -> dict[str, dict]:
                 "additionalProperties": False,
             },
         },
+        "attention.follow": {
+            "description": "注视跟随：看着在场的人，并在听到说话时转向说话方向。会话内默认开启；只在用户要求停止注视/别看我/保持不动时关闭，要求重新看着自己时开启。This changes a setting; it does not identify people.",
+            "input_schema": {
+                "type": "object",
+                "properties": {"enabled": {"type": "boolean"}},
+                "required": ["enabled"],
+                "additionalProperties": False,
+            },
+        },
     }
 
 
@@ -119,7 +128,7 @@ def actions(names=None) -> list[dict]:
             "version": 1,
             "input_schema": value["input_schema"],
             "output_schema": {"type": "object"},
-            "idempotent": name in {"motion.catalog", "behavior.speech_motion"},
+            "idempotent": name in {"motion.catalog", "behavior.speech_motion", "attention.follow"},
         }
         for name, value in definitions().items()
         if names is None or name in names
