@@ -148,7 +148,7 @@ class ChannelToolCall(_message.Message):
     def __init__(self, call_id: _Optional[str] = ..., name: _Optional[str] = ..., arguments: _Optional[_Union[_struct_pb2.Struct, _Mapping]] = ...) -> None: ...
 
 class ChannelToolResult(_message.Message):
-    __slots__ = ("turn_id", "call_id", "name", "ok", "content", "error_code", "error_message", "outcome_state", "reference_context")
+    __slots__ = ("turn_id", "call_id", "name", "ok", "content", "error_code", "error_message", "outcome_state", "reference_context", "attachment", "attachment_media_type")
     TURN_ID_FIELD_NUMBER: _ClassVar[int]
     CALL_ID_FIELD_NUMBER: _ClassVar[int]
     NAME_FIELD_NUMBER: _ClassVar[int]
@@ -158,6 +158,8 @@ class ChannelToolResult(_message.Message):
     ERROR_MESSAGE_FIELD_NUMBER: _ClassVar[int]
     OUTCOME_STATE_FIELD_NUMBER: _ClassVar[int]
     REFERENCE_CONTEXT_FIELD_NUMBER: _ClassVar[int]
+    ATTACHMENT_FIELD_NUMBER: _ClassVar[int]
+    ATTACHMENT_MEDIA_TYPE_FIELD_NUMBER: _ClassVar[int]
     turn_id: str
     call_id: str
     name: str
@@ -167,7 +169,9 @@ class ChannelToolResult(_message.Message):
     error_message: str
     outcome_state: str
     reference_context: _struct_pb2.Struct
-    def __init__(self, turn_id: _Optional[str] = ..., call_id: _Optional[str] = ..., name: _Optional[str] = ..., ok: bool = ..., content: _Optional[_Union[_struct_pb2.Struct, _Mapping]] = ..., error_code: _Optional[str] = ..., error_message: _Optional[str] = ..., outcome_state: _Optional[str] = ..., reference_context: _Optional[_Union[_struct_pb2.Struct, _Mapping]] = ...) -> None: ...
+    attachment: bytes
+    attachment_media_type: str
+    def __init__(self, turn_id: _Optional[str] = ..., call_id: _Optional[str] = ..., name: _Optional[str] = ..., ok: bool = ..., content: _Optional[_Union[_struct_pb2.Struct, _Mapping]] = ..., error_code: _Optional[str] = ..., error_message: _Optional[str] = ..., outcome_state: _Optional[str] = ..., reference_context: _Optional[_Union[_struct_pb2.Struct, _Mapping]] = ..., attachment: _Optional[bytes] = ..., attachment_media_type: _Optional[str] = ...) -> None: ...
 
 class ChannelToolCancel(_message.Message):
     __slots__ = ("turn_id", "call_id")

@@ -204,3 +204,35 @@ def test_microphone_policy_is_strict_and_preserves_legacy_wire_shape():
         InputSelection(microphone='false')
     assert manifest_inputs({'media': [{'kind': 'audio', 'direction': 'subscribe'}]}).microphone is False
     assert manifest_inputs({'media': [{'kind': 'audio', 'direction': 'publish'}]}).microphone is True
+
+
+def test_camera_use_is_absent_until_a_device_declares_the_camera_contract():
+    from eidolon_sdk.biz.capabilities import installed_registry
+    from eidolon_sdk.biz.presentation import (
+        DeviceOutputPolicy,
+        InputSelection,
+        OutputSelection,
+        SessionOutputPlan,
+        manifest_inputs,
+    )
+
+    # A device that never declared it sees exactly the wire shape it always has.
+    assert InputSelection(microphone=True).model_dump(mode="json") == {"microphone": True}
+    video_only = {"media": [{"kind": "video", "direction": "publish"}], "actions": []}
+    assert manifest_inputs(video_only).camera is None
+    still = installed_registry().get("camera.capture").action()
+    assert manifest_inputs({"media": [], "actions": [still]}).camera == "capture"
+    assert manifest_inputs({"media": [], "actions": [{**still, "version": 2}]}).camera is None
+
+    policy = DeviceOutputPolicy(
+        revision=1, allowed=OutputSelection(), inputs=InputSelection(camera="local")
+    )
+    assert policy.model_dump(mode="json")["inputs"] == {"microphone": False, "camera": "local"}
+    assert DeviceOutputPolicy.model_validate_json(policy.model_dump_json()) == policy
+    with pytest.raises(ValueError):
+        InputSelection(camera="always")
+
+    plan = SessionOutputPlan(session_id="session-1", policy_revision=1, outputs=OutputSelection())
+    assert "device_capabilities" not in plan.model_dump(mode="json")
+    granted = plan.model_copy(update={"device_capabilities": ("camera.capture",)})
+    assert granted.model_dump(mode="json")["device_capabilities"] == ["camera.capture"]

@@ -59,7 +59,12 @@ class CapabilityDefinition(BaseModel):
     description: str = Field(min_length=1, max_length=2048)
     input_schema: dict[str, Any]
     result_schema: dict[str, Any] = Field(default_factory=lambda: {"type": "object"})
-    required_output: Literal["speech", "motion", "expression", "dialogue_text", "audio_cue"]
+    # What the Owner must have allowed for a session to use this: one response
+    # output, or one input. Exactly one of the two.
+    required_output: Literal["speech", "motion", "expression", "dialogue_text", "audio_cue"] | None = None
+    required_input: Literal["camera"] | None = None
+    # False: the Agent uses it on the model's behalf and never offers it as a tool.
+    model_tool: bool = True
     execution_location: Literal["channel", "device"]
     body_control: bool = False
     side_effect: bool = True
@@ -84,6 +89,8 @@ class CapabilityDefinition(BaseModel):
     def schemas(self):
         if self.supports_response_attachment and not self.supports_background:
             raise ValueError("response attachment requires background execution")
+        if (self.required_output is None) == (self.required_input is None):
+            raise ValueError("a capability requires one output or one input")
         check_schema(self.input_schema)
         check_schema(self.result_schema, root=False)
         return self
@@ -95,6 +102,12 @@ class CapabilityDefinition(BaseModel):
         # and other unmodified packages merely by adding this SDK field.
         if not self.supports_response_attachment:
             value.pop("supports_response_attachment")
+        # Likewise the input gate and the tool switch: absent means the contract
+        # every installed device already agreed on.
+        if self.required_input is None:
+            value.pop("required_input")
+        if self.model_tool:
+            value.pop("model_tool")
         return digest(value)
 
     def action(self):
@@ -148,7 +161,7 @@ class CapabilityRegistry:
         }
         return {**body, "revision": digest(body)}
 
-    def accept(self, names, snapshot, *, conversation_id, outputs):
+    def accept(self, names, snapshot, *, conversation_id, outputs, inputs=None):
         names = frozenset(names)
         if snapshot is None:
             # Old callers see only contracts explicitly declaring legacy support.
@@ -177,17 +190,25 @@ class CapabilityRegistry:
         )
         if normalized != expected:
             raise ValueError("stale or unrecognized capability set")
-        return frozenset(n for n in names if outputs.get(self.get(n).required_output) is True)
+        inputs = inputs or {}
+
+        def allowed(definition):
+            if definition.required_input == "camera":
+                return inputs.get("camera") == "capture"
+            return outputs.get(definition.required_output) is True
+
+        return frozenset(n for n in names if allowed(self.get(n)))
 
 
 @lru_cache(maxsize=1)
 def installed_registry():
+    from .camera import definitions as camera
     from .motion import definitions as motion
     from .music import definitions as music
 
     registry = CapabilityRegistry()
     # Composition only: each package owns its definitions. Generic layers never enumerate names.
-    for package in (music, motion):
+    for package in (music, motion, camera):
         for definition in package():
             registry.register(definition)
     for entry in entry_points(group="eidolon.capabilities"):

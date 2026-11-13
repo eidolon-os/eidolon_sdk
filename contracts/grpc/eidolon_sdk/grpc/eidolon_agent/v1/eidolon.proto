@@ -194,6 +194,10 @@ message ChannelToolResult {
   // Optional safe, reusable object references, not instructions or execution authority.
   // Producer must omit credentials and transport URLs. Consumers bound retention.
   google.protobuf.Struct reference_context = 9;
+  // Optional binary the result is about (a camera still), with its media type.
+  // Never part of content: it is not shown to the model, logged or retained.
+  bytes attachment = 10;
+  string attachment_media_type = 11;
 }
 
 message ChannelToolCancel {

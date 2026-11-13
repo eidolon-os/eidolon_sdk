@@ -65,18 +65,46 @@ class OutputSelection(Contract):
         return self.speech or self.dialogue_text or self.expression or self.motion
 
 
+# How far the Owner lets a device use its camera, each level including the one before:
+# off: not at all. local: on the device only (following a face); no image leaves it.
+# capture: also one still at a time, on request, sent to the Host.
+CameraUse = Literal["off", "local", "capture"]
+CAMERA_CAPTURE = "camera.capture"
+
+
 class InputSelection(Contract):
-    """Owner permission to send microphone audio, independent of response outputs."""
+    """Owner permission for what a device may take in, independent of response outputs.
+
+    ``camera`` is None for every device that has not declared the camera
+    contract: its camera use then follows from its Manifest, as it always has.
+    """
 
     microphone: bool = Field(default=False, strict=True)
+    camera: CameraUse | None = None
+
+    @model_serializer(mode="wrap")
+    def serialize_inputs(self, handler):
+        value = handler(self)
+        # Devices that never declared the camera contract reject unknown keys.
+        if self.camera is None:
+            value.pop("camera", None)
+        return value
 
 
 def manifest_inputs(manifest: dict[str, Any]) -> InputSelection:
-    return InputSelection(microphone=any(
-        isinstance(entry, dict) and entry.get("kind") == "audio"
-        and entry.get("direction") in {"publish", "bidirectional"}
-        for entry in manifest.get("media", ())
-    ))
+    """What a device declared it can take in; ``camera`` is the most it supports."""
+    return InputSelection(
+        microphone=any(
+            isinstance(entry, dict) and entry.get("kind") == "audio"
+            and entry.get("direction") in {"publish", "bidirectional"}
+            for entry in manifest.get("media", ())
+        ),
+        camera="capture" if any(
+            isinstance(action, dict) and action.get("name") == CAMERA_CAPTURE
+            and action.get("version") == 1
+            for action in manifest.get("actions", ())
+        ) else None,
+    )
 
 
 class DeviceOutputPolicy(Contract):
@@ -102,6 +130,9 @@ class SessionOutputPlan(Contract):
     motion_profile: Literal["stackchan.head.v1", "eidolon.motion.v1", "eidolon.motion.v2"] | None = None
 
     motion_capabilities: tuple[str, ...] = ()
+    # Device capabilities this session may use that no response output gates
+    # (a camera still). Present only for a device that declared them.
+    device_capabilities: tuple[str, ...] = ()
 
     @model_serializer(mode="wrap")
     def serialize_output_plan(self, handler):
@@ -111,6 +142,8 @@ class SessionOutputPlan(Contract):
             value.pop("motion_profile", None)
         if not self.motion_capabilities:
             value.pop("motion_capabilities", None)
+        if not self.device_capabilities:
+            value.pop("device_capabilities", None)
         return value
 
 

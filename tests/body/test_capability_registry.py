@@ -54,8 +54,36 @@ def test_unmodified_packages_keep_their_previous_digest():
     from eidolon_sdk.biz.capabilities import digest
     definition = extension()
     previous = definition.model_dump(mode="json")
-    previous.pop("supports_response_attachment")
+    for added_later in ("supports_response_attachment", "required_input", "model_tool"):
+        previous.pop(added_later)
     assert definition.contract_digest == digest(previous)
+
+
+def test_a_capability_is_gated_by_one_output_or_one_input():
+    with pytest.raises(ValueError, match="one output or one input"):
+        extension(required_input="camera")
+    with pytest.raises(ValueError, match="one output or one input"):
+        CapabilityDefinition(
+            **extension().model_dump(exclude={"required_output"}), required_output=None
+        )
+    still = installed_registry().get("camera.capture")
+    assert (still.required_output, still.required_input) == (None, "camera")
+    assert still.execution_location == "device" and not still.model_tool
+    assert still.action()["name"] == "camera.capture"
+
+
+def test_an_input_gated_capability_needs_the_owner_to_allow_capture():
+    registry = installed_registry()
+    names = ["camera.capture", "motion.nod"]
+    snapshot = registry.snapshot(names, conversation_id="session", policy_revision=3)
+
+    def accepted(**selection):
+        return registry.accept(names, snapshot, conversation_id="session", **selection)
+
+    assert accepted(outputs={"motion": True}) == {"motion.nod"}
+    assert accepted(outputs={"motion": True}, inputs={"camera": "local"}) == {"motion.nod"}
+    assert accepted(outputs={}, inputs={"camera": "capture"}) == {"camera.capture"}
+    assert accepted(outputs={"motion": True}, inputs={"camera": "capture"}) == set(names)
 
 
 def test_conflict_and_mutation_are_isolated():
