@@ -205,10 +205,11 @@ def installed_registry():
     from .camera import definitions as camera
     from .motion import definitions as motion
     from .music import definitions as music
+    from .vision import definitions as vision
 
     registry = CapabilityRegistry()
     # Composition only: each package owns its definitions. Generic layers never enumerate names.
-    for package in (music, motion, camera):
+    for package in (music, motion, camera, vision):
         for definition in package():
             registry.register(definition)
     for entry in entry_points(group="eidolon.capabilities"):

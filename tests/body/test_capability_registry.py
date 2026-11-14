@@ -131,3 +131,41 @@ def test_protobuf_integer_recovery_is_schema_scoped():
             decode_arguments(schema, {"repeats": bad})
     with pytest.raises(ValueError):
         validate(schema, decode_arguments(schema, {"repeats": True}))
+
+
+def test_who_is_in_view_is_a_camera_gated_channel_tool_and_leaves_other_digests_alone():
+    registry = installed_registry()
+    who = registry.get("vision.who")
+    assert (who.execution_location, who.required_input, who.model_tool) == ("channel", "camera", True)
+    assert not who.side_effect and who.input_schema["properties"] == {}
+    names = ["camera.capture", "vision.who"]
+    snapshot = registry.snapshot(names, conversation_id="s", policy_revision=3)
+    accept = lambda inputs: registry.accept(  # noqa: E731
+        names, snapshot, conversation_id="s", outputs={}, inputs=inputs
+    )
+    assert accept({"camera": "capture"}) == frozenset(names)
+    assert accept({"camera": "local"}) == frozenset()
+    # A device's own set never lists it, so the revision devices compute is unchanged.
+    device_only = registry.snapshot(["camera.capture"], conversation_id="s", policy_revision=3)
+    assert all(c["name"] != "vision.who" for c in device_only["contracts"])
+
+
+def test_who_result_carries_names_and_never_scores():
+    from eidolon_sdk.biz.capabilities import validate
+
+    schema = installed_registry().get("vision.who").result_schema
+    good = {
+        "faces": 1,
+        "enrolled": 2,
+        "visible": [{"status": "identified", "name": "Ada"}],
+        "voice": {"status": "unidentified"},
+        "agreement": "face_only",
+        "address_as": "Ada",
+        "guidance": "g",
+    }
+    validate(schema, good)
+    for extra in ({"score": 0.9}, {"person_id": "x"}):
+        with pytest.raises(ValueError):
+            validate(schema, good | {"visible": [{"status": "identified", "name": "Ada"} | extra]})
+    with pytest.raises(ValueError):
+        validate(schema, good | {"vector": [0.1]})
