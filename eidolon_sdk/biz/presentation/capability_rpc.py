@@ -13,9 +13,31 @@ CANCEL = "eidolon.execution.cancel.v1"
 
 
 class ExecutionScope(Contract):
+    """What an invocation is bound to. Inside a session, that session and its plan.
+
+    Outside any session (``standing_scope``) the binding is the device's own
+    channel: ``session_id`` is the room the device holds, ``policy_revision`` the
+    output policy it received with that channel.
+    """
+
     execution_id: Identifier
     session_id: Identifier
     policy_revision: int = Field(strict=True, ge=1)
+
+
+def standing_scope(*, execution_id: str, room: str, policy_revision: int) -> ExecutionScope:
+    """The scope of an invocation on a device's standing channel, outside any session.
+
+    There is no session to bind to, and inventing a placeholder id would be a
+    sentinel every device has to special-case. The facts both sides already
+    share are the channel's room and the Owner's current output policy revision.
+    A device accepts such an invocation only from its room's Provider identity,
+    and only for a capability the registry marks ``owner_control``.
+    """
+
+    return ExecutionScope(
+        execution_id=execution_id, session_id=room, policy_revision=policy_revision
+    )
 
 
 class CapabilityInvocation(ExecutionScope):

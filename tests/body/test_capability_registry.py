@@ -54,7 +54,9 @@ def test_unmodified_packages_keep_their_previous_digest():
     from eidolon_sdk.biz.capabilities import digest
     definition = extension()
     previous = definition.model_dump(mode="json")
-    for added_later in ("supports_response_attachment", "required_input", "model_tool"):
+    for added_later in (
+        "supports_response_attachment", "required_input", "model_tool", "owner_control"
+    ):
         previous.pop(added_later)
     assert definition.contract_digest == digest(previous)
 
