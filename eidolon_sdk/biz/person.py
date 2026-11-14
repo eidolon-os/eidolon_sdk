@@ -20,6 +20,16 @@ class PersonProfile(PersonContract):
     )
 
 
+def address_as(display_name: str, profile: PersonProfile) -> str:
+    """The name a person is addressed by aloud.
+
+    A person says how they want to be called in their profile; until they do,
+    the name they are listed under serves. Recognition candidates carry this
+    one value, so voice and face can never address the same person differently.
+    """
+    return profile.preferred_name.strip() or display_name.strip()
+
+
 class PersonCreate(PersonContract):
     maturity: Literal["candidate", "established"] = "established"
     is_named: bool = True

@@ -64,11 +64,11 @@ def test_features_write_binds_consent_and_features():
 def test_candidates_hold_each_person_once():
     candidate = FaceCandidate(
         person_id="a" * 32,
-        display_name="Ada",
+        address_as="Ada",
         templates=[FaceTemplate(revision=1, features=FEATURES)],
     )
     assert FaceCandidates(owner_id="o", revision="b" * 64, persons=[candidate]).persons
     with pytest.raises(ValidationError):
         FaceCandidates(owner_id="o", revision="b" * 64, persons=[candidate, candidate])
     with pytest.raises(ValidationError):
-        FaceCandidate(person_id="a" * 32, display_name="Ada", templates=[])
+        FaceCandidate(person_id="a" * 32, address_as="Ada", templates=[])

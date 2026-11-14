@@ -193,7 +193,8 @@ class SpeakerCandidate(Contract):
     is_named: bool = True
     person_id: str = Field(min_length=1, max_length=64)
     person_revision: int = Field(ge=1)
-    display_name: str = Field(min_length=1, max_length=128)
+    # What to call this person aloud (``person.address_as``), already chosen.
+    address_as: str = Field(min_length=1, max_length=128)
     profile: PersonProfile
     templates: list[VoiceTemplate] = Field(min_length=1, max_length=5)
 

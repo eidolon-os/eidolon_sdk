@@ -99,7 +99,8 @@ class FaceTemplate(PersonContract):
 
 class FaceCandidate(PersonContract):
     person_id: str = Field(min_length=1, max_length=64)
-    display_name: str = Field(min_length=1, max_length=128)
+    # What to call this person aloud (``person.address_as``), already chosen.
+    address_as: str = Field(min_length=1, max_length=128)
     templates: list[FaceTemplate] = Field(min_length=1, max_length=MAX_FACE_TEMPLATES)
 
 

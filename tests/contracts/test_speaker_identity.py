@@ -199,7 +199,7 @@ def test_observation_attestation_roundtrips_and_cannot_renew_expired_evidence():
 def test_voiceprint_profiles_require_a_person_from_creation():
     from eidolon_sdk.biz.voiceprint import SpeakerProfileView
 
-    fields = dict(profile_id="v", display_name="Alice", revision=1, enrollment_id="e")
+    fields = dict(profile_id="v", revision=1, enrollment_id="e")
     assert SpeakerProfileView(person_id="p", **fields).person_id == "p"
     for invalid in ({}, {"person_id": None}, {"person_id": ""}):
         with pytest.raises(ValidationError):
@@ -208,7 +208,7 @@ def test_voiceprint_profiles_require_a_person_from_creation():
 
 def test_observation_profile_provenance_never_fabricates_an_enrollment():
     from eidolon_sdk.biz.voiceprint import SpeakerProfileView
-    fields = dict(person_id="p", profile_id="v", display_name="匿名", revision=1)
+    fields = dict(person_id="p", profile_id="v", revision=1)
     result = SpeakerProfileView(**fields, origin="observation", source_observation_id="observation")
     assert result.enrollment_id is None
     for provenance in [dict(origin="observation"),

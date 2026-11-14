@@ -118,7 +118,6 @@ class TemplateCalibration(Contract):
 class EnrollmentCreate(Contract):
     person_id: str = Field(min_length=1, max_length=64)
     operation_id: str = Field(min_length=1, max_length=64, pattern=r"^[A-Za-z0-9_-]+$")
-    display_name: str = Field(min_length=1, max_length=80)
     profile_id: str | None = Field(default=None, max_length=64)
 
 
@@ -135,7 +134,6 @@ class SpeakerProfileView(Contract):
     source_observation_id: str | None = None
     person_id: str = Field(min_length=1, max_length=64)
     profile_id: str
-    display_name: str
     revision: int
     enrollment_id: str | None = None
     recording_available: bool = False
@@ -294,7 +292,6 @@ class SpeakerSimilarity(Contract):
     revision: int
     status: Literal["scored", "incompatible"]
     similarity: float | None = Field(default=None, ge=-1, le=1)
-    display_name: str = ""
 
     @model_validator(mode="after")
     def score_matches_status(self):
