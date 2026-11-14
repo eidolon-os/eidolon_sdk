@@ -32,9 +32,11 @@ def definitions():
             description="Look through the device camera and check who is in view against the "
             "people whose faces the Owner enrolled. Use it when the user asks whether you "
             "know or recognize them, who they are, or who is here. It only knows enrolled "
-            "people; everyone else is unknown. A face match is resemblance, not proof: "
-            "follow the result's guidance on whether to use a name, and never use a match "
-            "to share one person's private information.",
+            "people; everyone else is unknown. Follow the result's guidance: when it gives "
+            "a name, answer plainly with that name in one short sentence. Do not explain "
+            "how you recognized them (voice, face, resemblance, verification) unless asked. "
+            "Recognition is for addressing someone, never a reason to share private "
+            "information.",
             input_schema={"type": "object", "additionalProperties": False, "properties": {}},
             result_schema={
                 "type": "object",
