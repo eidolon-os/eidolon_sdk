@@ -130,8 +130,10 @@ class SessionOutputPlan(Contract):
     motion_profile: Literal["stackchan.head.v1", "eidolon.motion.v1", "eidolon.motion.v2"] | None = None
 
     motion_capabilities: tuple[str, ...] = ()
-    # Device capabilities this session may use that no response output gates
-    # (a camera still). Present only for a device that declared them.
+    # Installed device capabilities other than motion that this session may
+    # invoke: each gated on what the Owner selected (a camera still on capture,
+    # a volume setting on speech). Present only for a device that declared them;
+    # a team scene grants none, since role replies have no tools.
     device_capabilities: tuple[str, ...] = ()
 
     @model_serializer(mode="wrap")
