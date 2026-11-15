@@ -29,19 +29,23 @@ def definitions():
         CapabilityDefinition(
             name=VISION_WHO,
             llm_name="vision_who",
+            # What the tool does, when to use it, what the result means and what it
+            # never allows. Not how to word the answer: the model reads this on every
+            # turn the tool is offered and repeats any wording it is given (four
+            # identical "you are X" answers in a row, 2026-11-14).
             description="Look through the device camera and check who is in view against the "
             "people whose faces the Owner enrolled. Use it when the user asks whether you "
             "know or recognize them, who they are, or who is here. It only knows enrolled "
-            "people; everyone else is unknown. Follow the result's guidance: when it gives "
-            "a name, answer plainly with that name in one short sentence. Do not explain "
-            "how you recognized them (voice, face, resemblance, verification) unless asked. "
-            "Recognition is for addressing someone, never a reason to share private "
-            "information.",
+            "people; everyone else is unknown. The person speaking is named only by "
+            "address_as, present only when a name may be used for them; without it, who is "
+            "speaking is not known, whatever names appear elsewhere in the result. summary "
+            "states the outcome in words. Knowing who someone is never makes it right to "
+            "share anyone's private information.",
             input_schema={"type": "object", "additionalProperties": False, "properties": {}},
             result_schema={
                 "type": "object",
                 "additionalProperties": False,
-                "required": ["faces", "enrolled", "visible", "voice", "agreement", "guidance"],
+                "required": ["faces", "enrolled", "visible", "voice", "agreement", "summary"],
                 "properties": {
                     "faces": {"type": "integer", "minimum": 0},
                     # How many people this household enrolled for face recognition.
@@ -71,7 +75,9 @@ def definitions():
                     "agreement": {"type": "string", "enum": list(AGREEMENTS)},
                     # Present only when a name may be used to address the user.
                     "address_as": {"type": "string", "maxLength": 128},
-                    "guidance": {"type": "string", "maxLength": 512},
+                    # The outcome in words: facts and what not to do, never how to
+                    # phrase the reply.
+                    "summary": {"type": "string", "maxLength": 512},
                 },
             },
             required_input="camera",

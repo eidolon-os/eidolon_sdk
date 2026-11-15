@@ -56,6 +56,9 @@ class CapabilityDefinition(BaseModel):
     name: str = Field(pattern=r"^[a-z][a-z0-9_]*(?:\.[a-z][a-z0-9_]*)+$", max_length=128)
     version: int = Field(default=1, ge=1, strict=True)
     llm_name: str = Field(pattern=r"^[a-zA-Z][a-zA-Z0-9_]*$", max_length=64)
+    # Read by the model on every turn the tool is offered: what it does, when to
+    # use it, what the result means and what it never allows. Never how to word
+    # the reply; that is the Companion's (see biz/capabilities/vision.py).
     description: str = Field(min_length=1, max_length=2048)
     input_schema: dict[str, Any]
     result_schema: dict[str, Any] = Field(default_factory=lambda: {"type": "object"})

@@ -163,7 +163,7 @@ def test_who_result_carries_names_and_never_scores():
         "voice": {"status": "unidentified"},
         "agreement": "face_only",
         "address_as": "Ada",
-        "guidance": "g",
+        "summary": "s",
     }
     validate(schema, good)
     for extra in ({"score": 0.9}, {"person_id": "x"}):
