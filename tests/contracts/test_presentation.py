@@ -141,6 +141,25 @@ def test_exported_artifacts_match_sdk_types():
         assert (root / name).read_text() == content, name
 
 
+def test_embedded_camera_action_is_what_makes_a_device_capture_capable():
+    """The firmware's still declaration is admitted, and it is what grants capture."""
+    import json
+    import re
+
+    from eidolon_sdk.biz.capabilities import installed_registry
+    from eidolon_sdk.biz.presentation import CAMERA_CAPTURE, manifest_inputs
+    from eidolon_sdk.biz.presentation.export import artifacts
+
+    header = artifacts()["embedded/camera_catalog.h"]
+    action = json.loads(re.search(r'kAction\[\] = R"json\((.*)\)json"', header).group(1))
+    registry = installed_registry()
+    assert action == registry.get(CAMERA_CAPTURE).action()
+    assert manifest_inputs({"actions": [action]}).camera == "capture"
+    for camera, granted in (("capture", True), ("local", False), ("off", False), (None, False)):
+        permitted = registry.permitted([CAMERA_CAPTURE], outputs={}, inputs={"camera": camera})
+        assert (CAMERA_CAPTURE in permitted) is granted
+
+
 def test_boolean_is_not_an_intensity():
     data = plan()
     data["steps"][0]["intensity"] = True
