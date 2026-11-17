@@ -123,3 +123,17 @@ def definitions() -> list[CapabilityDefinition]:
             **common,
         ),
     ]
+
+
+def presentations() -> dict[str, dict]:
+    """What the Owner reads about each setting tool (labels for the tool catalog)."""
+
+    def entry(label: str, summary: str) -> dict:
+        return {"label": label, "summary": summary, "group": "device_settings"}
+
+    return {
+        AUDIO_VOLUME_SET: entry("设定音量", "把设备音量调到你说的大小。"),
+        AUDIO_VOLUME_ADJUST: entry("调大调小音量", "把设备音量调大一点或小一点。"),
+        DISPLAY_BRIGHTNESS_SET: entry("设定屏幕亮度", "把屏幕亮度调到你说的大小。"),
+        DISPLAY_BRIGHTNESS_ADJUST: entry("调亮调暗屏幕", "把屏幕调亮一点或暗一点。"),
+    }

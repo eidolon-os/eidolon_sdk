@@ -264,6 +264,37 @@ def installed_properties() -> dict[str, dict]:
     return json.loads(_installed_properties())
 
 
+@lru_cache(maxsize=1)
+def _installed_presentations() -> str:
+    from eidolon_sdk.biz.tools import ToolPresentation
+
+    from .device_settings import presentations as device_settings
+    from .motion import presentations as motion
+    from .music import presentations as music
+    from .vision import presentations as vision
+
+    registry = installed_registry()
+    composed: dict[str, dict] = {}
+    # Composition only, like the registry. Kept apart from the definitions so a
+    # label can be reworded without changing any contract digest.
+    for package in (music, motion, vision, device_settings):
+        for name, value in package().items():
+            if name not in registry or name in composed:
+                raise ValueError(f"presentation for an unknown or duplicate capability: {name}")
+            composed[name] = ToolPresentation.model_validate(value).model_dump()
+    return json.dumps(composed, sort_keys=True, ensure_ascii=False)
+
+
+def installed_presentations() -> dict[str, dict]:
+    """What the Owner reads about each installed capability: label, summary, group.
+
+    Capabilities installed through entry points have none; the tool catalog
+    shows their contract name instead.
+    """
+
+    return json.loads(_installed_presentations())
+
+
 def declared_observable_properties(manifest) -> dict[str, dict]:
     """The installed observable properties this Manifest declares, name to schema."""
 
