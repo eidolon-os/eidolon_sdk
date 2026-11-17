@@ -178,6 +178,28 @@ class ToolCatalog(_Contract):
         return next((entry for entry in self.tools if entry.key == key), None)
 
 
+class DeviceToolOffer(_Contract):
+    """What one device's channel offers a session, as the Channel Provider granted it.
+
+    Two facts side by side, so a reader can tell "the device cannot" from "the
+    Owner has not allowed it": what the Manifest declared, and what the current
+    output policy lets a session use of that. Read from the channel's grant,
+    never recomputed elsewhere.
+    """
+
+    operation: Literal["channel.device-offer"] = "channel.device-offer"
+    device_id: str = Field(min_length=1, max_length=128)
+    #: Installed device contracts the accepted Manifest declares.
+    declared_capabilities: tuple[str, ...] = ()
+    #: The head profile the Manifest declares, whatever the Owner selected.
+    declared_motion_profile: str | None = None
+    #: None until the Owner has decided this device's outputs.
+    policy_revision: int | None = Field(default=None, ge=1)
+    outputs: dict[str, bool] | None = None
+    #: The device contracts a session on this channel may use.
+    session_capabilities: tuple[str, ...] = ()
+
+
 def _switch(policy: ToolPolicy, entry: ToolCatalogEntry) -> bool:
     return policy.overrides.get(entry.key, entry.default_enabled)
 
@@ -218,6 +240,7 @@ __all__ = [
     "BlockedBy",
     "CompanionToolPolicy",
     "CompanionToolPolicyState",
+    "DeviceToolOffer",
     "OwnerToolPolicyState",
     "ToolCatalog",
     "ToolCatalogEntry",
