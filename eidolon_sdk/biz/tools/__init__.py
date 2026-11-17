@@ -243,6 +243,18 @@ class ReadDeviceToolRestriction(_Contract):
     device_ref: DeviceRef
 
 
+class DeviceToolRestrictionConfiguration(_Contract):
+    """The answer to a read: which device, and what its Owner restricted.
+
+    ``restriction`` is None while the Owner has never restricted this device,
+    which is not the same answer as a restriction listing nothing: that one has
+    a revision a writer must name.
+    """
+
+    device_ref: DeviceRef
+    restriction: DeviceToolRestriction | None = None
+
+
 def _switch(policy: ToolPolicy, entry: ToolCatalogEntry) -> bool:
     return policy.overrides.get(entry.key, entry.default_enabled)
 
@@ -285,6 +297,7 @@ __all__ = [
     "CompanionToolPolicyState",
     "DeviceToolOffer",
     "DeviceToolRestriction",
+    "DeviceToolRestrictionConfiguration",
     "ReadDeviceToolRestriction",
     "SetDeviceToolRestriction",
     "OwnerToolPolicyState",
