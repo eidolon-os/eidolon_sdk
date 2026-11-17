@@ -15,6 +15,14 @@ Only the setter is offered to the Owner's own app (``owner_control``); the
 adjust forms exist for conversation. Each is gated on the output it tunes:
 volume on speech, brightness on the display that carries expression, so a
 Companion an Owner has not given that output cannot turn its knob either.
+
+A device with a speaker confirms a volume change out loud: one short cue at the
+new level once the value settles, and only where nothing else carries it (not
+at 0, not during a conversation or while something plays, not when the Owner's
+output policy allows no audio cue). It is the device presenting its own
+setting, so no caller asks for it and the Host sends nothing more; each device
+family plays it from its own settings handler (ESP32: ``ShouldConfirmVolume``
+in ``device_settings_core.h``).
 """
 
 from __future__ import annotations
