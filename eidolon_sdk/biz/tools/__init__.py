@@ -21,9 +21,18 @@ from __future__ import annotations
 
 from typing import Annotated, Literal, Self
 
-from pydantic import BaseModel, ConfigDict, Field, StrictBool, StringConstraints, model_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    StrictBool,
+    StringConstraints,
+    field_validator,
+    model_validator,
+)
 
 from eidolon_sdk.biz.capabilities import digest
+from eidolon_sdk.device_foundation.v1 import DeviceRef
 
 ToolKey = Annotated[
     str,
@@ -200,6 +209,40 @@ class DeviceToolOffer(_Contract):
     session_capabilities: tuple[str, ...] = ()
 
 
+MAX_RESTRICTED = 128
+
+
+def _set_of_keys(value):
+    # One spelling per set, so equal restrictions compare and fingerprint equal.
+    return tuple(sorted(set(value)))
+
+
+class DeviceToolRestriction(_Contract):
+    """Tools one device never offers a session, whichever Companion it carries.
+
+    Kept by Hub with the device and its generation. It only narrows: it cannot
+    grant what the Owner's or the Companion's switches withhold, nor widen what
+    the device's output policy allows.
+    """
+
+    revision: int = Field(ge=1, strict=True)
+    denied: tuple[ToolKey, ...] = Field(default=(), max_length=MAX_RESTRICTED)
+
+    _normalized = field_validator("denied")(_set_of_keys)
+
+
+class SetDeviceToolRestriction(_Contract):
+    device_ref: DeviceRef
+    expected_revision: int = Field(ge=0, strict=True)
+    denied: tuple[ToolKey, ...] = Field(default=(), max_length=MAX_RESTRICTED)
+
+    _normalized = field_validator("denied")(_set_of_keys)
+
+
+class ReadDeviceToolRestriction(_Contract):
+    device_ref: DeviceRef
+
+
 def _switch(policy: ToolPolicy, entry: ToolCatalogEntry) -> bool:
     return policy.overrides.get(entry.key, entry.default_enabled)
 
@@ -241,6 +284,9 @@ __all__ = [
     "CompanionToolPolicy",
     "CompanionToolPolicyState",
     "DeviceToolOffer",
+    "DeviceToolRestriction",
+    "ReadDeviceToolRestriction",
+    "SetDeviceToolRestriction",
     "OwnerToolPolicyState",
     "ToolCatalog",
     "ToolCatalogEntry",

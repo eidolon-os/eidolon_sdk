@@ -164,3 +164,17 @@ def test_runtime_snapshot_reads_the_owner_policy_when_present():
         {**base, "owner_tool_policy": {"revision": 1, "overrides": {"get_time": False}}}
     )
     assert snapshot.owner_tool_policy == ToolPolicy(revision=1, overrides={"get_time": False})
+
+
+def test_device_restriction_is_one_sorted_set_of_valid_keys():
+    from eidolon_sdk.biz.tools import DeviceToolRestriction
+
+    restriction = DeviceToolRestriction(revision=1, denied=["vision.look", "get_weather", "vision.look"])
+
+    assert restriction.denied == ("get_weather", "vision.look")
+    with pytest.raises(ValidationError):
+        DeviceToolRestriction(revision=0, denied=())
+    with pytest.raises(ValidationError):
+        DeviceToolRestriction(revision=1, denied=("Not A Key",))
+    with pytest.raises(ValidationError):
+        DeviceToolRestriction(revision=1, denied=tuple(f"t{i}" for i in range(129)))
