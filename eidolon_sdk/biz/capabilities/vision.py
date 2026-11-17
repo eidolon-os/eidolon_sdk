@@ -87,3 +87,16 @@ def definitions():
             timeout_s=12,
         )
     ]
+
+
+def presentations():
+    """What the Owner reads about each vision tool (labels for the tool catalog)."""
+
+    return {
+        VISION_WHO: {
+            "label": "认出画面里的人",
+            "summary": "用摄像头看看是谁，只认得你登记过脸的人。",
+            "group": "vision",
+            "host_feature": "face_recognition",
+        },
+    }

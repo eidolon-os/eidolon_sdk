@@ -89,3 +89,17 @@ def definitions():
             },
         ]
     ]
+
+
+def presentations():
+    """What the Owner reads about each music tool (labels for the tool catalog)."""
+
+    def entry(label, summary):
+        return {"label": label, "summary": summary, "group": "music", "host_feature": "music"}
+
+    return {
+        "music.search": entry("搜歌", "按歌名、歌手找歌。"),
+        "music.play": entry("播放音乐", "播放找到的歌。"),
+        "music.status": entry("播放状态", "查一下现在在放什么。"),
+        "music.stop": entry("停止音乐", "停掉正在放的音乐。"),
+    }

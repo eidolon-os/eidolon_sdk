@@ -36,3 +36,24 @@ def definitions():
         )
         for name, value in motion_definitions().items()
     ]
+
+
+_PRESENTATIONS = {
+    "motion.look": ("转头看", "朝某个方向看过去，或回正。"),
+    "motion.nod": ("点头", "在对话里点头。"),
+    "motion.shake": ("摇头", "在对话里摇头。"),
+    "motion.play": ("做一个动作", "从设备会的动作里挑一个来做。"),
+    "motion.stop": ("停下动作", "停止正在做的动作。"),
+    "motion.catalog": ("查看会的动作", "查一下这台设备会做哪些动作。"),
+    "behavior.speech_motion": ("说话时配合动作", "说话时身体跟着轻轻摆动。"),
+    "attention.follow": ("目光跟随", "看着在场的人，听到说话就转过去。"),
+}
+
+
+def presentations():
+    """What the Owner reads about each motion tool (labels for the tool catalog)."""
+
+    return {
+        name: {"label": label, "summary": summary, "group": "motion"}
+        for name, (label, summary) in _PRESENTATIONS.items()
+    }

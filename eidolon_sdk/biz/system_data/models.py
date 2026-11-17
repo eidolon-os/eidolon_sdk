@@ -7,6 +7,7 @@ from typing import Any, Literal
 from pydantic import BaseModel, ConfigDict, Field
 
 from eidolon_sdk.biz.persona import ResolvedRuntimeIdentity
+from eidolon_sdk.biz.tools import ToolPolicy
 
 
 class MemoryRealmSnapshot(BaseModel):
@@ -113,6 +114,8 @@ class CompanionRuntimeSnapshot(BaseModel):
     runtime_config: dict[str, Any]
     memory_realm: MemoryRealmSnapshot
     persona_genome: PersonaGenomeSnapshot
+    #: The Owner's tool switches for every Companion; None when never changed.
+    owner_tool_policy: ToolPolicy | None = None
 
     def runtime_identity(self, *, device_id: str | None = None) -> ResolvedRuntimeIdentity:
         """Map the wire DTO to the shared runtime domain value."""
